@@ -1,0 +1,31 @@
+# ノード名 (C++コードの Node("mcl_node", ...) と一致させる必要があります)
+mcl_node:
+  ros__parameters:
+    # --- 今回追加したHDF5マップ設定 ---
+    # HDF5ファイルのパス（できれば絶対パス推奨。~ は使えないことが多いので注意）
+    #mapFile: "src/nhk2026_localization_ver2/map/voxcel_map_output.h5"
+    
+    # 使用するZ軸のインデックス (LiDARの高さに合わせる)
+    mapZIndex: 27
+
+    # --- 尤度場モデルの調整パラメータ ---
+    # 尤度場の「壁の太さ」。推定が安定しないときは少し大きくする (例: 0.05)
+    lfmSigma: 0.03
+    
+    # LiDARの点を何個飛ばしで計算するか (1なら全点、大きいほど計算が軽い)
+    scanStep: 20
+    
+    # マップ解像度（HDF5から読み取れなかった場合のバックアップ値）
+    mapResolution: 0.01
+
+    # --- MCLの基本設定 ---
+    particleNum: 500
+    initial_x: 0.25      
+    initial_y: 0.25      
+    initial_theta: 1.57  
+    
+    # オドメトリのノイズパラメータ (値が大きいほどロボットの動きを信用しない)
+    odomNoise1: 0.1
+    odomNoise2: 0.1
+    odomNoise3: 0.1
+    odomNoise4: 0.1

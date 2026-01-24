@@ -1,0 +1,482 @@
+{
+    "Line": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.9063317593127924,
+                    0.9063317593127924,
+                    0.9063317593127924,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "Line",
+        "mapTo": "Line",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "BlueArena": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.5490196691901472,
+                    0.8431372944811967,
+                    0.8470588949527849,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "BlueArena",
+        "mapTo": "BlueArena",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "Rack": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.6000000968882041,
+                    0.35686279635511653,
+                    0.0,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "Rack",
+        "mapTo": "Rack",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "Low": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.16078431560149153,
+                    0.3254902167595649,
+                    0.0,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "Low",
+        "mapTo": "Low",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "Mid": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.10588235675910249,
+                    0.4431373114119622,
+                    0.23921572806122943,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "Mid",
+        "mapTo": "Mid",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "RedfiledMid": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.996078406052831,
+                    0.6039216740520839,
+                    0.5529412323287045,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "RedfiledMid",
+        "mapTo": "RedfiledMid",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "wall": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.46666671376782004,
+                    0.3137255612114821,
+                    0.15686277258931516,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "wall",
+        "mapTo": "wall",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "StartRetryR": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.8823530893855207,
+                    0.1019607900837754,
+                    0.0,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "StartRetryR",
+        "mapTo": "StartRetryR",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "Needle": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.6000099781689525,
+                    0.5819816899809634,
+                    0.59890141165841,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 1.0,
+                "roughnessFactor": 0.699999988079071,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "Needle",
+        "mapTo": "Needle",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "High": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.6039216740520839,
+                    0.6745099341076093,
+                    0.3254902167595649,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "High",
+        "mapTo": "High",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "StartRetryB": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.19215691553409148,
+                    0.035294120023027065,
+                    0.9647059410370601,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "StartRetryB",
+        "mapTo": "StartRetryB",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "BluefieldMid": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.47450987745200063,
+                    0.7450980047070952,
+                    0.8078432825780866,
+                    0.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "BluefieldMid",
+        "mapTo": "BluefieldMid",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "RedStart": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.996078406052831,
+                    0.8156864212367908,
+                    0.7921569743230893,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "RedStart",
+        "mapTo": "RedStart",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "spear": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.7019608907240009,
+                    0.7019608907240009,
+                    0.7019608907240009,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "spear",
+        "mapTo": "spear",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "BlueStart": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.7529412403905995,
+                    0.8980393131791163,
+                    0.9450981535456938,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "BlueStart",
+        "mapTo": "BlueStart",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    },
+    "RedArena": {
+        "Stages": [
+            {
+                "useAnisotropic": true,
+                "baseColorFactor": [
+                    0.996078406052831,
+                    0.7490196359483665,
+                    0.6745099341076093,
+                    1.0
+                ],
+                "vertColor": false,
+                "instanceDiffuse": false,
+                "metallicFactor": 0.0,
+                "roughnessFactor": 1.0,
+                "opacityFactor": 1.0,
+                "vertColorEmissive": false,
+                "instanceEmissive": false
+            },
+            {},
+            {},
+            {}
+        ],
+        "name": "RedArena",
+        "mapTo": "RedArena",
+        "class": "Material",
+        "groundType": "ASPHALT",
+        "activeLayers": 1,
+        "version": 1.5,
+        "dynamicCubemap": false
+    }
+}
