@@ -34,7 +34,7 @@ def generate_launch_description():
     rviz_config_path = os.path.join(
         package_dir,
         "config",
-        "default.rviz"
+        "nhk2026.rviz"
     )
 
     gazebo = IncludeLaunchDescription(
