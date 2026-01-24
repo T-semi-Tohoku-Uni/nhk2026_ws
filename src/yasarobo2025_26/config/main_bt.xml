@@ -4,168 +4,18 @@
   <BehaviorTree ID="MainBT">
     <Sequence>
       <Sequence>
-        <vacume_on on="1"/>
-        <Delay delay_msec="5000">
-          <generate_route x="0.15"
-                          y="0.75"
+        <Delay delay_msec="1000">
+          <generate_route x="3.0３"
+                          y="0.5"
                           theta="1.05"/>
         </Delay>
         <follow_route/>
-        <vacume_on on="0"/>
-        <SetBlackboard value="0"
-                       output_key="old_color"/>
       </Sequence>
-      <KeepRunningUntilFailure>
-        <Sequence>
-          <Delay delay_msec="2000">
-            <Sequence>
-              <SwitchColor color="{old_color}">
-                <Sequence>
-                  <generate_route x="0.88"
-                                  y="0.700"
-                                  theta="0.0"/>
-                </Sequence>
-                <Sequence>
-                  <waypoint x="0.3"
-                            y="2.0"/>
-                  <generate_route x="1.34"
-                                  y="2.00"
-                                  theta="-1.57"/>
-                </Sequence>
-                <Sequence>
-                  <waypoint x="0.3"
-                            y="2.0"/>
-                  <generate_route x="1.34"
-                                  y="2.00"
-                                  theta="-1.57"/>
-                </Sequence>
-              </SwitchColor>
-              <follow_route/>
-            </Sequence>
-          </Delay>
-          <WhileDoElseBreak>
-            <ball_detect x="{x}"
-                         y="{y}"/>
-            <Sequence>
-              <SwitchColor color="{old_color}">
-                <generate_route x="0.60"
-                                y="0.70"
-                                theta="3.14"/>
-                <generate_route x="1.34"
-                                y="2.10"
-                                theta="2.62"/>
-                <generate_route x="1.34"
-                                y="2.10"
-                                theta="2.62"/>
-              </SwitchColor>
-              <follow_route/>
-              <vacume_on on="1"/>
-              <ball_path x="{x}"
-                         y="{y}"
-                         is_return="0"/>
-              <follow_route/>
-              <get_pose x="{psee_x}"
-                        y="{pose_y}"
-                        theta="{pose_theta}"/>
-              <SwitchColor color="{old_color}">
-                <ball_path x="0.88"
-                           y="0.74"
-                           is_return="1"/>
-                <ball_path x="1.34"
-                           y="1.8"
-                           is_return="1"/>
-                <ball_path x="1.34"
-                           y="1.8"
-                           is_return="1"/>
-              </SwitchColor>
-              <follow_route/>
-              <ball_color color="{color}"/>
-              <Sequence>
-                <SwitchColor color="{old_color}">
-                  <waypoint x="0.3"
-                            y="0.75"/>
-                  <waypoint x="0.3"
-                            y="2.0"/>
-                  <waypoint x="0.3"
-                            y="2.0"/>
-                </SwitchColor>
-                <SwitchColor color="{color}">
-                  <generate_route x="0.15"
-                                  y="0.75"
-                                  theta="1.05"/>
-                  <generate_route x="0.15"
-                                  y="1.4"
-                                  theta="1.05"/>
-                  <generate_route x="0.30"
-                                  y="1.850"
-                                  theta="0.524"/>
-                </SwitchColor>
-              </Sequence>
-            </Sequence>
-            <Sequence>
-              <SwitchColor color="{old_color}">
-                <Sequence>
-                  <generate_route x="1.34"
-                                  y="2.00"
-                                  theta="-1.57"/>
-                  <follow_route/>
-                  <generate_route x="0.25"
-                                  y="0.25"
-                                  theta="1.57"/>
-                </Sequence>
-                <Sequence>
-                  <generate_route x="1.34"
-                                  y="0.80"
-                                  theta="-1.57"/>
-                  <follow_route/>
-                  <generate_route x="0.25"
-                                  y="0.25"
-                                  theta="1.57"/>
-                </Sequence>
-                <Sequence>
-                  <generate_route x="1.34"
-                                  y="0.80"
-                                  theta="-1.57"/>
-                  <follow_route/>
-                  <generate_route x="0.25"
-                                  y="0.25"
-                                  theta="1.57"/>
-                </Sequence>
-              </SwitchColor>
-            </Sequence>
-          </WhileDoElseBreak>
-          <follow_route/>
-          <vacume_on on="0"/>
-          <SetBlackboard value="{color}"
-                         output_key="old_color"/>
-        </Sequence>
-      </KeepRunningUntilFailure>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Control ID="SwitchColor"
-             editable="true">
-      <input_port name="color"/>
-    </Control>
-    <Control ID="WhileDoElseBreak"
-             editable="true"/>
-    <Action ID="ball_color"
-            editable="true">
-      <output_port name="color"/>
-    </Action>
-    <Action ID="ball_detect"
-            editable="true">
-      <output_port name="x"/>
-      <output_port name="y"/>
-    </Action>
-    <Action ID="ball_path"
-            editable="true">
-      <input_port name="x"/>
-      <input_port name="y"/>
-      <input_port name="is_return"/>
-    </Action>
     <Action ID="follow_route"
             editable="true"/>
     <Action ID="generate_route"
@@ -174,21 +24,6 @@
       <input_port name="y">TODO</input_port>
       <input_port name="theta"
                   default="0.0"/>
-    </Action>
-    <Action ID="get_pose"
-            editable="true">
-      <output_port name="x"/>
-      <output_port name="y"/>
-      <output_port name="theta"/>
-    </Action>
-    <Action ID="vacume_on"
-            editable="true">
-      <input_port name="on"/>
-    </Action>
-    <Action ID="waypoint"
-            editable="true">
-      <input_port name="x"/>
-      <input_port name="y"/>
     </Action>
   </TreeNodesModel>
 
