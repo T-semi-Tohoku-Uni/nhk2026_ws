@@ -70,10 +70,6 @@ echo 'export RCUTILS_COLORIZED_OUTPUT=1' >> ~/.bashrc
 ```
 
 ### シミュレーションで実行する場合
-gazeboに表示するモデルのパスを設定
-```bash
-echo 'export IGN_GAZEBO_RESOURCE_PATH=~/nhk2026_ws/src/nhk2026_sim/models/' >> ~/.bashrc
-```
 `WITH_SIM`環境変数を`1`に設定（`0`にすると実機バージョンでビルドされるので注意）
 ```bash
 echo 'export WITH_SIM=1' >> ~/.bashrc
