@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>nhk2026_localization_ver2</name>
+  <name>nhk2026_localization</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
   <maintainer email="grafen1202@gmail.com">grafen1202</maintainer>
