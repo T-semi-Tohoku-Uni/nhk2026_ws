@@ -29,17 +29,13 @@ def generate_launch_description():
     world = os.path.join(
         get_package_share_directory("nhk2026_sim"), "worlds", "field_nhk.world"
     )
-    map_server_config_path = os.path.join(
-        package_dir,
-        "map",
-        "map.yaml"
-    )
+
     rviz_config_path = os.path.join(
         package_dir,
         "config",
         "nhk2026.rviz"
     )
-    lifecycle_nodes = ['map_server']
+   
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
@@ -99,29 +95,9 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')]
     )
 
-    # nav2 map_server
-    map_server_cmd = Node(
-        package="nav2_map_server",
-        executable="map_server",
-        output="screen",
-        parameters=[
-            {'yaml_filename': map_server_config_path},
-        ],
-        remappings=[('clock', '/world/nhk2026/clock')]
-    )
+ 
 
-    # tf transfromer
-    start_lifecycle_manager_cmd = Node(
-        package="nav2_lifecycle_manager",
-        executable="lifecycle_manager",
-        name="lifecycle_manager",
-        output="screen",
-        emulate_tty=True,
-        parameters=[
-            {'autostart': True},
-            {'node_names': lifecycle_nodes}],
-        remappings=[('clock', '/world/nhk2026/clock')]
-    )
+  
 
     static_from_map_to_odom = Node(
         package="tf2_ros",
@@ -297,8 +273,6 @@ def generate_launch_description():
         gz_spawn_entity,
         bridge,
         rviz,
-        #map_server_cmd,
-        start_lifecycle_manager_cmd,
         static_from_map_to_odom,
         mcl_node,
         joy_node,
