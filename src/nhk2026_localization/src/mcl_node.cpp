@@ -71,7 +71,7 @@ namespace mcl {
                 this->declare_parameter<std::float_t>("odomNoise3", 1.0);
                 this->declare_parameter<std::float_t>("odomNoise4", 1.0);
                 // this->declare_parameter<std::float_t>("mapResolution", 0.01); // readMap内で上書きするためコメントアウト
-                this->declare_parameter<std::string>("mapFile", "src/nhk2026_localization_ver2/map/nhk2026_field.h5"); // HDF5ファイルのパス
+                this->declare_parameter<std::string>("mapFile", "src/nhk2026_localization/map/nhk2026_field.h5"); // HDF5ファイルのパス
                 this->declare_parameter<std::int32_t>("scanStep", 50);
                 this->declare_parameter<std::double_t>("lfmSigma", 0.03);
                 this->declare_parameter<std::double_t>("zHit", 1.0);

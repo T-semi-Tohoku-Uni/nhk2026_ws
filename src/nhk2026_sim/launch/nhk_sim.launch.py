@@ -105,7 +105,7 @@ def generate_launch_description():
 
 
     mcl_node = Node(
-        package="nhk2026_localization_ver2",
+        package="nhk2026_localization",
         executable="mcl_node",
         parameters=[
             {
@@ -121,7 +121,7 @@ def generate_launch_description():
 
 
     vel_feedback_node = Node(
-        package="nhk2026_localization_ver2",
+        package="nhk2026_localization",
         executable="vel_feedback_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
