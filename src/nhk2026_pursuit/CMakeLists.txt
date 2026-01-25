@@ -22,11 +22,11 @@ find_package(visualization_msgs REQUIRED)
 find_package(inrof2025_ros_type REQUIRED)
 
 add_executable(pursuit src/pursuit.cpp)
-# add_executable(path_planner src/path_planner.cpp)
+add_executable(path_planner src/path_planner.cpp)
 
-# target_link_libraries(path_planner
-#   Eigen3::Eigen
-#   ${YAML_CPP_LIBRARIES})
+target_link_libraries(path_planner
+  Eigen3::Eigen
+  ${YAML_CPP_LIBRARIES})
 
 
 ament_target_dependencies(pursuit
@@ -41,17 +41,20 @@ ament_target_dependencies(pursuit
   inrof2025_ros_type
 )
 
-# ament_target_dependencies(path_planner
-#   rclcpp
-#   OpenCV
-#   nav_msgs
-#   geometry_msgs
-#   std_msgs
-#   nhk2026_msgs
-#   tf2
-#   tf2_geometry_msgs
-#   visualization_msgs
-#   )
+ament_target_dependencies(path_planner
+  rclcpp
+  OpenCV
+  nav_msgs
+  geometry_msgs
+  std_msgs
+  # nhk2026_msgs
+  tf2
+  tf2_geometry_msgs
+  visualization_msgs
+  inrof2025_ros_type
+  )
+
+  
 
 target_include_directories(pursuit 
   PUBLIC 
@@ -59,14 +62,14 @@ target_include_directories(pursuit
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
 )
 
-# target_include_directories(path_planner
-#   PUBLIC 
-#     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#     $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-# )
+target_include_directories(path_planner
+  PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+)
 
 install(TARGETS pursuit DESTINATION lib/${PROJECT_NAME})
-# install(TARGETS path_planner DESTINATION lib/${PROJECT_NAME})
+install(TARGETS path_planner DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}

@@ -145,9 +145,9 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
-    gen_path = Node(
-        package="yasarobo2025_26",
-        executable="gen_path",
+    path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="path_planner",
         output="screen",
         parameters=[
             {
@@ -245,7 +245,7 @@ def generate_launch_description():
         joy_node,
         joy2Vel_node,
         vel_feedback_node,
-        gen_path,
+        path_planner,
         pursuit,
         rotate_node,
         bt_node,
