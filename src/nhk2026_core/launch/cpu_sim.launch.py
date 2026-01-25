@@ -160,9 +160,9 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
-    follow_node = Node(
-        package="yasarobo2025_26",
-        executable="follow_node",
+    pursuit = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
         output="screen",
         parameters=[{
             "max_linear_speed": 0.10,
@@ -246,7 +246,7 @@ def generate_launch_description():
         joy2Vel_node,
         vel_feedback_node,
         gen_path,
-        follow_node,
+        pursuit,
         rotate_node,
         bt_node,
         vacume_node,
