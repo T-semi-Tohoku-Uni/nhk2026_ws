@@ -20,6 +20,7 @@ find_package(std_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(inrof2025_ros_type REQUIRED)
+find_package(HDF5 COMPONENTS C CXX REQUIRED)
 
 add_executable(pursuit src/pursuit.cpp)
 add_executable(path_planner src/path_planner.cpp)
@@ -66,7 +67,18 @@ target_include_directories(path_planner
   PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    ${HDF5_INCLUDE_DIRS}
+
 )
+
+
+
+target_link_libraries(path_planner
+  ${HDF5_LIBRARIES}
+  ${HDF5_CXX_LIBRARIES}
+)
+
+
 
 install(TARGETS pursuit DESTINATION lib/${PROJECT_NAME})
 install(TARGETS path_planner DESTINATION lib/${PROJECT_NAME})

@@ -12,6 +12,9 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <H5Cpp.h>
+
+using namespace H5;
 
 namespace path {
     class PathGenerator: public rclcpp::Node {
@@ -23,11 +26,13 @@ namespace path {
                 this->declare_parameter<std::float_t>("initial_y", 0.25);
                 this->declare_parameter<std::float_t>("initial_theta", M_PI/2);
                 this->declare_parameter<std::float_t>("sample_parameter", 15.0);
+                this->declare_parameter<int>("mapZIndex", 4);
 
                 double initial_x = this->get_parameter("initial_x").as_double();
                 double initial_y = this->get_parameter("initial_y").as_double();
                 double initial_theta = this->get_parameter("initial_theta").as_double();
                 sample_parameter_ = this->get_parameter("sample_parameter").as_double();
+                this->mapZIndex_ = this->get_parameter("mapZIndex").as_int();
 
                 this->curOdom_.x = initial_x;
                 this->curOdom_.y = initial_y;
@@ -36,7 +41,8 @@ namespace path {
                 this->mapResolution_ = 0.01;
                 this->mapWidth_ = 182;
                 this->mapHeight_ = 232;
-                this->mapDir_ = "src/yasarobo2025_26/map/";
+                this->mapFile_ = "src/nhk2026_localization/map/nhk2026_field.h5";
+                
 
                 readMap();
 
@@ -284,6 +290,7 @@ namespace path {
                     }
                 }
             }
+            
 
             // 経路再構築
             std::vector<std::pair<int, int>> path_g;
@@ -308,75 +315,187 @@ namespace path {
             return path_f;
         }
 
+        void publishVoxelMap(const std::vector<uint8_t>& map_data, hsize_t dim_x, hsize_t dim_y, hsize_t dim_z) {
+                // インデックスの範囲チェック
+                if (this->mapZIndex_ < 0 || this->mapZIndex_ >= (int)dim_z) {
+                    RCLCPP_ERROR(this->get_logger(), "mapZIndex %d is out of bounds (0 to %llu)", this->mapZIndex_, dim_z - 1);
+                    return;
+                }
+        }
+
         void readMap() {
-            try {
-                YAML::Node lconf = YAML::LoadFile(this->mapDir_ + "map.yaml");
-                mapResolution_ = lconf["resolution"].as<std::double_t>();
-                mapOrigin_ = lconf["origin"].as<std::vector<std::double_t>>();
+                try {
+                    RCLCPP_INFO(this->get_logger(), "Loading map from: %s", this->mapFile_.c_str());
+                    
+                    
+                    H5File file(this->mapFile_, H5F_ACC_RDONLY);
+                    DataSet dataset = file.openDataSet("map_data");
 
-                std::string imgFile = mapDir_ + "map.pgm";
-                mapImg_ = cv::imread(imgFile, 0);
-                mapWidth_ = mapImg_.cols;
-                mapHeight_ = mapImg_.rows;
+                    
+                    DataSpace dataspace = dataset.getSpace();
+                    int rank = dataspace.getSimpleExtentNdims();
+                    std::vector<hsize_t> dims(rank);
+                    dataspace.getSimpleExtentDims(dims.data(), NULL);
 
-                cv::Mat mapImg = mapImg_.clone();
-                for (int v = 0; v < mapHeight_; v++ ) {
-                    for (int u = 0; u < mapWidth_; u++ ) {
-                        uchar val = mapImg.at<uchar>(v, u);
-                        if (val == 0) {
-                            mapImg.at<uchar>(v, u) = 0;
+                    hsize_t dim_x = dims[0];
+                    hsize_t dim_y = dims[1];
+                    hsize_t dim_z = dims[2];
+
+                    mapWidth_ = dim_x;
+                    mapHeight_ = dim_y;
+
+                    RCLCPP_INFO(this->get_logger(), "Map Shape: (%llu, %llu, %llu)", dim_x, dim_y, dim_z);
+
+                    if (this->mapZIndex_ >= (int)dim_z) {
+                        RCLCPP_ERROR(this->get_logger(), "Z index %d is out of bounds (Max: %llu)", this->mapZIndex_, dim_z - 1);
+                        return;
+                    }
+
+                    
+                    float voxel_size = 0.01f;
+
+                    try {
+                        
+                        if (mapResolution_ <= 0.0) mapResolution_ = 0.01;
+
+                        if (dataset.attrExists("origin")) {
+                            Attribute attr = dataset.openAttribute("origin");
+                            
+                            float origin_buf[3];
+                            
+                            attr.read(PredType::NATIVE_FLOAT, origin_buf);
+
+                            mapOrigin_ = {(double)origin_buf[0], (double)origin_buf[1], (double)origin_buf[2]};
+                            
+                        
+                            RCLCPP_INFO(this->get_logger(), "origin x:%f, y:%f, z:%f", mapOrigin_[0], mapOrigin_[1], mapOrigin_[2]);
                         } else {
-                            mapImg.at<uchar>(v, u) = 1;
+                            RCLCPP_INFO(this->get_logger(), "origin attribute not found. Using calculated defaults.");
+                            
+                            
+                            double u_target = 0; 
+                            double v_target = 0;
+                            double pixels_from_bottom = (double)(mapHeight_ - 1) - v_target;
+                            
+                           
+                            // mapOrigin_ = {-0.32, -0.02, 0.0};
+                        }
+                    } catch (H5::Exception& e) {
+                        
+                        e.printErrorStack();
+                        RCLCPP_WARN(this->get_logger(), "HDF5 Error in reading attributes. Using defaults.");
+                        mapResolution_ = 0.01;
+                    } catch (std::exception& e) {
+                        RCLCPP_WARN(this->get_logger(), "Standard Exception: %s", e.what());
+                    } catch(...) {
+                        RCLCPP_WARN(this->get_logger(), "Unknown Error in reading attributes. Using defaults.");
+                        mapResolution_ = 0.01;
+                    }
+
+
+                    
+                    size_t total_size = dim_x * dim_y * dim_z;
+                    std::vector<uint8_t> map_data(total_size);
+                    dataset.read(map_data.data(), PredType::NATIVE_UINT8);
+
+                    // OpenCV画像 (2値マップ) の作成 & 距離場計算
+                    // OpenCV Mat: (rows=height=y, cols=width=x)
+                    cv::Mat binary_img(dim_y, dim_x, CV_8UC1);
+                    cv::Mat raw_slice_img(dim_y, dim_x, CV_8UC1);
+
+                  
+                    for (int y = 0; y < (int)dim_y; ++y) {
+                        for (int x = 0; x < (int)dim_x; ++x) {
+                            unsigned long idx = x * (dim_y * dim_z) + y * dim_z + this->mapZIndex_;
+                            uint8_t val = map_data[idx];
+
+                            
+                            int v_img = (int)dim_y - 1 - y; 
+
+                            if (val == 1) {
+                                binary_img.at<uint8_t>(v_img, x) = 0;   // 障害物
+                            } else {
+                                binary_img.at<uint8_t>(v_img, x) = 255; // 自由空間
+                            }
                         }
                     }
-                }
+                    
+                    cv::Mat debug_binary_color;
+                    cv::cvtColor(binary_img, debug_binary_color, cv::COLOR_GRAY2BGR);
 
-                cv::Mat distFieldF(mapHeight_, mapWidth_, CV_32FC1);
-                cv::Mat distFieldD(mapHeight_, mapWidth_, CV_64FC1);
-                cv::distanceTransform(mapImg, distFieldF, cv::DIST_L2, 5);
-                
-                // 原点    : 左上
-                // first  : 縦軸
-                // second : 横軸
-                
-                for (int v = 0; v < mapHeight_; v++ ) {
-                    for (int u = 0; u < mapWidth_; u++ ) {
-                        std::float_t d = distFieldF.at<std::float_t>(v, u);
-                        distFieldD.at<std::double_t>(v, u) = (std::double_t)d * mapResolution_;
+                    
+                    std::int32_t u_origin, v_origin;
+                    xy2uv(0.0, 0.0, &u_origin, &v_origin);
+
+                    
+                    if (u_origin >= 0 && u_origin < (int)dim_x && v_origin >= 0 && v_origin < (int)dim_y) {
+                        
+                        cv::circle(debug_binary_color, cv::Point(u_origin, v_origin), 5, cv::Scalar(0, 255, 0), -1);
+                        RCLCPP_INFO(this->get_logger(), "Physical origin (0,0) is at image pixel: u=%d, v=%d", u_origin, v_origin);
+                    } else {
+                        RCLCPP_WARN(this->get_logger(), "Physical origin (0,0) is outside the map boundaries!");
                     }
+
+                    
+                    std::int32_t u_init, v_init;
+                    
+                    xy2uv(0.25, 0.25, &u_init, &v_init); 
+
+                    if (u_init >= 0 && u_init < binary_img.cols && v_init >= 0 && v_init < binary_img.rows) {
+                
+                        cv::circle(debug_binary_color, cv::Point(u_init, v_init), 5, cv::Scalar(255, 0, 0), -1);
+                    }
+
+                    // drawMarkerOnImage(debug_binary_color, 0.32, 0.02, cv::Scalar(0, 0, 255));
+
+                
+                    cv::imwrite("debug_binary_map.png", debug_binary_color);
+                    
+
+        
+                    cv::imwrite("debug_raw_slice.png", raw_slice_img);
+
+
+                    RCLCPP_INFO(this->get_logger(), "Saved raw Z-slice image to debug_raw_slice.png");
+                
+                    mapImg_ = binary_img.clone();
+
+                    
+                    cv::Mat distFieldF;
+                    cv::Mat distFieldD;
+                    cv::distanceTransform(binary_img, distFieldF, cv::DIST_L2, 5);
+
+                  
+                    //  distFieldD = d * mapResolution_
+                    distFieldD = cv::Mat(dim_y, dim_x, CV_64FC1); // メモリ確保
+                    for (int y = 0; y < (int)dim_y; ++y) {
+                        for (int x = 0; x < (int)dim_x; ++x) {
+                            float d_pixel = distFieldF.at<float>(y, x);
+                            distFieldD.at<double>(y, x) = (double)d_pixel * mapResolution_;
+                        }
+                    }
+
+                    double max_val;
+                    cv::minMaxLoc(distFieldD, nullptr, &max_val, nullptr, nullptr);
+                    cv::Mat diff = distFieldD - max_val;   // 要素ごとに引き算
+                    cv::Mat absDiff = cv::abs(diff);      // 要素ごとの絶対値
+                
+                    distField_ = absDiff.clone();
+
+                } catch (FileIException& error) {
+                    error.printErrorStack();
+                    RCLCPP_ERROR(this->get_logger(), "HDF5 File Error");
+                } catch (DataSetIException& error) {
+                    error.printErrorStack();
+                    RCLCPP_ERROR(this->get_logger(), "HDF5 DataSet Error");
+                } catch (DataSpaceIException& error) {
+                    error.printErrorStack();
+                    RCLCPP_ERROR(this->get_logger(), "HDF5 DataSpace Error");
+                } catch (const std::exception& e) {
+                    RCLCPP_ERROR(this->get_logger(), "Error in readMap: %s", e.what());
                 }
-
-                double max_val;
-                cv::minMaxLoc(distFieldD, nullptr, &max_val, nullptr, nullptr);
-                cv::Mat diff = distFieldD - max_val;   // 要素ごとに引き算
-                cv::Mat absDiff = cv::abs(diff);      // 要素ごとの絶対値
-
-
-                // // 1) 距離場 distFieldD（CV_64F）を 0–255 に正規化して 8bit 化
-                // cv::Mat normDist;
-                // cv::normalize(distFieldD, normDist, 0.0, 255.0, cv::NORM_MINMAX);
-                // cv::Mat dist8U;
-                // normDist.convertTo(dist8U, CV_8U);
-
-                // // 2) グレースケール→BGR に変換
-                // cv::Mat colorImg;
-                // cv::cvtColor(dist8U, colorImg, cv::COLOR_GRAY2BGR);
-
-                // // 3) 特定ピクセルをマーク (row=50, col=11 を赤に)
-                // //    .at は (y,x) = (row,col) の順番なので注意
-                // colorImg.at<cv::Vec3b>(11, 50) = cv::Vec3b(0, 0, 255);
-
-                // （任意）円マークを描く場合
-                // cv::circle(colorImg, cv::Point(11, 50), /*半径*/ 3, cv::Scalar(0,255,0), /*塗りつぶし*/ -1);
-
-                // 4) 画像を保存
-                // cv::imwrite("distField_highlight.png", colorImg);
-
-                distField_ = absDiff.clone();
-            } catch (const YAML::Exception& e) {
-                RCLCPP_ERROR(this->get_logger(), "%s\n", e.what());
             }
-        }
+
 
         std::array<std::pair<int,int>, 8> directions8_ {{
             {-1,  0},   // 上        (north)
@@ -389,12 +508,13 @@ namespace path {
             { 1,  1}    // 右下      (south-east)
         }};
         double sample_parameter_;
-        std::string mapDir_;
+        std::string mapFile_;
         std::double_t mapResolution_;
         std::int32_t mapWidth_, mapHeight_;
         std::vector<std::double_t> mapOrigin_;
         cv::Mat mapImg_;
         cv::Mat distField_;
+        int mapZIndex_;
         rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
         rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubSamplePath_;        
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarker_;

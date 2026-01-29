@@ -35,7 +35,7 @@ def generate_launch_description():
         "config",
         "nhk2026.rviz"
     )
-   
+
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
