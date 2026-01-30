@@ -7,7 +7,7 @@
       <collision name="collision">
         <geometry>
           <mesh>
-            <uri>model://field_nhk/meshes/nhk2026_field.obj</uri>
+            <uri>model://field_nhk/meshes/fieldObj_zySwap.obj</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>
@@ -16,7 +16,7 @@
       <visual name="visual">
         <geometry>
           <mesh>
-            <uri>model://field_nhk/meshes/nhk2026_field.obj</uri>
+            <uri>model://field_nhk/meshes/fieldObj_zySwap.obj</uri>
             <scale>1 1 1</scale>
           </mesh>
         </geometry>

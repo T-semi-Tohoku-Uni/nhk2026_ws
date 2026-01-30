@@ -36,7 +36,7 @@
           <static>1</static>
           <include>
             <uri>model://field_nhk</uri>
-            <pose>0 0 0 1.578 0 0</pose>
+            <pose>0 0 0 0 0 0</pose>
           </include>
         </model>
 
