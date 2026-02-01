@@ -13,17 +13,25 @@
 class CanBridge
 {
 public:
+    struct RxData_struct
+    {
+    int canid;
+    std::vector<uint8_t> data;
+    };
+
     CanBridge(const char* Ifname);
     ~CanBridge();
     void send_float(int canid, std::vector<float> txdata_f);
     void send_int(int canid, std::vector<int> txdata_i);
     void send_bits(int canid, std::vector<bool> txdata_b);
+    RxData_struct receive_data();
+     
 private:
     const char* ifname;
     int sock;
     union Data
     {
-    uint32_t data_ui32;
-    float data_f32;
+        uint32_t data_ui32;
+        float data_f32;
     };
 };
