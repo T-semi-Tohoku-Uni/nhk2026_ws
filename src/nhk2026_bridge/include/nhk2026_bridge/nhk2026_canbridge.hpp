@@ -39,4 +39,8 @@ private:
     std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32MultiArray>::SharedPtr> float_publisher_;
     std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Int32MultiArray>::SharedPtr> int_publisher_;
     std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_publisher_;
+
+    std::vector<std::string> float_bridge_list_;
+    std::vector<std::string> int_bridge_list_;
+    std::vector<std::string> bytes_bridge_list_;
 };
