@@ -40,7 +40,7 @@ CanBridge::~CanBridge()
     close(this->sock);
 }
 
-int CanBridge::send_float(int canid, std::vector<float> txdata_f)
+void CanBridge::send_float(int canid, std::vector<float> txdata_f)
 {
     int byte_length = (int)txdata_f.size() * 4;
     if (byte_length > 64)
@@ -65,9 +65,5 @@ int CanBridge::send_float(int canid, std::vector<float> txdata_f)
     if (nbytes < 0)
     {
         throw std::runtime_error("failed to write");
-    }
-    else
-    {
-        return 0;
     }
 }
