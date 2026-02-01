@@ -7,7 +7,9 @@ using std::placeholders::_1;
 CanBridgenhk2026::CanBridgenhk2026()
 : rclcpp_lifecycle::LifecycleNode(std::string("nhk2026_canbridge"))
 {
-    
+    this->declare_parameter("ifname", "can0");
+    std::vector<std::string> default_topic = {};
+    this->declare_parameter("float_bridge_topic", default_topic);
 }
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lifecycle::State &state)
