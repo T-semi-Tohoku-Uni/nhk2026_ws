@@ -1,0 +1,7 @@
+/**:
+  ros__parameters:
+    max_vx: 2.0
+    max_vy: 2.0
+    max_omega: 3.14
+    max_button_vx: 0.2
+    max_button_vy: 0.2
