@@ -22,9 +22,9 @@ public:
 
     CanBridge(const std::string Ifname);
     ~CanBridge();
-    void send_float(int canid, std::vector<float> txdata_f);
-    void send_int(int canid, std::vector<int> txdata_i);
-    void send_bits(int canid, std::vector<bool> txdata_b);
+    void send_float(int canid, std::vector<float> &txdata_f);
+    void send_int(int canid, std::vector<int> &txdata_i);
+    void send_bits(int canid, std::vector<bool> &txdata_b);
     RxData_struct receive_data();
      
 private:

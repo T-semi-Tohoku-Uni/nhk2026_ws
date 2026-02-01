@@ -40,7 +40,7 @@ CanBridge::~CanBridge()
     close(this->sock);
 }
 
-void CanBridge::send_float(int canid, std::vector<float> txdata_f)
+void CanBridge::send_float(int canid, std::vector<float> &txdata_f)
 {
     int byte_length = (int)txdata_f.size() * 4;
     if (byte_length > 64)
@@ -68,7 +68,7 @@ void CanBridge::send_float(int canid, std::vector<float> txdata_f)
     }
 }
 
-void CanBridge::send_int(int canid, std::vector<int> txdata_i)
+void CanBridge::send_int(int canid, std::vector<int> &txdata_i)
 {
     int byte_length = (int)txdata_i.size() *4;
     if (byte_length > 64)
@@ -95,7 +95,7 @@ void CanBridge::send_int(int canid, std::vector<int> txdata_i)
     }
 }
 
-void CanBridge::send_bits(int canid, std::vector<bool> txdata_b)
+void CanBridge::send_bits(int canid, std::vector<bool> &txdata_b)
 {
     int byte_length = (((int)txdata_b.size() + 7) / 8);
     if (byte_length > 64)
