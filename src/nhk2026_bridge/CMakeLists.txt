@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
 find_package(backward_ros REQUIRED)
 
 include_directories(
@@ -57,6 +58,25 @@ target_link_libraries(test_canbridge
 
 install(
   TARGETS test_canbridge
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(nhk2026_canbridge
+  src/nhk2026_canbridge.cpp
+)
+
+ament_target_dependencies(nhk2026_canbridge
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+)
+
+target_link_libraries(nhk2026_canbridge
+  can_library
+)
+
+install(
+  TARGETS nhk2026_canbridge
   DESTINATION lib/${PROJECT_NAME}
 )
 
