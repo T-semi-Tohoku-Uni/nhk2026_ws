@@ -15,7 +15,7 @@ class CanBridge
 public:
     CanBridge(const char* Ifname);
     ~CanBridge();
-    int send_float(int canid, std::vector<float> txdata_f);
+    void send_float(int canid, std::vector<float> txdata_f);
 private:
     const char* ifname;
     int sock;
