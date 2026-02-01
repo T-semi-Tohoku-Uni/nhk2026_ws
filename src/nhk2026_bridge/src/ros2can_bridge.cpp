@@ -67,3 +67,55 @@ void CanBridge::send_float(int canid, std::vector<float> txdata_f)
         throw std::runtime_error("failed to write");
     }
 }
+
+void CanBridge::send_int(int canid, std::vector<int> txdata_i)
+{
+    int byte_length = (int)txdata_i.size() *4;
+    if (byte_length > 64)
+    {        
+        throw std::runtime_error("Data Length is too long");
+    }
+
+    canfd_frame frame{};
+    frame.can_id = canid;
+    frame.len = byte_length;
+    frame.flags |= CANFD_BRS;
+    for (size_t i = 0; i < txdata_i.size(); i++)
+    {
+        frame.data[i*4    ] = (uint8_t)((txdata_i[i] >> 24) & 0xff);
+        frame.data[i*4 + 1] = (uint8_t)((txdata_i[i] >> 16) & 0xff);
+        frame.data[i*4 + 2] = (uint8_t)((txdata_i[i] >>  8) & 0xff);
+        frame.data[i*4 + 3] = (uint8_t)((txdata_i[i]      ) & 0xff);
+    }
+    int nbytes = write(this->sock, &frame, sizeof(frame));
+    if (nbytes < 0)
+    {
+        throw std::runtime_error("failed to write");
+    }
+}
+
+void CanBridge::send_bits(int canid, std::vector<bool> txdata_b)
+{
+    int byte_length = (((int)txdata_b.size() + 7) / 8);
+    if (byte_length > 64)
+    {
+        throw std::runtime_error("Data Length is too long");
+    }
+
+    canfd_frame frame{};
+    frame.can_id = canid;
+    frame.len = byte_length;
+    frame.flags |= CANFD_BRS;
+
+    for (size_t i = 0; i< txdata_b.size(); i++)
+    {
+        size_t byte = i >> 3;
+        uint8_t bit_mask = 1u << (i & 7);
+        if (txdata_b[i]) frame.data[byte] |= bit_mask;
+    }
+    int nbytes = write(this->sock, &frame, sizeof(frame));
+    if (nbytes < 0)
+    {
+        throw std::runtime_error("failed to write");
+    }
+}
