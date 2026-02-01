@@ -45,7 +45,7 @@ int CanBridge::send_float(int canid, std::vector<float> txdata_f)
     int byte_length = (int)txdata_f.size() * 4;
     if (byte_length > 64)
     {
-        return -1;
+        throw std::runtime_error("Data Length is too long");
     }
 
     canfd_frame frame{};
