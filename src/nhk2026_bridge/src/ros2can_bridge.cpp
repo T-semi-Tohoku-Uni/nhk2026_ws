@@ -119,3 +119,16 @@ void CanBridge::send_bits(int canid, std::vector<bool> txdata_b)
         throw std::runtime_error("failed to write");
     }
 }
+
+CanBridge::RxData_struct CanBridge::receive_data()
+{
+    canfd_frame frame{};
+    const int nbytes = read(this->sock, &frame, sizeof(frame));
+    if (nbytes <= 0) throw std::runtime_error("failed to read");
+
+    RxData_struct rxdata;
+    rxdata.canid = frame.can_id;
+    rxdata.data.assign(frame.data, frame.data + frame.len);
+
+    return rxdata;
+}
