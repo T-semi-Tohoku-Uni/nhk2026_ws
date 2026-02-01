@@ -1,6 +1,6 @@
 #include "ros2can_bridge.hpp"
 
-CanBridge::CanBridge(const char* Ifname)
+CanBridge::CanBridge(const std::string Ifname)
 : ifname(Ifname)
 {
     this->sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -18,7 +18,7 @@ CanBridge::CanBridge(const char* Ifname)
     }
 
     ifreq ifr{};
-    std::strncpy(ifr.ifr_name, ifname, IFNAMSIZ - 1);
+    std::strncpy(ifr.ifr_name, ifname.c_str(), IFNAMSIZ - 1);
     if (ioctl(this->sock, SIOCGIFINDEX, &ifr) < 0)
     {
         close(this->sock);
@@ -62,7 +62,7 @@ void CanBridge::send_float(int canid, std::vector<float> txdata_f)
         frame.data[i*4 + 3] = (uint8_t)((data.data_ui32      ) & 0xff);
     }
     int nbytes = write(this->sock, &frame, sizeof(frame));
-    if (nbytes < 0)
+    if (nbytes != sizeof(frame))
     {
         throw std::runtime_error("failed to write");
     }
@@ -82,13 +82,14 @@ void CanBridge::send_int(int canid, std::vector<int> txdata_i)
     frame.flags |= CANFD_BRS;
     for (size_t i = 0; i < txdata_i.size(); i++)
     {
-        frame.data[i*4    ] = (uint8_t)((txdata_i[i] >> 24) & 0xff);
-        frame.data[i*4 + 1] = (uint8_t)((txdata_i[i] >> 16) & 0xff);
-        frame.data[i*4 + 2] = (uint8_t)((txdata_i[i] >>  8) & 0xff);
-        frame.data[i*4 + 3] = (uint8_t)((txdata_i[i]      ) & 0xff);
+        uint32_t val = static_cast<uint32_t>(txdata_i[i]);
+        frame.data[i*4    ] = (uint8_t)((val >> 24) & 0xff);
+        frame.data[i*4 + 1] = (uint8_t)((val >> 16) & 0xff);
+        frame.data[i*4 + 2] = (uint8_t)((val >>  8) & 0xff);
+        frame.data[i*4 + 3] = (uint8_t)((val      ) & 0xff);
     }
     int nbytes = write(this->sock, &frame, sizeof(frame));
-    if (nbytes < 0)
+    if (nbytes != sizeof(frame))
     {
         throw std::runtime_error("failed to write");
     }
@@ -114,7 +115,7 @@ void CanBridge::send_bits(int canid, std::vector<bool> txdata_b)
         if (txdata_b[i]) frame.data[byte] |= bit_mask;
     }
     int nbytes = write(this->sock, &frame, sizeof(frame));
-    if (nbytes < 0)
+    if (nbytes != sizeof(frame))
     {
         throw std::runtime_error("failed to write");
     }
@@ -124,7 +125,7 @@ CanBridge::RxData_struct CanBridge::receive_data()
 {
     canfd_frame frame{};
     const int nbytes = read(this->sock, &frame, sizeof(frame));
-    if (nbytes <= 0) throw std::runtime_error("failed to read");
+    if (nbytes != sizeof(frame)) throw std::runtime_error("failed to read");
 
     RxData_struct rxdata;
     rxdata.canid = frame.can_id;
