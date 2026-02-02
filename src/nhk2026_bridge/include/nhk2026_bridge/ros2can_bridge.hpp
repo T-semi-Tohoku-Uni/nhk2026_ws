@@ -27,9 +27,9 @@ public:
     void send_bits(int canid, std::vector<bool> &txdata_b);
     RxData_struct receive_data();
 
-    std::vector<float> rxdata_to_float(RxData_struct rxdata);
-    std::vector<int> rxdata_to_int(RxData_struct rxdata);
-    std::vector<bool> rxdata_to_bytes(RxData_struct rxdata);
+    std::vector<float> rxdata_to_float(const RxData_struct &rxdata);
+    std::vector<int> rxdata_to_int(const RxData_struct &rxdata);
+    std::vector<bool> rxdata_to_bytes(const RxData_struct &rxdata);
      
 private:
     const std::string ifname;

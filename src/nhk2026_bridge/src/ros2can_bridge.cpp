@@ -133,3 +133,21 @@ CanBridge::RxData_struct CanBridge::receive_data()
 
     return rxdata;
 }
+
+std::vector<float> CanBridge::rxdata_to_float(const RxData_struct &rxdata)
+{
+    size_t vector_len = rxdata.data.size() / 4;
+
+    std::vector<float> rxdata_f;
+    rxdata_f.resize(vector_len);
+
+    for (size_t i = 0; i < vector_len; i++)
+    {
+        uint32_t rxdata_ui32 = static_cast<uint32_t>(rxdata.data[i*4] << 24 | rxdata.data[i*4 + 1] << 16 | rxdata.data[i*4 + 2] << 8 | rxdata.data[i*4 + 3]);
+        union Data data;
+        data.data_ui32 = rxdata_ui32;
+        rxdata_f[i] = data.data_f32;
+    }
+
+    return rxdata_f;
+}
