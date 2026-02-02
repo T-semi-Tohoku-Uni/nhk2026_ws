@@ -171,3 +171,27 @@ std::vector<int> CanBridge::rxdata_to_int(const RxData_struct &rxdata)
 
     return rxdata_i;
 }
+
+std::vector<bool> CanBridge::rxdata_to_bytes(const RxData_struct &rxdata)
+{
+    size_t vector_len = rxdata.data.size() * 8;
+
+    std::vector<bool> rxdata_b;
+    rxdata_b.resize(vector_len);
+
+    for (size_t byte = 0; byte < rxdata.data.size(); ++byte)
+    {
+        const uint8_t val = rxdata.data[byte];
+        const size_t base = byte << 3;
+        rxdata_b[base    ] = val & 0x01;
+        rxdata_b[base + 1] = val & 0x02;
+        rxdata_b[base + 2] = val & 0x04;
+        rxdata_b[base + 3] = val & 0x08;
+        rxdata_b[base + 4] = val & 0x10;
+        rxdata_b[base + 5] = val & 0x20;
+        rxdata_b[base + 6] = val & 0x40;
+        rxdata_b[base + 7] = val & 0x80;
+    }
+
+    return rxdata_b;
+}
