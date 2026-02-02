@@ -151,6 +151,9 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
         );
     }
 
+    this->running_.store(true);
+    this->rx_thread_ = std::thread([this] {this->rx_loop();});
+    
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
