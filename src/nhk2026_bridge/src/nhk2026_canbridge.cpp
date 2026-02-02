@@ -10,7 +10,20 @@ CanBridgenhk2026::CanBridgenhk2026()
 {
     this->declare_parameter("ifname", "can0");
     std::vector<std::string> default_topic = {};
-    this->declare_parameter("float_bridge_topic", default_topic);
+    this->declare_parameter("pub_float_bridge_topic", default_topic);
+    this->declare_parameter("pub_int_bridge_topic", default_topic);
+    this->declare_parameter("pub_bytes_bridge_topic", default_topic);
+    this->declare_parameter("sub_float_bridge_topic", default_topic);
+    this->declare_parameter("sub_int_bridge_topic", default_topic);
+    this->declare_parameter("sub_bytes_bridge_topic", default_topic);
+
+    std::vector<int> default_canid = {};
+    this->declare_parameter("pub_float_bridge_canid", default_canid);
+    this->declare_parameter("pub_int_bridge_canid", default_canid);
+    this->declare_parameter("pub_bytes_bridge_canid", default_canid);
+    this->declare_parameter("sub_float_bridge_canid", default_canid);
+    this->declare_parameter("sub_int_bridge_canid", default_canid);
+    this->declare_parameter("sub_bytes_bridge_canid", default_canid);
 }
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lifecycle::State &state)
