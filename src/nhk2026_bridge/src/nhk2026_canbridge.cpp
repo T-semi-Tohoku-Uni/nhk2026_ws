@@ -102,7 +102,29 @@ void CanBridgenhk2026::rx_loop()
             continue;
         }
 
-        
+        for (size_t i = 0; i < this->rx_float_bridge_canid_list_.size(); i++)
+        {
+            if (this->rx_float_bridge_canid_list_[i] == rxdata.canid)
+            {
+
+            }
+        }
+
+        for (size_t i = 0; i < this->rx_int_bridge_canid_list_.size(); i++)
+        {
+            if (this->rx_int_bridge_canid_list_[i] == rxdata.canid)
+            {
+                
+            }
+        }
+
+        for (size_t i = 0; i < this->rx_bytes_bridge_canid_list_.size(); i++)
+        {
+            if (this->rx_bytes_bridge_canid_list_[i] == rxdata.canid)
+            {
+                
+            }
+        }
     }
     
 }
