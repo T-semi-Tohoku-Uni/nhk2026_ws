@@ -174,6 +174,18 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_lifecycle::State &state)
 {
+    this->running_.store(false);
+    if (this->can_bridge) this->can_bridge->shutdown();
+    if (this->rx_thread_.joinable()) this->rx_thread_.join();
+    this->can_bridge.reset();
+
+    this->float_publisher_.clear();
+    this->int_publisher_.clear();
+    this->bytes_publisher_.clear();
+    this->float_subscribers_.clear();
+    this->int_subscribers_.clear();
+    this->bytes_subscribers_.clear();
+
     RCLCPP_INFO(
         get_logger(),
         "on_deactivate() called. state: id=%u, label=%s",

@@ -30,7 +30,8 @@ public:
     std::vector<float> rxdata_to_float(const RxData_struct &rxdata);
     std::vector<int> rxdata_to_int(const RxData_struct &rxdata);
     std::vector<bool> rxdata_to_bytes(const RxData_struct &rxdata);
-     
+    void shutdown();
+    
 private:
     const std::string ifname;
     int sock;

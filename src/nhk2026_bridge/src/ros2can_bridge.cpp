@@ -195,3 +195,8 @@ std::vector<bool> CanBridge::rxdata_to_bytes(const RxData_struct &rxdata)
 
     return rxdata_b;
 }
+
+void CanBridge::shutdown()
+{
+    if (sock >= 0) close(sock); sock = -1;
+}
