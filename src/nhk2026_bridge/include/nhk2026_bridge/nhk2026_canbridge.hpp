@@ -45,13 +45,19 @@ private:
     std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Int32MultiArray>::SharedPtr> int_publisher_;
     std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_publisher_;
 
-    std::vector<std::string> float_bridge_topic_list_;
-    std::vector<std::string> int_bridge_topic_list_;
-    std::vector<std::string> bytes_bridge_topic_list_;
+    std::vector<std::string> tx_float_bridge_topic_list_;
+    std::vector<std::string> tx_int_bridge_topic_list_;
+    std::vector<std::string> tx_bytes_bridge_topic_list_;
+    std::vector<int> tx_float_bridge_canid_list_;
+    std::vector<int> tx_int_bridge_canid_list_;
+    std::vector<int> tx_bytes_bridge_canid_list_;
     
-    std::vector<std::string> float_bridge_canid_list_;
-    std::vector<std::string> int_bridge_canid_list_;
-    std::vector<std::string> bytes_bridge_canid_list_;
+    std::vector<std::string> rx_float_bridge_topic_list_;
+    std::vector<std::string> rx_int_bridge_topic_list_;
+    std::vector<std::string> rx_bytes_bridge_topic_list_;
+    std::vector<int> rx_float_bridge_canid_list_;
+    std::vector<int> rx_int_bridge_canid_list_;
+    std::vector<int> rx_bytes_bridge_canid_list_;
 
     std::atomic<bool> running_{false};
     std::thread rx_thread_;
