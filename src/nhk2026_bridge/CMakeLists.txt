@@ -12,6 +12,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(backward_ros REQUIRED)
 
 include_directories(
@@ -69,6 +70,7 @@ ament_target_dependencies(nhk2026_canbridge
   rclcpp
   rclcpp_lifecycle
   std_msgs
+  lifecycle_msgs
 )
 
 target_link_libraries(nhk2026_canbridge
