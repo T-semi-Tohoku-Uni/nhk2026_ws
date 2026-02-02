@@ -102,6 +102,55 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
             )
         );
     }
+
+    this->int_publisher_.reserve(this->pub_int_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->pub_int_bridge_canid_list_.size(); i++)
+    {
+        this->int_publisher_.push_back(
+            this->create_publisher<std_msgs::msg::Int32MultiArray>(
+                this->pub_int_bridge_topic_list_[i],
+                device
+            )
+        );
+    }
+    this->int_subscribers_.reserve(this->sub_int_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->sub_int_bridge_canid_list_.size(); i++)
+    {
+        this->int_subscribers_.push_back(
+            this->create_subscription<std_msgs::msg::Int32MultiArray>(
+                this->sub_int_bridge_topic_list_[i],
+                device,
+                [this, i](std_msgs::msg::Int32MultiArray::ConstSharedPtr rxdata) {
+                    this->int_sub_process(this->sub_int_bridge_canid_list_[i], rxdata);
+                }
+            )
+        );
+    }
+
+    this->bytes_publisher_.reserve(this->pub_bytes_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->pub_bytes_bridge_canid_list_.size(); i++)
+    {
+        this->bytes_publisher_.push_back(
+            this->create_publisher<std_msgs::msg::ByteMultiArray>(
+                this->pub_bytes_bridge_topic_list_[i],
+                device
+            )
+        );
+    }
+    this->bytes_subscribers_.reserve(this->sub_bytes_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->sub_bytes_bridge_canid_list_.size(); i++)
+    {
+        this->bytes_subscribers_.push_back(
+            this->create_subscription<std_msgs::msg::ByteMultiArray>(
+                this->sub_bytes_bridge_topic_list_[i],
+                device,
+                [this, i](std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata) {
+                    this->bytes_sub_process(this->sub_bytes_bridge_canid_list_[i], rxdata);
+                }
+            )
+        );
+    }
+
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
