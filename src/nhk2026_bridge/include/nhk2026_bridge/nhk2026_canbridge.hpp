@@ -35,6 +35,8 @@ private:
         const std::vector<rclcpp::Parameter> &parameters
     );
 
+    void rx_loop();
+
     std::vector<rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr> float_subscribers_;
     std::vector<rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr> int_subscribers_;
     std::vector<rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_subscribers_;
@@ -53,4 +55,6 @@ private:
 
     std::atomic<bool> running_{false};
     std::thread rx_thread_;
+
+    std::unique_ptr<CanBridge> can_bridge;
 };

@@ -87,6 +87,26 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
     return result;
 }
 
+void CanBridgenhk2026::rx_loop()
+{
+    while (rclcpp::ok() && this->running_.load() && this->can_bridge != nullptr)
+    {
+        CanBridge::RxData_struct rxdata;
+        try
+        {
+            rxdata = this->can_bridge->receive_data();
+        }
+        catch(const std::exception& e)
+        {
+            RCLCPP_ERROR(this->get_logger(), e.what());
+            continue;
+        }
+
+        
+    }
+    
+}
+
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
