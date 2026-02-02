@@ -28,6 +28,28 @@ CanBridgenhk2026::CanBridgenhk2026()
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lifecycle::State &state)
 {
+    this->pub_float_bridge_topic_list_ = this->get_parameter("pub_float_bridge_topic").as_string_array();
+    this->pub_int_bridge_topic_list_ = this->get_parameter("pub_int_bridge_topic").as_string_array();
+    this->pub_bytes_bridge_topic_list_ = this->get_parameter("pub_bytes_bridge_topic").as_string_array();
+    this->sub_float_bridge_topic_list_ = this->get_parameter("sub_float_bridge_topic").as_string_array();
+    this->sub_int_bridge_topic_list_ = this->get_parameter("sub_int_bridge_topic").as_string_array();
+    this->sub_bytes_bridge_topic_list_ = this->get_parameter("sub_bytes_bridge_topic").as_string_array();
+
+    auto assign_canid = [this](const char *name, std::vector<int> &dest)
+    {
+        auto src = this->get_parameter(name).as_integer_array();
+        dest.assign(src.begin(), src.end());
+    };
+    assign_canid("pub_float_bridge_canid", this->pub_float_bridge_canid_list_);
+    assign_canid("pub_int_bridge_canid", this->pub_int_bridge_canid_list_);
+    assign_canid("pub_bytes_bridge_canid", this->pub_bytes_bridge_canid_list_);
+    assign_canid("sub_float_bridge_canid", this->sub_float_bridge_canid_list_);
+    assign_canid("sub_int_bridge_canid", this->sub_int_bridge_canid_list_);
+    assign_canid("sub_bytes_bridge_canid", this->sub_bytes_bridge_canid_list_);
+
+    this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
+        std::bind(&CanBridgenhk2026::parameters_callback, this, _1)
+    );
     RCLCPP_INFO(
         get_logger(),
         "on_configure() called. state: id=%u, label=%s",
