@@ -106,7 +106,11 @@ void CanBridgenhk2026::rx_loop()
         {
             if (this->rx_float_bridge_canid_list_[i] == rxdata.canid)
             {
-
+                std::vector<float> txdata_f = this->can_bridge->rxdata_to_float(rxdata);
+                std_msgs::msg::Float32MultiArray txdata;
+                txdata.data = txdata_f;
+                this->float_publisher_[i]->publish(txdata);
+                break;
             }
         }
 
@@ -114,7 +118,11 @@ void CanBridgenhk2026::rx_loop()
         {
             if (this->rx_int_bridge_canid_list_[i] == rxdata.canid)
             {
-                
+                std::vector<int> txdata_i = this->can_bridge->rxdata_to_int(rxdata);
+                std_msgs::msg::Int32MultiArray txdata;
+                txdata.data = txdata_i;
+                this->int_publisher_[i]->publish(txdata);
+                break;
             }
         }
 
