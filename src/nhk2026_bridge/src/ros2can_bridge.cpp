@@ -151,3 +151,23 @@ std::vector<float> CanBridge::rxdata_to_float(const RxData_struct &rxdata)
 
     return rxdata_f;
 }
+
+std::vector<int> CanBridge::rxdata_to_int(const RxData_struct &rxdata)
+{
+    size_t vector_len = rxdata.data.size() / 4;
+
+    std::vector<int> rxdata_i;
+    rxdata_i.resize(vector_len);
+
+    for (size_t i = 0; i < vector_len; i++)
+    {
+        uint32_t rxdata_ui32 = (static_cast<uint32_t>(rxdata.data[i*4])     << 24) |
+                               (static_cast<uint32_t>(rxdata.data[i*4 + 1]) << 16) |
+                               (static_cast<uint32_t>(rxdata.data[i*4 + 2]) << 8)  |
+                               (static_cast<uint32_t>(rxdata.data[i*4 + 3]));
+
+        rxdata_i[i] = static_cast<int32_t>(rxdata_ui32);
+    }
+
+    return rxdata_i;
+}
