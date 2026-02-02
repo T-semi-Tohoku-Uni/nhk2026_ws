@@ -121,22 +121,22 @@ def generate_launch_description():
         output="screen"
     )
 
-    # joy
-    joy_node = Node(
-        package="joy",
-        executable="joy_node",
-        name="joy_node",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
+    # # joy
+    # joy_node = Node(
+    #     package="joy",
+    #     executable="joy_node",
+    #     name="joy_node",
+    #     output="screen",
+    #     remappings=[('clock', '/world/nhk2026/clock')],
+    # )
 
-    joy2Vel_node = Node(
-        package="yasarobo2025_26",
-        executable="joy2vel",
-        name="joy2vel",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
+    # joy2Vel_node = Node(
+    #     package="yasarobo2025_26",
+    #     executable="joy2vel",
+    #     name="joy2vel",
+    #     output="screen",
+    #     remappings=[('clock', '/world/nhk2026/clock')],
+    # )
 
     vel_feedback_node = Node(
         package="nhk2026_localization",
@@ -242,8 +242,8 @@ def generate_launch_description():
         rviz,
         static_from_map_to_odom,
         mcl_node,
-        joy_node,
-        joy2Vel_node,
+        # joy_node,
+        # joy2Vel_node,
         vel_feedback_node,
         path_planner,
         pursuit,
