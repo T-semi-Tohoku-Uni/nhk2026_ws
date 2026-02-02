@@ -10,6 +10,9 @@
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "std_msgs/msg/byte_multi_array.hpp"
 
+#include <atomic>
+#include <thread>
+
 class CanBridgenhk2026
 : public rclcpp_lifecycle::LifecycleNode
 {
@@ -47,4 +50,7 @@ private:
     std::vector<std::string> float_bridge_canid_list_;
     std::vector<std::string> int_bridge_canid_list_;
     std::vector<std::string> bytes_bridge_canid_list_;
+
+    std::atomic<bool> running_{false};
+    std::thread rx_thread_;
 };
