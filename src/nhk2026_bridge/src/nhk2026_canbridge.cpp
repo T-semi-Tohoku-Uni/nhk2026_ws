@@ -1,6 +1,7 @@
 #include "nhk2026_canbridge.hpp"
 
 #include <functional>
+#include <utility>
 
 using std::placeholders::_1;
 
@@ -130,7 +131,10 @@ void CanBridgenhk2026::rx_loop()
         {
             if (this->pub_bytes_bridge_canid_list_[i] == rxdata.canid)
             {
-                
+                std_msgs::msg::ByteMultiArray txdata;
+                txdata.data = std::move(rxdata.data);
+                this->bytes_publisher_[i]->publish(txdata);
+                break;
             }
         }
     }
