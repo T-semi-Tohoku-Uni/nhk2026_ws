@@ -102,9 +102,9 @@ void CanBridgenhk2026::rx_loop()
             continue;
         }
 
-        for (size_t i = 0; i < this->rx_float_bridge_canid_list_.size(); i++)
+        for (size_t i = 0; i < this->pub_float_bridge_canid_list_.size(); i++)
         {
-            if (this->rx_float_bridge_canid_list_[i] == rxdata.canid)
+            if (this->pub_float_bridge_canid_list_[i] == rxdata.canid)
             {
                 std::vector<float> txdata_f = this->can_bridge->rxdata_to_float(rxdata);
                 std_msgs::msg::Float32MultiArray txdata;
@@ -114,9 +114,9 @@ void CanBridgenhk2026::rx_loop()
             }
         }
 
-        for (size_t i = 0; i < this->rx_int_bridge_canid_list_.size(); i++)
+        for (size_t i = 0; i < this->pub_int_bridge_canid_list_.size(); i++)
         {
-            if (this->rx_int_bridge_canid_list_[i] == rxdata.canid)
+            if (this->pub_int_bridge_canid_list_[i] == rxdata.canid)
             {
                 std::vector<int> txdata_i = this->can_bridge->rxdata_to_int(rxdata);
                 std_msgs::msg::Int32MultiArray txdata;
@@ -126,9 +126,9 @@ void CanBridgenhk2026::rx_loop()
             }
         }
 
-        for (size_t i = 0; i < this->rx_bytes_bridge_canid_list_.size(); i++)
+        for (size_t i = 0; i < this->pub_bytes_bridge_canid_list_.size(); i++)
         {
-            if (this->rx_bytes_bridge_canid_list_[i] == rxdata.canid)
+            if (this->pub_bytes_bridge_canid_list_[i] == rxdata.canid)
             {
                 
             }
