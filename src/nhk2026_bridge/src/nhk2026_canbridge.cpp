@@ -75,6 +75,16 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_lifecycle::State &state)
 {
+	try
+	{
+		this->can_bridge = std::make_unique<CanBridge>(this->Ifname);
+	}
+	catch(const std::exception& e)
+	{
+		RCLCPP_INFO(this->get_logger(), "please check can0");
+		return CallbackReturn::FAILURE;
+	}
+
     rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
@@ -153,7 +163,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
 
     this->running_.store(true);
     this->rx_thread_ = std::thread([this] {this->rx_loop();});
-    
+
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
