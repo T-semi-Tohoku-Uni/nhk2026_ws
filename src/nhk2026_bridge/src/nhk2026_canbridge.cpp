@@ -251,7 +251,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_shutdown(const rclcpp_life
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
-    
+
     RCLCPP_INFO(
         get_logger(),
         "on_shutdown() called. state: id=%u, label=%s",
@@ -264,6 +264,15 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
     const std::vector<rclcpp::Parameter> &parameters)
 {
     rcl_interfaces::msg::SetParametersResult result;
+
+    auto st = this->get_current_state().id();
+    if (st == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+        result.successful = false;
+        result.reason = "can_bridge_node is active";
+        return result;
+    }
+
     result.successful = true;
     result.reason = "success";
 

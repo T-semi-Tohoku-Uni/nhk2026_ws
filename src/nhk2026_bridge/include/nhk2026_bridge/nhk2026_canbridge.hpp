@@ -9,6 +9,7 @@
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "std_msgs/msg/byte_multi_array.hpp"
+#include "lifecycle_msgs/msg/state.hpp"
 
 #include <atomic>
 #include <thread>
