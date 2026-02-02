@@ -60,6 +60,33 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_lifecycle::State &state)
 {
+    rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+
+    this->float_publisher_.reserve(this->pub_float_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->pub_float_bridge_canid_list_.size(); i++)
+    {
+        this->float_publisher_.push_back(
+            this->create_publisher<std_msgs::msg::Float32MultiArray>(
+                this->pub_float_bridge_topic_list_[i],
+                device
+            )
+        );
+    }
+    this->float_subscribers_.reserve(this->sub_float_bridge_topic_list_.size());
+    for (size_t i = 0; i < this->sub_float_bridge_canid_list_.size(); i++)
+    {
+        this->float_subscribers_.push_back(
+            this->create_subscription<std_msgs::msg::Float32MultiArray>(
+                this->sub_float_bridge_topic_list_[i],
+                device,
+                [this, i](std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata) {
+                    this->float_sub_process(this->sub_float_bridge_canid_list_[i], rxdata);
+                }
+            )
+        );
+    }
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
