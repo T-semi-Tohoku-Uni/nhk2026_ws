@@ -81,7 +81,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
 	}
 	catch(const std::exception& e)
 	{
-		RCLCPP_INFO(this->get_logger(), "please check can0");
+		RCLCPP_ERROR(this->get_logger(), "%s", e.what());
 		return CallbackReturn::FAILURE;
 	}
 
