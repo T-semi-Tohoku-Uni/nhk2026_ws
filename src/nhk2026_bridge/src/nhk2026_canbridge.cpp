@@ -47,6 +47,21 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
     assign_canid("sub_int_bridge_canid", this->sub_int_bridge_canid_list_);
     assign_canid("sub_bytes_bridge_canid", this->sub_bytes_bridge_canid_list_);
 
+    auto mismatch = [](const auto &topics, const auto &canids) {
+        return topics.size() != canids.size();
+    };
+    if (
+        mismatch(this->pub_float_bridge_topic_list_, this->pub_float_bridge_canid_list_) ||
+        mismatch(this->pub_int_bridge_topic_list_, this->pub_int_bridge_canid_list_)   ||
+        mismatch(this->pub_bytes_bridge_topic_list_, this->pub_bytes_bridge_canid_list_) ||
+        mismatch(this->sub_float_bridge_topic_list_, this->sub_float_bridge_canid_list_) ||
+        mismatch(this->sub_int_bridge_topic_list_, this->sub_int_bridge_canid_list_)   ||
+        mismatch(this->sub_bytes_bridge_topic_list_, this->sub_bytes_bridge_canid_list_)
+    )
+    {
+        return CallbackReturn::FAILURE;
+    }
+
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&CanBridgenhk2026::parameters_callback, this, _1)
     );
