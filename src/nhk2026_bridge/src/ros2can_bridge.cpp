@@ -40,7 +40,7 @@ CanBridge::~CanBridge()
     close(this->sock);
 }
 
-void CanBridge::send_float(int canid, std::vector<float> &txdata_f)
+void CanBridge::send_float(int canid, const std::vector<float> &txdata_f)
 {
     int byte_length = (int)txdata_f.size() * 4;
     if (byte_length > 64)
@@ -68,7 +68,7 @@ void CanBridge::send_float(int canid, std::vector<float> &txdata_f)
     }
 }
 
-void CanBridge::send_int(int canid, std::vector<int> &txdata_i)
+void CanBridge::send_int(int canid, const std::vector<int> &txdata_i)
 {
     int byte_length = (int)txdata_i.size() *4;
     if (byte_length > 64)
@@ -95,9 +95,9 @@ void CanBridge::send_int(int canid, std::vector<int> &txdata_i)
     }
 }
 
-void CanBridge::send_bits(int canid, std::vector<bool> &txdata_b)
+void CanBridge::send_bytes(int canid, const std::vector<uint8_t> &txdata_b)
 {
-    int byte_length = (((int)txdata_b.size() + 7) / 8);
+    const int byte_length = static_cast<int>(txdata_b.size());
     if (byte_length > 64)
     {
         throw std::runtime_error("Data Length is too long");
@@ -108,12 +108,11 @@ void CanBridge::send_bits(int canid, std::vector<bool> &txdata_b)
     frame.len = byte_length;
     frame.flags |= CANFD_BRS;
 
-    for (size_t i = 0; i< txdata_b.size(); i++)
+    if (byte_length > 0)
     {
-        size_t byte = i >> 3;
-        uint8_t bit_mask = 1u << (i & 7);
-        if (txdata_b[i]) frame.data[byte] |= bit_mask;
+        std::memcpy(frame.data, txdata_b.data(), static_cast<size_t>(byte_length));
     }
+
     int nbytes = write(this->sock, &frame, sizeof(frame));
     if (nbytes != sizeof(frame))
     {
@@ -170,30 +169,6 @@ std::vector<int> CanBridge::rxdata_to_int(const RxData_struct &rxdata)
     }
 
     return rxdata_i;
-}
-
-std::vector<bool> CanBridge::rxdata_to_bytes(const RxData_struct &rxdata)
-{
-    size_t vector_len = rxdata.data.size() * 8;
-
-    std::vector<bool> rxdata_b;
-    rxdata_b.resize(vector_len);
-
-    for (size_t byte = 0; byte < rxdata.data.size(); ++byte)
-    {
-        const uint8_t val = rxdata.data[byte];
-        const size_t base = byte << 3;
-        rxdata_b[base    ] = val & 0x01;
-        rxdata_b[base + 1] = val & 0x02;
-        rxdata_b[base + 2] = val & 0x04;
-        rxdata_b[base + 3] = val & 0x08;
-        rxdata_b[base + 4] = val & 0x10;
-        rxdata_b[base + 5] = val & 0x20;
-        rxdata_b[base + 6] = val & 0x40;
-        rxdata_b[base + 7] = val & 0x80;
-    }
-
-    return rxdata_b;
 }
 
 void CanBridge::shutdown()
