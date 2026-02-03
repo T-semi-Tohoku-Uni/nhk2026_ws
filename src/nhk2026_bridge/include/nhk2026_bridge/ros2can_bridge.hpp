@@ -22,14 +22,13 @@ public:
 
     CanBridge(const std::string Ifname);
     ~CanBridge();
-    void send_float(int canid, std::vector<float> &txdata_f);
-    void send_int(int canid, std::vector<int> &txdata_i);
-    void send_bits(int canid, std::vector<bool> &txdata_b);
+    void send_float(int canid, const std::vector<float> &txdata_f);
+    void send_int(int canid, const std::vector<int> &txdata_i);
+    void send_bytes(int canid, const std::vector<uint8_t> &txdata_b);
     RxData_struct receive_data();
 
     std::vector<float> rxdata_to_float(const RxData_struct &rxdata);
     std::vector<int> rxdata_to_int(const RxData_struct &rxdata);
-    std::vector<bool> rxdata_to_bytes(const RxData_struct &rxdata);
     void shutdown();
     
 private:
