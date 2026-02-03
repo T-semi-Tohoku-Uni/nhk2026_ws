@@ -14,7 +14,7 @@ import random
 
 
 def generate_launch_description():
-    x = -1.0
+    x = 1.0
     y = 1.0
     z = 0.10
     theta = math.pi/2
@@ -27,7 +27,7 @@ def generate_launch_description():
     package_dir = get_package_share_directory("nhk2026_sim")
 
     world = os.path.join(
-        get_package_share_directory("nhk2026_sim"), "worlds", "field_soko.world"
+        get_package_share_directory("nhk2026_sim"), "worlds", "field_nhk.world"
     )
 
     rviz_config_path = os.path.join(
