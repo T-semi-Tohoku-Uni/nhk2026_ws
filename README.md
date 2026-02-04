@@ -6,6 +6,7 @@
 - ros2 humble
 - rosdep
 - gazebo
+- librealsense2
 
 #
 ### ros2 humble
@@ -59,6 +60,9 @@ cd
 mkdir -p nhk2026_ws/src
 ```
 各パッケージは`nhk2026_ws/src/`においていきます
+
+### librealsense2のインストール
+[このサイト](https://github.com/realsenseai/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages)を参考にインストールしてください
 
 
 
