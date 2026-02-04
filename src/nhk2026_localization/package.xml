@@ -19,7 +19,8 @@
   <depend>tf2_sensor_msgs</depend>
   <depend>laser_geometry</depend>
   <depend>yaml-cpp</depend>
-  <depend>opencv</depend>
+  <depend>libopencv-dev</depend>
+  <depend>nanoflann</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
