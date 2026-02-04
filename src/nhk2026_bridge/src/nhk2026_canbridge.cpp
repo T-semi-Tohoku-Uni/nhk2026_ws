@@ -34,30 +34,31 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
     this->sub_float_bridge_topic_list_ = this->get_parameter("sub_float_bridge_topic").as_string_array();
     this->sub_int_bridge_topic_list_ = this->get_parameter("sub_int_bridge_topic").as_string_array();
     this->sub_bytes_bridge_topic_list_ = this->get_parameter("sub_bytes_bridge_topic").as_string_array();
+    this->Ifname = this->get_parameter("ifname").as_string();
 
-    auto assign_canid = [this](const char *name, std::vector<int> &dest)
-    {
-        auto src = this->get_parameter(name).as_integer_array();
-        dest.assign(src.begin(), src.end());
-    };
-    assign_canid("pub_float_bridge_canid", this->pub_float_bridge_canid_list_);
-    assign_canid("pub_int_bridge_canid", this->pub_int_bridge_canid_list_);
-    assign_canid("pub_bytes_bridge_canid", this->pub_bytes_bridge_canid_list_);
-    assign_canid("sub_float_bridge_canid", this->sub_float_bridge_canid_list_);
-    assign_canid("sub_int_bridge_canid", this->sub_int_bridge_canid_list_);
-    assign_canid("sub_bytes_bridge_canid", this->sub_bytes_bridge_canid_list_);
+    const std::vector<int64_t> pub_float_canids = this->get_parameter("pub_float_bridge_canid").as_integer_array();
+    const std::vector<int64_t> pub_int_canids = this->get_parameter("pub_int_bridge_canid").as_integer_array();
+    const std::vector<int64_t> pub_bytes_canids = this->get_parameter("pub_bytes_bridge_canid").as_integer_array();
+    const std::vector<int64_t> sub_float_canids = this->get_parameter("sub_float_bridge_canid").as_integer_array();
+    const std::vector<int64_t> sub_int_canids = this->get_parameter("sub_int_bridge_canid").as_integer_array();
+    const std::vector<int64_t> sub_bytes_canids = this->get_parameter("sub_bytes_bridge_canid").as_integer_array();
 
-    auto mismatch = [](const auto &topics, const auto &canids) {
-        return topics.size() != canids.size();
-    };
-    if (
-        mismatch(this->pub_float_bridge_topic_list_, this->pub_float_bridge_canid_list_) ||
-        mismatch(this->pub_int_bridge_topic_list_, this->pub_int_bridge_canid_list_)   ||
-        mismatch(this->pub_bytes_bridge_topic_list_, this->pub_bytes_bridge_canid_list_) ||
-        mismatch(this->sub_float_bridge_topic_list_, this->sub_float_bridge_canid_list_) ||
-        mismatch(this->sub_int_bridge_topic_list_, this->sub_int_bridge_canid_list_)   ||
-        mismatch(this->sub_bytes_bridge_topic_list_, this->sub_bytes_bridge_canid_list_)
-    )
+    this->pub_float_bridge_canid_list_.assign(pub_float_canids.begin(), pub_float_canids.end());
+    this->pub_int_bridge_canid_list_.assign(pub_int_canids.begin(), pub_int_canids.end());
+    this->pub_bytes_bridge_canid_list_.assign(pub_bytes_canids.begin(), pub_bytes_canids.end());
+    this->sub_float_bridge_canid_list_.assign(sub_float_canids.begin(), sub_float_canids.end());
+    this->sub_int_bridge_canid_list_.assign(sub_int_canids.begin(), sub_int_canids.end());
+    this->sub_bytes_bridge_canid_list_.assign(sub_bytes_canids.begin(), sub_bytes_canids.end());
+
+    const bool mismatch_pub_float = this->pub_float_bridge_topic_list_.size() != this->pub_float_bridge_canid_list_.size();
+    const bool mismatch_pub_int = this->pub_int_bridge_topic_list_.size() != this->pub_int_bridge_canid_list_.size();
+    const bool mismatch_pub_bytes = this->pub_bytes_bridge_topic_list_.size() != this->pub_bytes_bridge_canid_list_.size();
+    const bool mismatch_sub_float = this->sub_float_bridge_topic_list_.size() != this->sub_float_bridge_canid_list_.size();
+    const bool mismatch_sub_int = this->sub_int_bridge_topic_list_.size() != this->sub_int_bridge_canid_list_.size();
+    const bool mismatch_sub_bytes = this->sub_bytes_bridge_topic_list_.size() != this->sub_bytes_bridge_canid_list_.size();
+
+    if (mismatch_pub_float || mismatch_pub_int || mismatch_pub_bytes ||
+        mismatch_sub_float || mismatch_sub_int || mismatch_sub_bytes)
     {
         return CallbackReturn::FAILURE;
     }
@@ -265,7 +266,7 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
 {
     rcl_interfaces::msg::SetParametersResult result;
 
-    auto st = this->get_current_state().id();
+    const uint8_t st = this->get_current_state().id();
     if (st == lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
     {
         result.successful = false;
@@ -276,10 +277,93 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
     result.successful = true;
     result.reason = "success";
 
-    for (const auto &param : parameters)
+    for (const rclcpp::Parameter &param : parameters)
     {
-        
+        const std::string &name = param.get_name();
+        const rclcpp::ParameterType type = param.get_type();
+
+        if (name == "ifname" && type == rclcpp::ParameterType::PARAMETER_STRING)
+        {
+            this->Ifname = param.as_string();
+            continue;
+        }
+
+        if (name == "pub_float_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->pub_float_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "pub_int_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->pub_int_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "pub_bytes_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->pub_bytes_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_float_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->sub_float_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_int_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->sub_int_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_bytes_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
+        {
+            const std::vector<std::string> arr = param.as_string_array();
+            this->sub_bytes_bridge_topic_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+
+        if (name == "pub_float_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->pub_float_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "pub_int_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->pub_int_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "pub_bytes_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->pub_bytes_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_float_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->sub_float_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_int_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->sub_int_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
+        if (name == "sub_bytes_bridge_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER_ARRAY)
+        {
+            const std::vector<int64_t> arr = param.as_integer_array();
+            this->sub_bytes_bridge_canid_list_.assign(arr.begin(), arr.end());
+            continue;
+        }
     }
+
+    
 
     return result;
 }

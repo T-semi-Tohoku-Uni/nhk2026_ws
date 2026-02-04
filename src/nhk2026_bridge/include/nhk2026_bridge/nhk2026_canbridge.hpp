@@ -12,6 +12,7 @@
 #include "lifecycle_msgs/msg/state.hpp"
 
 #include <atomic>
+#include <string>
 #include <thread>
 
 class CanBridgenhk2026
@@ -22,7 +23,7 @@ public:
     using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 private:
-    const char* Ifname;
+    std::string Ifname;
 
     CallbackReturn on_configure(const rclcpp_lifecycle::State &state);
     CallbackReturn on_activate(const rclcpp_lifecycle::State &state);
