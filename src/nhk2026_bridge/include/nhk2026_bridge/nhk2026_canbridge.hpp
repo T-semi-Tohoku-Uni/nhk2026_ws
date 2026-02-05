@@ -43,9 +43,9 @@ private:
     std::vector<rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr> int_subscribers_;
     std::vector<rclcpp::Subscription<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_subscribers_;
     
-    std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Float32MultiArray>::SharedPtr> float_publisher_;
-    std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::Int32MultiArray>::SharedPtr> int_publisher_;
-    std::vector<rclcpp_lifecycle::LifecyclePublisher<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_publisher_;
+    std::vector<rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr> float_publisher_;
+    std::vector<rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr> int_publisher_;
+    std::vector<rclcpp::Publisher<std_msgs::msg::ByteMultiArray>::SharedPtr> bytes_publisher_;
 
     std::vector<std::string> pub_float_bridge_topic_list_;
     std::vector<std::string> pub_int_bridge_topic_list_;
