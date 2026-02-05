@@ -76,6 +76,19 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_lifecycle::State &state)
 {
+    const bool mismatch_pub_float = this->pub_float_bridge_topic_list_.size() != this->pub_float_bridge_canid_list_.size();
+    const bool mismatch_pub_int = this->pub_int_bridge_topic_list_.size() != this->pub_int_bridge_canid_list_.size();
+    const bool mismatch_pub_bytes = this->pub_bytes_bridge_topic_list_.size() != this->pub_bytes_bridge_canid_list_.size();
+    const bool mismatch_sub_float = this->sub_float_bridge_topic_list_.size() != this->sub_float_bridge_canid_list_.size();
+    const bool mismatch_sub_int = this->sub_int_bridge_topic_list_.size() != this->sub_int_bridge_canid_list_.size();
+    const bool mismatch_sub_bytes = this->sub_bytes_bridge_topic_list_.size() != this->sub_bytes_bridge_canid_list_.size();
+
+    if (mismatch_pub_float || mismatch_pub_int || mismatch_pub_bytes ||
+        mismatch_sub_float || mismatch_sub_int || mismatch_sub_bytes)
+    {
+        return CallbackReturn::FAILURE;
+    }
+    
 	try
 	{
 		this->can_bridge = std::make_unique<CanBridge>(this->Ifname);
