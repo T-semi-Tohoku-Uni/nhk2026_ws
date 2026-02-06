@@ -29,6 +29,11 @@ CanBridgenhk2026::CanBridgenhk2026()
     this->declare_parameter("sub_bytes_bridge_canid", default_canid);
 }
 
+CanBridgenhk2026::~CanBridgenhk2026()
+{
+    this->stop_bridge_();
+}
+
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lifecycle::State &state)
 {
     this->pub_float_bridge_topic_list_ = this->get_parameter("pub_float_bridge_topic").as_string_array();
@@ -194,7 +199,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
     return CallbackReturn::SUCCESS;
 }
 
-CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_lifecycle::State &state)
+void CanBridgenhk2026::stop_bridge_() noexcept
 {
     if (this->error_timer_)
     {
@@ -205,15 +210,20 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_li
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
-    
+
     this->running_.store(false);
     if (this->can_bridge) this->can_bridge->shutdown();
     if (this->rx_thread_.joinable()) this->rx_thread_.join();
     this->can_bridge.reset();
-    
+
     this->float_publisher_.clear();
     this->int_publisher_.clear();
     this->bytes_publisher_.clear();
+}
+
+CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+    this->stop_bridge_();
 
     RCLCPP_INFO(
         get_logger(),
@@ -225,24 +235,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_li
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_cleanup(const rclcpp_lifecycle::State &state)
 {
-    if (this->error_timer_)
-    {
-        this->error_timer_->cancel();
-        this->error_timer_.reset();
-    }
-    this->rx_error_.store(false);
-    this->float_subscribers_.clear();
-    this->int_subscribers_.clear();
-    this->bytes_subscribers_.clear();
-    
-    this->running_.store(false);
-    if (this->can_bridge) this->can_bridge->shutdown();
-    if (this->rx_thread_.joinable()) this->rx_thread_.join();
-    this->can_bridge.reset();
-    
-    this->float_publisher_.clear();
-    this->int_publisher_.clear();
-    this->bytes_publisher_.clear();
+    this->stop_bridge_();
 
     RCLCPP_INFO(
         get_logger(),
@@ -254,24 +247,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_cleanup(const rclcpp_lifec
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_error(const rclcpp_lifecycle::State &state)
 {
-    if (this->error_timer_)
-    {
-        this->error_timer_->cancel();
-        this->error_timer_.reset();
-    }
-    this->rx_error_.store(false);
-    this->float_subscribers_.clear();
-    this->int_subscribers_.clear();
-    this->bytes_subscribers_.clear();
-    
-    this->running_.store(false);
-    if (this->can_bridge) this->can_bridge->shutdown();
-    if (this->rx_thread_.joinable()) this->rx_thread_.join();
-    this->can_bridge.reset();
-    
-    this->float_publisher_.clear();
-    this->int_publisher_.clear();
-    this->bytes_publisher_.clear();
+    this->stop_bridge_();
 
     RCLCPP_INFO(
         get_logger(),
@@ -283,24 +259,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_error(const rclcpp_lifecyc
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_shutdown(const rclcpp_lifecycle::State &state)
 {
-    if (this->error_timer_)
-    {
-        this->error_timer_->cancel();
-        this->error_timer_.reset();
-    }
-    this->rx_error_.store(false);
-    this->float_subscribers_.clear();
-    this->int_subscribers_.clear();
-    this->bytes_subscribers_.clear();
-    
-    this->running_.store(false);
-    if (this->can_bridge) this->can_bridge->shutdown();
-    if (this->rx_thread_.joinable()) this->rx_thread_.join();
-    this->can_bridge.reset();
-    
-    this->float_publisher_.clear();
-    this->int_publisher_.clear();
-    this->bytes_publisher_.clear();
+    this->stop_bridge_();
 
     RCLCPP_INFO(
         get_logger(),
