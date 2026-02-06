@@ -1,5 +1,7 @@
 #include "ros2can_bridge.hpp"
 
+#include <cerrno>
+
 CanBridge::CanBridge(const std::string Ifname)
 : ifname(Ifname)
 {
@@ -122,15 +124,34 @@ void CanBridge::send_bytes(int canid, const std::vector<uint8_t> &txdata_b)
 
 CanBridge::RxData_struct CanBridge::receive_data()
 {
-    canfd_frame frame{};
-    const int nbytes = read(this->sock, &frame, sizeof(frame));
-    if (nbytes != sizeof(frame)) throw std::runtime_error("failed to read");
+    for (;;)
+    {
+        canfd_frame frame{};
+        const int nbytes = read(this->sock, &frame, sizeof(frame));
+        if (nbytes < 0)
+        {
+            if (errno == EINTR)
+            {
+                continue;
+            }
+            throw std::runtime_error(std::string("failed to read: ") + std::strerror(errno));
+        }
+        if (nbytes != static_cast<int>(sizeof(canfd_frame)) &&
+            nbytes != static_cast<int>(sizeof(can_frame)))
+        {
+            throw std::runtime_error("failed to read: unexpected frame size " + std::to_string(nbytes));
+        }
+        if (frame.len > CANFD_MAX_DLEN)
+        {
+            throw std::runtime_error("failed to read: invalid data length");
+        }
 
-    RxData_struct rxdata;
-    rxdata.canid = frame.can_id;
-    rxdata.data.assign(frame.data, frame.data + frame.len);
+        RxData_struct rxdata;
+        rxdata.canid = frame.can_id;
+        rxdata.data.assign(frame.data, frame.data + frame.len);
 
-    return rxdata;
+        return rxdata;
+    }
 }
 
 std::vector<float> CanBridge::rxdata_to_float(const RxData_struct &rxdata)
