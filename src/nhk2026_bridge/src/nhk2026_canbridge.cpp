@@ -68,6 +68,48 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
     if (mismatch_pub_float || mismatch_pub_int || mismatch_pub_bytes ||
         mismatch_sub_float || mismatch_sub_int || mismatch_sub_bytes)
     {
+        if (mismatch_pub_float) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: pub_float_bridge_topic(size=%zu) != pub_float_bridge_canid(size=%zu)",
+                this->pub_float_bridge_topic_list_.size(),
+                this->pub_float_bridge_canid_list_.size());
+        }
+        if (mismatch_pub_int) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: pub_int_bridge_topic(size=%zu) != pub_int_bridge_canid(size=%zu)",
+                this->pub_int_bridge_topic_list_.size(),
+                this->pub_int_bridge_canid_list_.size());
+        }
+        if (mismatch_pub_bytes) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: pub_bytes_bridge_topic(size=%zu) != pub_bytes_bridge_canid(size=%zu)",
+                this->pub_bytes_bridge_topic_list_.size(),
+                this->pub_bytes_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_float) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: sub_float_bridge_topic(size=%zu) != sub_float_bridge_canid(size=%zu)",
+                this->sub_float_bridge_topic_list_.size(),
+                this->sub_float_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_int) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: sub_int_bridge_topic(size=%zu) != sub_int_bridge_canid(size=%zu)",
+                this->sub_int_bridge_topic_list_.size(),
+                this->sub_int_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_bytes) {
+            RCLCPP_ERROR(
+                get_logger(),
+                "Configuration mismatch: sub_bytes_bridge_topic(size=%zu) != sub_bytes_bridge_canid(size=%zu)",
+                this->sub_bytes_bridge_topic_list_.size(),
+                this->sub_bytes_bridge_canid_list_.size());
+        }
         return CallbackReturn::FAILURE;
     }
 
