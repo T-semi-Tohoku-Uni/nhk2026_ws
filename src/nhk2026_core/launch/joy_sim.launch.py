@@ -121,6 +121,22 @@ def generate_launch_description():
         output="screen"
     )
 
+    # joy
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    joy2Vel_node = Node(
+        package="yasarobo2025_26",
+        executable="joy2vel",
+        name="joy2vel",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
 
     vel_feedback_node = Node(
         package="nhk2026_localization",
@@ -129,93 +145,9 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
-    path_planner = Node(
-        package="nhk2026_pursuit",
-        executable="path_planner",
-        output="screen",
-        parameters=[
-            {
-                "initial_x": x,
-                "initial_y": y,
-                "initial_theta": theta,
-                "sample_parameter": frequency,
-            },
-        ],
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
 
-    pursuit = Node(
-        package="nhk2026_pursuit",
-        executable="pursuit",
-        output="screen",
-        parameters=[{
-            "max_linear_speed": 0.10,
-            "max_angular_speed": 0.7,
-            "max_linear_tolerance": 0.05,
-            "max_theta_tolerance": 0.10,
-            "max_reaching_distance": 0.05,
-            "max_reaching_theta": 0.10,
-            "lookahead_distance": 0.20,
-            "resampleThreshold": 0.10,
-            "Kp_tan": 0.80,
-            "Ki_tan": 0.0,
-            "Kd_tan": 0.0,
-            "Kp_normal": 0.80,
-            "Ki_normal": 0.00,
-            "Kd_normal": 0.00,
-            "Kp_theta": 1.0,
-            "Ki_theta": 0.00,
-            "Kd_theta": 0.00,
-            "x": 10,
-        },
-        ],
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
 
-    bt_node = Node (
-        package="yasarobo2025_26",
-        executable="bt_node",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
-
-    rotate_node = Node(
-        package="yasarobo2025_26",
-        executable="rotate_node",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
-
-    vacume_node = Node(
-        package="yasarobo2025_26",
-        executable="dummy_vacume_uart",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
-
-    detect_node = Node(
-        package="yasarobo2025_26",
-        executable="ball_detect_node",
-        output="screen",
-        parameters=[{
-            "min_pts": 10,
-            "wall_threshold": -1.0,
-        },
-        ],
-        remappings=[('clock', '/world/nhk2026/clock')],
-    )
-
-    ball_path_node = Node(
-        package="yasarobo2025_26",
-        executable="ball_path_node",
-        output="screen",
-        remappings=[('clock', '/world/nhk2026/clock')],
-        parameters=[{
-            "shorten": 0.15,
-            "num_points_": 10
-        }]
-    )
-
+ 
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
@@ -226,12 +158,7 @@ def generate_launch_description():
         rviz,
         static_from_map_to_odom,
         mcl_node,
-        vel_feedback_node,
-        path_planner,
-        pursuit,
-        rotate_node,
-        bt_node,
-        vacume_node,
-        detect_node,
-        ball_path_node
+        joy_node,
+        joy2Vel_node,
+        vel_feedback_node
     ])
