@@ -34,17 +34,22 @@ def _require_can0(context, *args, **kwargs):
 def _ensure_can0_up(context, *args, **kwargs):
     # can0 があるかチェック
     try:
-        out = subprocess.check_output(["/sbin/ip", "-o", "link", "show", "can0"], text=True)
+        out = subprocess.check_output(["/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
         # can0 が無い/読めないなら何もしない
         return []
 
-    # すでに UP なら何もしない
-    if "UP" in out:
+    # すでに UP かつ FD 設定済みなら何もしない
+    desired_ok = all(token in out for token in ("bitrate 1000000", "dbitrate 2000000", "fd on"))
+    if "UP" in out and desired_ok:
         return []
 
-    # DOWN なら sudo で設定
+    # DOWN または FD 未設定なら sudo で再設定
     return [
+        ExecuteProcess(
+            cmd=["sudo", "/sbin/ip", "link", "set", "can0", "down"],
+            output="screen",
+        ),
         ExecuteProcess(
             cmd=[
                 "sudo", "/sbin/ip", "link", "set", "can0", "up",
