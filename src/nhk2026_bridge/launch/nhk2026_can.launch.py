@@ -13,7 +13,7 @@ import launch
 
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')
-    canid_file = os.path.join(pkg_share, 'config', 'nhk2026_canbridge.yml')
+    canid_file = os.path.join(pkg_share, 'config', 'nhk206_canbridge.yml')
 
     name_space = ''
     ld = LaunchDescription()
