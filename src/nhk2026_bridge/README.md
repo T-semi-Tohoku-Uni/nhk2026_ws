@@ -1,0 +1,26 @@
+## nhk2026_canbridge 使い方（概要）
+ROS 2 Lifecycle Node `nhk2026_canbridge` は、CAN バスと ROS トピックを相互にブリッジします。  
+Lifecycle の `configure` → `activate` を行うことで動作を開始します。
+
+### 役割
+- CAN → ROS: 受信した CAN フレームを `pub_*` 設定に従って各トピックへ publish
+- ROS → CAN: `sub_*` 設定に従って各トピックを subscribe し、受信メッセージを CAN へ送信
+
+### パラメータ
+- `ifname`（string, default: `can0`）
+- `pub_float_bridge_topic` / `pub_int_bridge_topic` / `pub_bytes_bridge_topic`（string[]）
+- `sub_float_bridge_topic` / `sub_int_bridge_topic` / `sub_bytes_bridge_topic`（string[]）
+- `pub_float_bridge_canid` / `pub_int_bridge_canid` / `pub_bytes_bridge_canid`（int[]）
+- `sub_float_bridge_canid` / `sub_int_bridge_canid` / `sub_bytes_bridge_canid`（int[]）
+
+### 必須の対応関係
+- それぞれ `topic` 配列と `canid` 配列の要素数が一致していないと `configure/activate` が失敗します。
+- 対応は「配列の同じインデックス同士」で行われます。
+
+### メッセージ型
+- float 系: `std_msgs/msg/Float32MultiArray`
+- int 系: `std_msgs/msg/Int32MultiArray`
+- bytes 系: `std_msgs/msg/ByteMultiArray`
+
+### 運用上の注意
+- Active 状態ではパラメータ変更は拒否されます。変更する場合は `deactivate` してから再設定してください。
