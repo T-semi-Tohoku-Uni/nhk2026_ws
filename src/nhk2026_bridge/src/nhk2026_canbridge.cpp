@@ -473,8 +473,6 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
         }
     }
 
-    
-
     return result;
 }
 
