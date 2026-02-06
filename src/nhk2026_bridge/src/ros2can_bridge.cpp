@@ -3,7 +3,7 @@
 #include <cerrno>
 
 CanBridge::CanBridge(const std::string Ifname)
-: ifname(Ifname)
+: ifname(Ifname), sock(-1)
 {
     this->sock = socket(PF_CAN, SOCK_RAW, CAN_RAW);
     if (this->sock < 0)
