@@ -440,17 +440,38 @@ void CanBridgenhk2026::rx_loop()
 
 void CanBridgenhk2026::float_sub_process(int canid, std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata)
 {
-    this->can_bridge->send_float(canid, rxdata->data);
+    try
+    {
+        this->can_bridge->send_float(canid, rxdata->data);
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    }
 }
 
 void CanBridgenhk2026::int_sub_process(int canid, std_msgs::msg::Int32MultiArray::ConstSharedPtr rxdata)
 {
+    try
+    {
     this->can_bridge->send_int(canid, rxdata->data);
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    }
 }
 
 void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata)
 {
+    try
+    {
     this->can_bridge->send_bytes(canid, rxdata->data);
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    }
 }
 
 int main(int argc, char *argv[])
