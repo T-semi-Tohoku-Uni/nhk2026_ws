@@ -97,15 +97,15 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
         return CallbackReturn::FAILURE;
     }
     
-	try
-	{
-		this->can_bridge = std::make_unique<CanBridge>(this->Ifname);
-	}
-	catch(const std::exception& e)
-	{
-		RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-		return CallbackReturn::FAILURE;
-	}
+    try
+    {
+        this->can_bridge = std::make_unique<CanBridge>(this->Ifname);
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+        return CallbackReturn::FAILURE;
+    }
 
     rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
