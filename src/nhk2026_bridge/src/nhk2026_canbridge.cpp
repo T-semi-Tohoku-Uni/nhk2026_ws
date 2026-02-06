@@ -1,5 +1,8 @@
 #include "nhk2026_canbridge.hpp"
 
+#include "lifecycle_msgs/msg/transition.hpp"
+
+#include <chrono>
 #include <functional>
 #include <utility>
 
@@ -175,8 +178,13 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
         );
     }
 
+    this->rx_error_.store(false);
     this->running_.store(true);
     this->rx_thread_ = std::thread([this] {this->rx_loop();});
+    this->error_timer_ = this->create_wall_timer(
+        std::chrono::milliseconds(200),
+        std::bind(&CanBridgenhk2026::handle_rx_error, this)
+    );
 
     RCLCPP_INFO(
         get_logger(),
@@ -188,6 +196,12 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_lifecycle::State &state)
 {
+    if (this->error_timer_)
+    {
+        this->error_timer_->cancel();
+        this->error_timer_.reset();
+    }
+    this->rx_error_.store(false);
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
@@ -211,6 +225,12 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_li
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_cleanup(const rclcpp_lifecycle::State &state)
 {
+    if (this->error_timer_)
+    {
+        this->error_timer_->cancel();
+        this->error_timer_.reset();
+    }
+    this->rx_error_.store(false);
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
@@ -234,6 +254,12 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_cleanup(const rclcpp_lifec
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_error(const rclcpp_lifecycle::State &state)
 {
+    if (this->error_timer_)
+    {
+        this->error_timer_->cancel();
+        this->error_timer_.reset();
+    }
+    this->rx_error_.store(false);
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
@@ -257,6 +283,12 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_error(const rclcpp_lifecyc
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_shutdown(const rclcpp_lifecycle::State &state)
 {
+    if (this->error_timer_)
+    {
+        this->error_timer_->cancel();
+        this->error_timer_.reset();
+    }
+    this->rx_error_.store(false);
     this->float_subscribers_.clear();
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
@@ -397,7 +429,10 @@ void CanBridgenhk2026::rx_loop()
         catch(const std::exception& e)
         {
             RCLCPP_ERROR(this->get_logger(), "%s", e.what());
-            continue;
+            this->rx_error_.store(true);
+            this->running_.store(false);
+            if (this->can_bridge) this->can_bridge->shutdown();
+            break;
         }
 
         for (size_t i = 0; i < this->pub_float_bridge_canid_list_.size(); i++)
@@ -436,6 +471,23 @@ void CanBridgenhk2026::rx_loop()
         }
     }
     
+}
+
+void CanBridgenhk2026::handle_rx_error()
+{
+    if (!this->rx_error_.load())
+    {
+        return;
+    }
+    if (this->get_current_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+    {
+        this->rx_error_.store(false);
+        return;
+    }
+
+    RCLCPP_WARN(this->get_logger(), "rx_loop failed. deactivating lifecycle node.");
+    this->rx_error_.store(false);
+    this->trigger_transition(lifecycle_msgs::msg::Transition::TRANSITION_DEACTIVATE);
 }
 
 void CanBridgenhk2026::float_sub_process(int canid, std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata)

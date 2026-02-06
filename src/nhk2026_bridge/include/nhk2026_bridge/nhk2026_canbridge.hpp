@@ -38,6 +38,7 @@ private:
     );
 
     void rx_loop();
+    void handle_rx_error();
 
     std::vector<rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr> float_subscribers_;
     std::vector<rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr> int_subscribers_;
@@ -63,6 +64,8 @@ private:
 
     std::atomic<bool> running_{false};
     std::thread rx_thread_;
+    std::atomic<bool> rx_error_{false};
+    rclcpp::TimerBase::SharedPtr error_timer_;
 
     std::unique_ptr<CanBridge> can_bridge;
 
