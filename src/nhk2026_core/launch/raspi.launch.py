@@ -145,6 +145,7 @@ def generate_launch_description():
 
  
     return LaunchDescription([
+        SetEnvironmentVariable(name='WITH_SIM', value='0'),
         SetEnvironmentVariable(name='RCUTILS_COLORIZED_OUTPUT', value='1'),
         node_robot_state_publisher,
         static_from_map_to_odom,
