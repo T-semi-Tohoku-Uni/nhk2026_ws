@@ -6,7 +6,7 @@ import os
 import subprocess
 
 from launch.actions import EmitEvent, RegisterEventHandler
-from launch.actions import OpaqueFunction, Shutdown
+from launch.actions import OpaqueFunction, Shutdown, ExecuteProcess
 from launch.event_handlers import OnProcessStart
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
@@ -31,6 +31,32 @@ def _require_can0(context, *args, **kwargs):
             Shutdown(reason="ip command not found"),
         ]
     
+def _ensure_can0_up(context, *args, **kwargs):
+    # can0 があるかチェック
+    try:
+        out = subprocess.check_output(["/sbin/ip", "-o", "link", "show", "can0"], text=True)
+    except Exception:
+        # can0 が無い/読めないなら何もしない
+        return []
+
+    # すでに UP なら何もしない
+    if "UP" in out:
+        return []
+
+    # DOWN なら sudo で設定
+    return [
+        ExecuteProcess(
+            cmd=[
+                "sudo", "/sbin/ip", "link", "set", "can0", "up",
+                "type", "can",
+                "bitrate", "1000000",
+                "dbitrate", "2000000",
+                "fd", "on",
+            ],
+            output="screen",
+        ),
+    ]
+    
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')
     canid_file = os.path.join(pkg_share, 'config', 'nhk206_canbridge.yml')
@@ -38,6 +64,7 @@ def generate_launch_description():
     name_space = ''
     ld = LaunchDescription()
     ld.add_action(OpaqueFunction(function=_require_can0))
+    ld.add_action(OpaqueFunction(function=_ensure_can0_up))
 
     # canbridge node
     canbridgenode = LifecycleNode(
