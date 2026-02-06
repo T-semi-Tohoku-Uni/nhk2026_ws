@@ -20,7 +20,7 @@ public:
         std::vector<uint8_t> data;
     };
 
-    CanBridge(const std::string Ifname);
+    CanBridge(const std::string& Ifname);
     ~CanBridge();
     void send_float(int canid, const std::vector<float> &txdata_f);
     void send_int(int canid, const std::vector<int> &txdata_i);
