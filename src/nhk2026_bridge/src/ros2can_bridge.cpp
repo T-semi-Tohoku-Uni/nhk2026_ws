@@ -74,7 +74,7 @@ void CanBridge::send_int(int canid, const std::vector<int> &txdata_i)
 {
     int byte_length = (int)txdata_i.size() *4;
     if (byte_length > 64)
-    {        
+    {
         throw std::runtime_error("Data Length is too long");
     }
 
