@@ -3,20 +3,43 @@ from launch_ros.actions import LifecycleNode
 from launch_ros.actions import Node
 from ament_index_python.packages import get_package_share_directory
 import os
+import subprocess
 
 from launch.actions import EmitEvent, RegisterEventHandler
+from launch.actions import OpaqueFunction, Shutdown, LogError
 from launch.event_handlers import OnProcessStart
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
 import lifecycle_msgs.msg
 import launch
 
+def _require_can0(context, *args, **kwargs):
+    # can0 が存在するか確認
+    try:
+        subprocess.check_output(["ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
+        return []  # OK: 何もしない（続行）
+    except subprocess.CalledProcessError as e:
+        # ip は実行できたが can0 が無い等
+        msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
+        return [
+            LogError(msg=msg),
+            Shutdown(reason="can0 not found"),
+        ]
+    except FileNotFoundError:
+        # ip コマンド自体が無いケース（レアだが）
+        msg = "ip コマンドが見つかりません。launch を停止します。"
+        return [
+            LogError(msg=msg),
+            Shutdown(reason="ip command not found"),
+        ]
+    
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')
     canid_file = os.path.join(pkg_share, 'config', 'nhk206_canbridge.yml')
 
     name_space = ''
     ld = LaunchDescription()
+    ld.add_action(OpaqueFunction(function=_require_can0))
 
     # canbridge node
     canbridgenode = LifecycleNode(
