@@ -9,19 +9,34 @@
 #include <stdexcept>
 #include <cstring>
 #include <unistd.h>
+#include <string>
 
 class CanBridge
 {
 public:
-    CanBridge(const char* Ifname);
+    struct RxData_struct
+    {
+        int canid;
+        std::vector<uint8_t> data;
+    };
+
+    CanBridge(const std::string& Ifname);
     ~CanBridge();
-    int send_float(int canid, std::vector<float> txdata_f);
+    void send_float(int canid, const std::vector<float> &txdata_f);
+    void send_int(int canid, const std::vector<int> &txdata_i);
+    void send_bytes(int canid, const std::vector<uint8_t> &txdata_b);
+    RxData_struct receive_data();
+
+    std::vector<float> rxdata_to_float(const RxData_struct &rxdata);
+    std::vector<int> rxdata_to_int(const RxData_struct &rxdata);
+    void shutdown();
+    
 private:
-    const char* ifname;
+    const std::string ifname;
     int sock;
     union Data
     {
-    uint32_t data_ui32;
-    float data_f32;
+        uint32_t data_ui32;
+        float data_f32;
     };
 };
