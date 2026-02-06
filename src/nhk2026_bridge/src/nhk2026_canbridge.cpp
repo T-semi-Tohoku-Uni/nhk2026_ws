@@ -180,6 +180,18 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
                 "sub_int_bridge_canid_list_ (%zu).",
                 this->sub_int_bridge_topic_list_.size(),
                 this->sub_int_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_bytes)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between sub_bytes_bridge_topic_list_ (%zu) and "
+                "sub_bytes_bridge_canid_list_ (%zu).",
+                this->sub_bytes_bridge_topic_list_.size(),
+                this->sub_bytes_bridge_canid_list_.size());
+        }
+        return CallbackReturn::FAILURE;
+    }
     try
     {
         this->can_bridge = std::make_unique<CanBridge>(this->Ifname);
