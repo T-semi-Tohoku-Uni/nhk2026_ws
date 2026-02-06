@@ -12,6 +12,7 @@ CanBridgenhk2026::CanBridgenhk2026()
 : rclcpp_lifecycle::LifecycleNode(std::string("nhk2026_canbridge"))
 {
     this->declare_parameter("ifname", "can0");
+    this->declare_parameter("add_cmd_vel", false);
     std::vector<std::string> default_topic = {};
     this->declare_parameter("pub_float_bridge_topic", default_topic);
     this->declare_parameter("pub_int_bridge_topic", default_topic);
@@ -43,6 +44,7 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
     this->sub_int_bridge_topic_list_ = this->get_parameter("sub_int_bridge_topic").as_string_array();
     this->sub_bytes_bridge_topic_list_ = this->get_parameter("sub_bytes_bridge_topic").as_string_array();
     this->Ifname = this->get_parameter("ifname").as_string();
+    this->add_cmd_vel = this->get_parameter("add_cmd_vel").as_bool();
 
     const std::vector<int64_t> pub_float_canids = this->get_parameter("pub_float_bridge_canid").as_integer_array();
     const std::vector<int64_t> pub_int_canids = this->get_parameter("pub_int_bridge_canid").as_integer_array();
@@ -278,6 +280,11 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
         );
     }
 
+    if (this->add_cmd_vel)
+    {
+
+    }
+
     this->rx_error_.store(false);
     this->running_.store(true);
     this->rx_thread_ = std::thread([this] {this->rx_loop();});
@@ -407,6 +414,11 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
         if (name == "ifname" && type == rclcpp::ParameterType::PARAMETER_STRING)
         {
             this->Ifname = param.as_string();
+            continue;
+        }
+        if (name == "add_cmd_vel" && type == rclcpp::ParameterType::PARAMETER_BOOL)
+        {
+            this->add_cmd_vel = param.as_bool();
             continue;
         }
 

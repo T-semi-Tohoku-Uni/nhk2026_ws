@@ -74,4 +74,6 @@ private:
     void float_sub_process(int canid, std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata);
     void int_sub_process(int canid, std_msgs::msg::Int32MultiArray::ConstSharedPtr rxdata);
     void bytes_sub_process(int canid, std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata);
+
+    bool add_cmd_vel;
 };
