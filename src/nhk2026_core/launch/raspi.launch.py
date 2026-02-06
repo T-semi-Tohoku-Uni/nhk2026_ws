@@ -18,9 +18,9 @@ import xacro
 import math
 
 def generate_launch_description():
-    x = 0.25
-    y = 0.25
-    z = 0.30
+    x = -1.3
+    y = 1
+    z = 0.1
     theata = math.pi / 2
 
     package_dir = get_package_share_directory("nhk2026_sim")
