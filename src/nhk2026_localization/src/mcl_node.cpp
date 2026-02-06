@@ -177,6 +177,7 @@ namespace mcl {
                 if (!sim || std::string(sim) != "1") {
                     is_sim_ = false;
                 } else {
+                    RCLCPP_INFO(this->get_logger(), "freofkprekfore");
                     is_sim_ = true;
                 }
 
