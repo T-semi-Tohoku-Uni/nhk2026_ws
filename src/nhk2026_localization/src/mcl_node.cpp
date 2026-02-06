@@ -174,6 +174,11 @@ namespace mcl {
 
                 const char *sim = std::getenv("WITH_SIM");
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
+                if (sim) {
+                    RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is set to: %s", sim);
+                } else {
+                    RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is NOT set.");
+                }
                 if (!sim || std::string(sim) != "1") {
                     is_sim_ = false;
                 } else {
