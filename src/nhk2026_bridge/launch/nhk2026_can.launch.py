@@ -21,12 +21,14 @@ def _require_can0(context, *args, **kwargs):
     except subprocess.CalledProcessError as e:
         # ip は実行できたが can0 が無い等
         msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
+        launch.logging.get_logger(__name__).error(msg)
         return [
             Shutdown(reason="can0 not found"),
         ]
     except FileNotFoundError:
         # ip コマンド自体が無いケース（レアだが）
         msg = "ip コマンドが見つかりません。launch を停止します。"
+        launch.logging.get_logger(__name__).error(msg)
         return [
             Shutdown(reason="ip command not found"),
         ]
