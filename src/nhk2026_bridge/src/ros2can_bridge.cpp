@@ -198,6 +198,6 @@ std::vector<int> CanBridge::rxdata_to_int(const RxData_struct &rxdata)
 
 void CanBridge::shutdown()
 {
-    if (sock >= 0) close(sock); 
+    if (sock >= 0) close(sock);
     sock = -1;
 }
