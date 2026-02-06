@@ -136,6 +136,60 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
     if (mismatch_pub_float || mismatch_pub_int || mismatch_pub_bytes ||
         mismatch_sub_float || mismatch_sub_int || mismatch_sub_bytes)
     {
+        if (mismatch_pub_float)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between pub_float_bridge_topic_list_ (%zu) and "
+                "pub_float_bridge_canid_list_ (%zu).",
+                this->pub_float_bridge_topic_list_.size(),
+                this->pub_float_bridge_canid_list_.size());
+        }
+        if (mismatch_pub_int)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between pub_int_bridge_topic_list_ (%zu) and "
+                "pub_int_bridge_canid_list_ (%zu).",
+                this->pub_int_bridge_topic_list_.size(),
+                this->pub_int_bridge_canid_list_.size());
+        }
+        if (mismatch_pub_bytes)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between pub_bytes_bridge_topic_list_ (%zu) and "
+                "pub_bytes_bridge_canid_list_ (%zu).",
+                this->pub_bytes_bridge_topic_list_.size(),
+                this->pub_bytes_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_float)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between sub_float_bridge_topic_list_ (%zu) and "
+                "sub_float_bridge_canid_list_ (%zu).",
+                this->sub_float_bridge_topic_list_.size(),
+                this->sub_float_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_int)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between sub_int_bridge_topic_list_ (%zu) and "
+                "sub_int_bridge_canid_list_ (%zu).",
+                this->sub_int_bridge_topic_list_.size(),
+                this->sub_int_bridge_canid_list_.size());
+        }
+        if (mismatch_sub_bytes)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Activation failed: size mismatch between sub_bytes_bridge_topic_list_ (%zu) and "
+                "sub_bytes_bridge_canid_list_ (%zu).",
+                this->sub_bytes_bridge_topic_list_.size(),
+                this->sub_bytes_bridge_canid_list_.size());
+        }
         return CallbackReturn::FAILURE;
     }
     
