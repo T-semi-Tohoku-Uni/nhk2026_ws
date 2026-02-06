@@ -39,7 +39,11 @@ CanBridge::CanBridge(const std::string Ifname)
 
 CanBridge::~CanBridge()
 {
-    close(this->sock);
+    if (this->sock >= 0)
+    {
+        close(this->sock);
+        this->sock = -1;
+    }
 }
 
 void CanBridge::send_float(int canid, const std::vector<float> &txdata_f)
