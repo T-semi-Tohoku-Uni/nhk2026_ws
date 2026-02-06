@@ -6,7 +6,7 @@ import os
 import subprocess
 
 from launch.actions import EmitEvent, RegisterEventHandler
-from launch.actions import OpaqueFunction, Shutdown, LogError
+from launch.actions import OpaqueFunction, Shutdown
 from launch.event_handlers import OnProcessStart
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
@@ -22,14 +22,12 @@ def _require_can0(context, *args, **kwargs):
         # ip は実行できたが can0 が無い等
         msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
         return [
-            LogError(msg=msg),
             Shutdown(reason="can0 not found"),
         ]
     except FileNotFoundError:
         # ip コマンド自体が無いケース（レアだが）
         msg = "ip コマンドが見つかりません。launch を停止します。"
         return [
-            LogError(msg=msg),
             Shutdown(reason="ip command not found"),
         ]
     
