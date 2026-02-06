@@ -254,7 +254,26 @@ void CanBridgenhk2026::stop_bridge_() noexcept
     this->bytes_subscribers_.clear();
 
     this->running_.store(false);
-    if (this->can_bridge) this->can_bridge->shutdown();
+    if (this->can_bridge)
+    {
+        try
+        {
+            this->can_bridge->shutdown();
+        }
+        catch (const std::exception & e)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Exception during CAN bridge shutdown: %s",
+                e.what());
+        }
+        catch (...)
+        {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "Unknown exception during CAN bridge shutdown");
+        }
+    }
     if (this->rx_thread_.joinable()) this->rx_thread_.join();
     this->can_bridge.reset();
 
