@@ -429,7 +429,6 @@ void CanBridgenhk2026::rx_loop()
             }
         }
     }
-    
 }
 
 void CanBridgenhk2026::handle_rx_error()
