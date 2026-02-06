@@ -20,6 +20,7 @@ class CanBridgenhk2026
 {
 public:
     CanBridgenhk2026();
+    ~CanBridgenhk2026() override;
     using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 private:
@@ -39,6 +40,7 @@ private:
 
     void rx_loop();
     void handle_rx_error();
+    void stop_bridge_() noexcept;
 
     std::vector<rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr> float_subscribers_;
     std::vector<rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr> int_subscribers_;
