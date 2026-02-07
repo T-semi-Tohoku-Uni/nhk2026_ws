@@ -295,7 +295,19 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_activate(const rclcpp_life
 
     if (this->add_cmd_vel)
     {
+        this->cmd_vel_subscriber = this->create_subscription<geometry_msgs::msg::Twist>(
+            this->cmd_vel_topic_name,
+            device,
+            std::bind(&CanBridgenhk2026::cmd_vel_callback, this, _1)
+        );
+    }
 
+    if (this->add_cmd_vel_feedback)
+    {
+        this->cmd_vel_feedback_publisher = this->create_publisher<geometry_msgs::msg::Twist>(
+            this->cmd_vel_feedback_topic_name,
+            device
+        );
     }
 
     this->rx_error_.store(false);
