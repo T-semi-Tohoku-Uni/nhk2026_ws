@@ -608,6 +608,11 @@ void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArra
     }
 }
 
+void CanBridgenhk2026::cmd_vel_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
+{
+    
+}
+
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
