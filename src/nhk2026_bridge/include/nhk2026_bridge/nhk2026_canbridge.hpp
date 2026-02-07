@@ -80,5 +80,10 @@ private:
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_feedback_publisher;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscriber;
 
+    int cmd_vel_canid;
+    int cmd_vel_feedback_canid;
+    std::string cmd_vel_topic_name;
+    std::string cmd_vel_feedback_topic_name;
+
     void cmd_vel_callback(geometry_msgs::msg::Twist::SharedPtr rxdata);
 };
