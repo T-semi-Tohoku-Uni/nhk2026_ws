@@ -603,6 +603,20 @@ void CanBridgenhk2026::rx_loop()
                 break;
             }
         }
+
+        if (add_cmd_vel_feedback)
+        {
+            if (this->cmd_vel_feedback_canid == rxdata.canid)
+            {
+                std::vector<float> txdata_f = this->can_bridge->rxdata_to_float(rxdata);
+                geometry_msgs::msg::Twist txdata;
+                txdata.linear.set__x(txdata_f[0]);
+                txdata.linear.set__y(txdata_f[1]);
+                txdata.angular.set__z(txdata_f[3]);
+                if (this->cmd_vel_feedback_publisher != nullptr) this->cmd_vel_feedback_publisher->publish(txdata);
+                continue;
+            }
+        }
     }
 }
 
