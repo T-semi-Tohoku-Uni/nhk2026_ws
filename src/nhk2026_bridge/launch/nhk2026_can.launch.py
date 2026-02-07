@@ -16,7 +16,7 @@ import launch
 def _require_can0(context, *args, **kwargs):
     # can0 が存在するか確認
     try:
-        subprocess.check_output(["ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
+        subprocess.check_output(["/usr/sbin/ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
         return []  # OK: 何もしない（続行）
     except subprocess.CalledProcessError as e:
         # ip は実行できたが can0 が無い等
@@ -36,7 +36,7 @@ def _require_can0(context, *args, **kwargs):
 def _ensure_can0_up(context, *args, **kwargs):
     # can0 があるかチェック
     try:
-        out = subprocess.check_output(["/sbin/ip", "-details", "link", "show", "can0"], text=True)
+        out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
         # can0 が無い/読めないなら何もしない
         return []
@@ -49,12 +49,12 @@ def _ensure_can0_up(context, *args, **kwargs):
     # DOWN または FD 未設定なら sudo で再設定
     return [
         ExecuteProcess(
-            cmd=["sudo", "/sbin/ip", "link", "set", "can0", "down"],
+            cmd=["/usr/sbin/ip", "link", "set", "can0", "down"],
             output="screen",
         ),
         ExecuteProcess(
             cmd=[
-                "sudo", "/sbin/ip", "link", "set", "can0", "up",
+                "/usr/sbin/ip", "link", "set", "can0", "up",
                 "type", "can",
                 "bitrate", "1000000",
                 "dbitrate", "2000000",
