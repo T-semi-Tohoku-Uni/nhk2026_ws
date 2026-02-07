@@ -10,6 +10,7 @@
 #include "std_msgs/msg/int32_multi_array.hpp"
 #include "std_msgs/msg/byte_multi_array.hpp"
 #include "lifecycle_msgs/msg/state.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
 #include <atomic>
 #include <string>
@@ -74,4 +75,16 @@ private:
     void float_sub_process(int canid, std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata);
     void int_sub_process(int canid, std_msgs::msg::Int32MultiArray::ConstSharedPtr rxdata);
     void bytes_sub_process(int canid, std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata);
+
+    bool add_cmd_vel;
+    bool add_cmd_vel_feedback;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_feedback_publisher;
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscriber;
+
+    int cmd_vel_canid;
+    int cmd_vel_feedback_canid;
+    std::string cmd_vel_topic_name;
+    std::string cmd_vel_feedback_topic_name;
+
+    void cmd_vel_callback(geometry_msgs::msg::Twist::SharedPtr rxdata);
 };

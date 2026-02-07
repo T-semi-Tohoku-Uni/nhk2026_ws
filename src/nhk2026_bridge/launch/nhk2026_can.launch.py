@@ -6,7 +6,7 @@ import os
 import subprocess
 
 from launch.actions import EmitEvent, RegisterEventHandler
-from launch.actions import OpaqueFunction, Shutdown, ExecuteProcess
+from launch.actions import OpaqueFunction, Shutdown
 from launch.event_handlers import OnProcessStart
 from launch_ros.event_handlers import OnStateTransition
 from launch_ros.events.lifecycle import ChangeState
@@ -16,7 +16,7 @@ import launch
 def _require_can0(context, *args, **kwargs):
     # can0 が存在するか確認
     try:
-        subprocess.check_output(["ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
+        subprocess.check_output(["/usr/sbin/ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
         return []  # OK: 何もしない（続行）
     except subprocess.CalledProcessError as e:
         # ip は実行できたが can0 が無い等
@@ -32,11 +32,18 @@ def _require_can0(context, *args, **kwargs):
         return [
             Shutdown(reason="ip command not found"),
         ]
+
+def _run_cmd(cmd):
+    try:
+        out = subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
+        return True, out
+    except subprocess.CalledProcessError as e:
+        return False, e.output
     
 def _ensure_can0_up(context, *args, **kwargs):
     # can0 があるかチェック
     try:
-        out = subprocess.check_output(["/sbin/ip", "-details", "link", "show", "can0"], text=True)
+        out = subprocess.check_output(["sudo", "/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
         # can0 が無い/読めないなら何もしない
         return []
@@ -46,23 +53,26 @@ def _ensure_can0_up(context, *args, **kwargs):
     if "UP" in out and desired_ok:
         return []
 
-    # DOWN または FD 未設定なら sudo で再設定
-    return [
-        ExecuteProcess(
-            cmd=["sudo", "/sbin/ip", "link", "set", "can0", "down"],
-            output="screen",
-        ),
-        ExecuteProcess(
-            cmd=[
-                "sudo", "/sbin/ip", "link", "set", "can0", "up",
-                "type", "can",
-                "bitrate", "1000000",
-                "dbitrate", "2000000",
-                "fd", "on",
-            ],
-            output="screen",
-        ),
+    # DOWN または FD 未設定なら sudo -n で再設定（launch 内で直列実行）
+    cmds = [
+        ["sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "down"],
+        [
+            "sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "up",
+            "type", "can",
+            "bitrate", "1000000",
+            "dbitrate", "2000000",
+            "fd", "on",
+        ],
     ]
+    for cmd in cmds:
+        ok, out = _run_cmd(cmd)
+        if not ok:
+            launch.logging.get_logger(__name__).error(
+                "can0 設定に失敗しました。cmd: %s\n(output: %s)"
+                % (" ".join(cmd), out.strip())
+            )
+            return [Shutdown(reason="can0 setup failed")]
+    return []
     
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')

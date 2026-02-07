@@ -1,6 +1,7 @@
 #include "ros2can_bridge.hpp"
 
 #include <cerrno>
+#include <poll.h>
 
 CanBridge::CanBridge(const std::string &Ifname)
 : ifname(Ifname), sock(-1)
@@ -126,10 +127,33 @@ void CanBridge::send_bytes(int canid, const std::vector<uint8_t> &txdata_b)
     }
 }
 
-CanBridge::RxData_struct CanBridge::receive_data()
+bool CanBridge::receive_data(RxData_struct &out)
 {
     for (;;)
     {
+        if (this->sock < 0)
+        {
+            return false;
+        }
+
+        pollfd pfd{};
+        pfd.fd = this->sock;
+        pfd.events = POLLIN;
+        const int pr = poll(&pfd, 1, 200); // 200ms timeout to allow shutdown
+        if (pr < 0)
+        {
+            if (errno == EINTR)
+            {
+                continue;
+            }
+            throw std::runtime_error(std::string("failed to poll: ") + std::strerror(errno));
+        }
+        if (pr == 0)
+        {
+            // timeout: no data
+            return false;
+        }
+
         canfd_frame frame{};
         const int nbytes = read(this->sock, &frame, sizeof(frame));
         if (nbytes < 0)
@@ -150,11 +174,9 @@ CanBridge::RxData_struct CanBridge::receive_data()
             throw std::runtime_error("failed to read: invalid data length");
         }
 
-        RxData_struct rxdata;
-        rxdata.canid = frame.can_id;
-        rxdata.data.assign(frame.data, frame.data + frame.len);
-
-        return rxdata;
+        out.canid = frame.can_id;
+        out.data.assign(frame.data, frame.data + frame.len);
+        return true;
     }
 }
 
