@@ -33,4 +33,19 @@
   </collision>
 </link>
 
+<link name="lidar_front"/>
+<link name="lidar_back"/>
+
+<joint name="base_link_to_lidar_front" type="fixed">
+  <origin xyz="-0.094036 0.2255 0.0755" rpy="0 0 1.5707"/>
+  <parent link="base_link"/>
+  <child link="lidar_front"/>
+</joint>
+
+<joint name="base_link_to_lidar_back" type="fixed">
+  <origin xyz="0.2084 -0.2999 0.0755" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="lidar_back"/>
+</joint>
+
 </robot>
