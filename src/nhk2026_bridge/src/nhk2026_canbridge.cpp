@@ -562,7 +562,11 @@ void CanBridgenhk2026::rx_loop()
         CanBridge::RxData_struct rxdata;
         try
         {
-            rxdata = this->can_bridge->receive_data();
+            const bool got = this->can_bridge->receive_data(rxdata);
+            if (!got)
+            {
+                continue;
+            }
         }
         catch(const std::exception& e)
         {
