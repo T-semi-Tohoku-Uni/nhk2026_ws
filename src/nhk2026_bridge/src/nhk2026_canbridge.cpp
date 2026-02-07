@@ -338,6 +338,8 @@ void CanBridgenhk2026::stop_bridge_() noexcept
     this->int_subscribers_.clear();
     this->bytes_subscribers_.clear();
 
+    this->cmd_vel_subscriber.reset();
+
     this->running_.store(false);
     if (this->can_bridge)
     {
@@ -365,6 +367,8 @@ void CanBridgenhk2026::stop_bridge_() noexcept
     this->float_publisher_.clear();
     this->int_publisher_.clear();
     this->bytes_publisher_.clear();
+
+    this->cmd_vel_feedback_publisher.reset();
 }
 
 CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_deactivate(const rclcpp_lifecycle::State &state)
@@ -609,10 +613,15 @@ void CanBridgenhk2026::rx_loop()
             if (this->cmd_vel_feedback_canid == rxdata.canid)
             {
                 std::vector<float> txdata_f = this->can_bridge->rxdata_to_float(rxdata);
+                if (txdata_f.size() != 3)
+                {
+                    RCLCPP_WARN(this->get_logger(), "cmd_vel_feedback's payload is less");
+                    continue;
+                }
                 geometry_msgs::msg::Twist txdata;
                 txdata.linear.set__x(txdata_f[0]);
                 txdata.linear.set__y(txdata_f[1]);
-                txdata.angular.set__z(txdata_f[3]);
+                txdata.angular.set__z(txdata_f[2]);
                 if (this->cmd_vel_feedback_publisher != nullptr) this->cmd_vel_feedback_publisher->publish(txdata);
                 continue;
             }
