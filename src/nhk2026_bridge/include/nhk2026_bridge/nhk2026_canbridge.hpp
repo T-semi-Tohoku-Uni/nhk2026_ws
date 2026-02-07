@@ -77,6 +77,7 @@ private:
     void bytes_sub_process(int canid, std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata);
 
     bool add_cmd_vel;
+    bool add_cmd_vel_feedback;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_feedback_publisher;
     rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_subscriber;
 
