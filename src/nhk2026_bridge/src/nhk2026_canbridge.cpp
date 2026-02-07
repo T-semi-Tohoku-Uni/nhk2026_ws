@@ -11,8 +11,6 @@ using std::placeholders::_1;
 CanBridgenhk2026::CanBridgenhk2026()
 : rclcpp_lifecycle::LifecycleNode(std::string("nhk2026_canbridge"))
 {
-    this->declare_parameter("ifname", "can0");
-    this->declare_parameter("add_cmd_vel", false);
     std::vector<std::string> default_topic = {};
     this->declare_parameter("pub_float_bridge_topic", default_topic);
     this->declare_parameter("pub_int_bridge_topic", default_topic);
@@ -28,6 +26,15 @@ CanBridgenhk2026::CanBridgenhk2026()
     this->declare_parameter("sub_float_bridge_canid", default_canid);
     this->declare_parameter("sub_int_bridge_canid", default_canid);
     this->declare_parameter("sub_bytes_bridge_canid", default_canid);
+    
+    this->declare_parameter("ifname", "can0");
+    this->declare_parameter("add_cmd_vel", false);
+    this->declare_parameter("add_cmd_vel_feedback", false);
+
+    this->declare_parameter("cmd_vel_canid", 0x100);
+    this->declare_parameter("cmd_vel_topic_name", "cmd_vel");
+    this->declare_parameter("cmd_vel_feedback_canid", 0x101);
+    this->declare_parameter("cmd_vel_feedback_topic_name", "cmd_vel_feedback");
 }
 
 CanBridgenhk2026::~CanBridgenhk2026()
@@ -43,8 +50,6 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
     this->sub_float_bridge_topic_list_ = this->get_parameter("sub_float_bridge_topic").as_string_array();
     this->sub_int_bridge_topic_list_ = this->get_parameter("sub_int_bridge_topic").as_string_array();
     this->sub_bytes_bridge_topic_list_ = this->get_parameter("sub_bytes_bridge_topic").as_string_array();
-    this->Ifname = this->get_parameter("ifname").as_string();
-    this->add_cmd_vel = this->get_parameter("add_cmd_vel").as_bool();
 
     const std::vector<int64_t> pub_float_canids = this->get_parameter("pub_float_bridge_canid").as_integer_array();
     const std::vector<int64_t> pub_int_canids = this->get_parameter("pub_int_bridge_canid").as_integer_array();
@@ -114,6 +119,14 @@ CanBridgenhk2026::CallbackReturn CanBridgenhk2026::on_configure(const rclcpp_lif
         }
         return CallbackReturn::FAILURE;
     }
+    this->Ifname = this->get_parameter("ifname").as_string();
+    this->add_cmd_vel = this->get_parameter("add_cmd_vel").as_bool();
+    this->add_cmd_vel_feedback = this->get_parameter("add_cmd_vel_feedback").as_bool();
+
+    this->cmd_vel_canid = this->get_parameter("cmd_vel_canid").as_int();
+    this->cmd_vel_topic_name = this->get_parameter("cmd_vel_topic_name").as_string();
+    this->cmd_vel_feedback_canid = this->get_parameter("cmd_vel_feedback_canid").as_int();
+    this->cmd_vel_feedback_topic_name = this->get_parameter("cmd_vel_feedback_topic_name").as_string();    
 
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&CanBridgenhk2026::parameters_callback, this, _1)
@@ -411,17 +424,6 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
         const std::string &name = param.get_name();
         const rclcpp::ParameterType type = param.get_type();
 
-        if (name == "ifname" && type == rclcpp::ParameterType::PARAMETER_STRING)
-        {
-            this->Ifname = param.as_string();
-            continue;
-        }
-        if (name == "add_cmd_vel" && type == rclcpp::ParameterType::PARAMETER_BOOL)
-        {
-            this->add_cmd_vel = param.as_bool();
-            continue;
-        }
-
         if (name == "pub_float_bridge_topic" && type == rclcpp::ParameterType::PARAMETER_STRING_ARRAY)
         {
             const std::vector<std::string> arr = param.as_string_array();
@@ -495,6 +497,43 @@ rcl_interfaces::msg::SetParametersResult CanBridgenhk2026::parameters_callback(
             this->sub_bytes_bridge_canid_list_.assign(arr.begin(), arr.end());
             continue;
         }
+
+        if (name == "ifname" && type == rclcpp::ParameterType::PARAMETER_STRING)
+        {
+            this->Ifname = param.as_string();
+            continue;
+        }
+        if (name == "add_cmd_vel" && type == rclcpp::ParameterType::PARAMETER_BOOL)
+        {
+            this->add_cmd_vel = param.as_bool();
+            continue;
+        }
+        if (name == "add_cmd_vel_feedback" && type == rclcpp::ParameterType::PARAMETER_BOOL)
+        {
+            this->add_cmd_vel_feedback = param.as_bool();
+            continue;
+        }
+        if (name == "cmd_vel_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER)
+        {
+            this->cmd_vel_canid = param.as_int();
+            continue;
+        }
+        if (name == "cmd_vel_topic_name" && type == rclcpp::ParameterType::PARAMETER_STRING)
+        {
+            this->cmd_vel_topic_name = param.as_string();
+            continue;
+        }
+        if (name == "cmd_vel_feedback_canid" && type == rclcpp::ParameterType::PARAMETER_INTEGER)
+        {
+            this->cmd_vel_feedback_canid = param.as_int();
+            continue;
+        }
+        if (name == "cmd_vel_feedback_topic_name" && type == rclcpp::ParameterType::PARAMETER_STRING)
+        {
+            this->cmd_vel_feedback_topic_name = param.as_string();
+            continue;
+        }
+
     }
 
     return result;
@@ -610,7 +649,7 @@ void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArra
 
 void CanBridgenhk2026::cmd_vel_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
 {
-    
+
 }
 
 int main(int argc, char *argv[])
