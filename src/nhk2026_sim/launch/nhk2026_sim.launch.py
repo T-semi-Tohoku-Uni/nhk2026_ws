@@ -23,12 +23,6 @@ def generate_launch_description():
         get_package_share_directory("nhk2026_sim"), "worlds", "field_nhk.world"
     )
 
-    rviz_config_path = os.path.join(
-        package_dir,
-        "config",
-        "nhk2026.rviz"
-    )
-
 
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
@@ -67,14 +61,15 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
+        name='ros_gz_bridge_1',
         arguments=[
-            '/pointcloud2_front@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
-            '/pointcloud2_back@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
-            '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
-            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
-            '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/tf_static@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'],
+            '/pointcloud2_front/points@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
+            '/pointcloud2_back/points@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
+            '/odom@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
+            '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
+            '/tf@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
+            '/tf_static@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
+            '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@ignition.msgs.Clock'],
         output='screen'
     )
 

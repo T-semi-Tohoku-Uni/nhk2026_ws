@@ -33,6 +33,14 @@
   </collision>
 </link>
 
+<link name="base_footprint"/>
+
+<joint name="base_link_to_base_footprint" type="fixed">
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <parent link="base_link"/>
+  <child link="base_footprint"/>
+</joint>
+
 <link name="lidar_front"/>
 <link name="lidar_back"/>
 
@@ -57,8 +65,8 @@
         name="ignition::gazebo::systems::OdometryPublisher">
 
   <odom_frame>odom</odom_frame>
-  <robot_base_frame>base_footprint</robot_base_frame>
-  <odom_publish_frequency>10</odom_publish_frequency>
+  <robot_base_frame>base_root</robot_base_frame>
+  <odom_publish_frequency>40</odom_publish_frequency>
   <odom_topic>/odom</odom_topic>
   <tf_topic>/tf</tf_topic>
   <dimensions>2</dimensions>
@@ -94,9 +102,6 @@
         <resolution>0.001</resolution>
       </range>
     </ray>
-    <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
-        <render_engine>ogre</render_engine>
-    </plugin>
   </sensor>
 </gazebo>
 <gazebo reference="lidar_back">
@@ -127,9 +132,6 @@
         <resolution>0.001</resolution>
       </range>
     </ray>
-    <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
-        <render_engine>ogre</render_engine>
-    </plugin>
   </sensor>
 </gazebo>
 
