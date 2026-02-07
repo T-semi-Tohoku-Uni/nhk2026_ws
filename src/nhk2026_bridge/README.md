@@ -2,6 +2,20 @@
 ROS 2 Lifecycle Node `nhk2026_canbridge` は、CAN バスと ROS トピックを相互にブリッジします。  
 Lifecycle の `configure` → `activate` を行うことで動作を開始します。
 
+### 事前準備
+CANインターフェースのセットアップを自動で行うために以下の手順をお願いします。
+
+`sudo visudo` で sudoers ファイルを開き、以下の行を追加してください。
+
+```
+youruser ALL=(root) NOPASSWD: /usr/sbin/ip link set can0 up type can bitrate 1000000 dbitrate 2000000 fd on
+youruser ALL=(root) NOPASSWD: /usr/sbin/ip link set can0 up
+youruser ALL=(root) NOPASSWD: /usr/sbin/ip -o link show can0
+youruser ALL=(root) NOPASSWD: /usr/sbin/ip link set can0 down
+```
+
+youruser は実際のユーザ名に置き換えてください。またipコマンドのパスは`which ip`で確認してください。
+
 ### 役割
 - CAN → ROS: 受信した CAN フレームを `pub_*` 設定に従って各トピックへ publish
 - ROS → CAN: `sub_*` 設定に従って各トピックを subscribe し、受信メッセージを CAN へ送信
