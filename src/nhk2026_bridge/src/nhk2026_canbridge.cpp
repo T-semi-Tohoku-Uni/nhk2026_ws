@@ -615,7 +615,7 @@ void CanBridgenhk2026::rx_loop()
                 std::vector<float> txdata_f = this->can_bridge->rxdata_to_float(rxdata);
                 if (txdata_f.size() != 3)
                 {
-                    RCLCPP_WARN(this->get_logger(), "cmd_vel_feedback's payload is less");
+                    RCLCPP_WARN(this->get_logger(), "cmd_vel_feedback's payload is unexpected size");
                     continue;
                 }
                 geometry_msgs::msg::Twist txdata;
@@ -648,6 +648,7 @@ void CanBridgenhk2026::handle_rx_error()
 
 void CanBridgenhk2026::float_sub_process(int canid, std_msgs::msg::Float32MultiArray::ConstSharedPtr rxdata)
 {
+    if (!can_bridge) return;
     try
     {
         this->can_bridge->send_float(canid, rxdata->data);
@@ -660,6 +661,7 @@ void CanBridgenhk2026::float_sub_process(int canid, std_msgs::msg::Float32MultiA
 
 void CanBridgenhk2026::int_sub_process(int canid, std_msgs::msg::Int32MultiArray::ConstSharedPtr rxdata)
 {
+    if (!can_bridge) return;
     try
     {
         this->can_bridge->send_int(canid, rxdata->data);
@@ -672,6 +674,7 @@ void CanBridgenhk2026::int_sub_process(int canid, std_msgs::msg::Int32MultiArray
 
 void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArray::ConstSharedPtr rxdata)
 {
+    if (!can_bridge) return;
     try
     {
         this->can_bridge->send_bytes(canid, rxdata->data);
