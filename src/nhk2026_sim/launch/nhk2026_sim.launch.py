@@ -97,6 +97,6 @@ def generate_launch_description():
         node_robot_state_publisher,
         gz_spawn_entity,
         bridge,
-        joy_node,
+        # joy_node,
         joy2Vel_node,
     ])
