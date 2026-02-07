@@ -653,7 +653,7 @@ void CanBridgenhk2026::int_sub_process(int canid, std_msgs::msg::Int32MultiArray
 {
     try
     {
-    this->can_bridge->send_int(canid, rxdata->data);
+        this->can_bridge->send_int(canid, rxdata->data);
     }
     catch(const std::exception& e)
     {
@@ -665,7 +665,7 @@ void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArra
 {
     try
     {
-    this->can_bridge->send_bytes(canid, rxdata->data);
+        this->can_bridge->send_bytes(canid, rxdata->data);
     }
     catch(const std::exception& e)
     {
@@ -675,7 +675,20 @@ void CanBridgenhk2026::bytes_sub_process(int canid, std_msgs::msg::ByteMultiArra
 
 void CanBridgenhk2026::cmd_vel_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
 {
+    std::vector<float> txdata_vector(3);
+    txdata_vector[0] = rxdata->linear.x;
+    txdata_vector[1] = rxdata->linear.y;
+    txdata_vector[2] = rxdata->angular.z;
 
+    try
+    {
+        this->can_bridge->send_float(this->cmd_vel_canid, txdata_vector);
+    }
+    catch(const std::exception& e)
+    {
+        RCLCPP_ERROR(this->get_logger(), "%s", e.what());
+    }
+    
 }
 
 int main(int argc, char *argv[])
