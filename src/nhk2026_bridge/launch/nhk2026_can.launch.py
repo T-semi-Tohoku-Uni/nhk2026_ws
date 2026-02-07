@@ -36,7 +36,7 @@ def _require_can0(context, *args, **kwargs):
 def _ensure_can0_up(context, *args, **kwargs):
     # can0 があるかチェック
     try:
-        out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
+        out = subprocess.check_output(["sudo", "/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
         # can0 が無い/読めないなら何もしない
         return []
@@ -54,7 +54,7 @@ def _ensure_can0_up(context, *args, **kwargs):
         ),
         ExecuteProcess(
             cmd=[
-                "/usr/sbin/ip", "link", "set", "can0", "up",
+                "sudo", "/usr/sbin/ip", "link", "set", "can0", "up",
                 "type", "can",
                 "bitrate", "1000000",
                 "dbitrate", "2000000",
