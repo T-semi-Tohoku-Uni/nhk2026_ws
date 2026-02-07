@@ -25,7 +25,7 @@ public:
     void send_float(int canid, const std::vector<float> &txdata_f);
     void send_int(int canid, const std::vector<int> &txdata_i);
     void send_bytes(int canid, const std::vector<uint8_t> &txdata_b);
-    RxData_struct receive_data();
+    bool receive_data(RxData_struct &out);
 
     std::vector<float> rxdata_to_float(const RxData_struct &rxdata);
     std::vector<int> rxdata_to_int(const RxData_struct &rxdata);
