@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<robot name="r2_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro" />
+<xacro:include filename="$(find nhk2026_sim)/urdf/r2_robot.trans" />
+
+<link name="base_root"/>
+
+<joint name="base_root_to_base_link" type="fixed">
+  <origin xyz="0 0 0" rpy="0 0 0"/>
+  <parent link="base_root"/>
+  <child link="base_link"/>
+</joint>
+
+<link name="base_link">
+  <inertial>
+    <origin xyz="0.06030185659270798 0.06561514891160666 0.304245696022597" rpy="0 0 0"/>
+    <mass value="1032.9670991741832"/>
+    <inertia ixx="58.654004" iyy="37.606623" izz="56.51615" ixy="-6.107741" iyz="11.174448" ixz="6.412628"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="silicone_white"/>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+</robot>
