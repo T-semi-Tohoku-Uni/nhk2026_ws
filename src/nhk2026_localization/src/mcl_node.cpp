@@ -162,9 +162,9 @@ namespace mcl {
                 path_.header.frame_id = "map";
                 pubPose_ = create_publisher<geometry_msgs::msg::Pose2D>("pose", 10);
                 
-                rclcpp::QoS marker_qos(1); // 最新の1件を保持
-                marker_qos.transient_local(); // これがRVizの画像の設定と一致します
-                marker_qos.reliable();        // 信頼性重視
+                rclcpp::QoS marker_qos(1); 
+                marker_qos.transient_local(); 
+                marker_qos.reliable();        
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", 10);
 
                 origin_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("origin_marker", marker_qos);
