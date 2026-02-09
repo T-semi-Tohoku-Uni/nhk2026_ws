@@ -122,7 +122,7 @@ def generate_launch_description():
         name='static_laser_tf',
         # 引数: x y z yaw pitch roll parent_frame child_frame
         # 以下の例は、base_linkから前に10cm、上に20cmの位置にLiDARがある場合
-        arguments=['-0.094036', '0.2255', '0.0755', '0', '0', '1.5707', 'base_link', 'laser']
+        arguments=['-0.094036', '0.2255', '0.0755', '1.5707', '0', '0', 'base_link', 'laser']
     )
 
     joy_node = Node(
