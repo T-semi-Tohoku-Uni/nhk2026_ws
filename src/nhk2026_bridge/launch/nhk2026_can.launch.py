@@ -43,7 +43,7 @@ def _run_cmd(cmd):
 def _ensure_can0_up(context, *args, **kwargs):
     # can0 があるかチェック
     try:
-        out = subprocess.check_output(["sudo", "/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
+        out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
         # can0 が無い/読めないなら何もしない
         return []
