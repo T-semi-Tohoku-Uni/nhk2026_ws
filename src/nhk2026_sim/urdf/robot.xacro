@@ -325,9 +325,6 @@
           <resolution>0.015</resolution>
         </range>
       </ray>
-      <plugin filename="libignition-gazebo-sensors-system.so" name="ignition::gazebo::systems::Sensors">
-          <render_engine>ogre</render_engine>
-      </plugin>
     </sensor>
   </gazebo>
 
