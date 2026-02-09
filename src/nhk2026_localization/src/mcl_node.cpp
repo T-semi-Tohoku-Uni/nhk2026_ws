@@ -162,7 +162,7 @@ namespace mcl {
                     if (!sim || std::string(sim) != "1") {
                         subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
                     } else {
-                        subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/pointcloud2_front", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
+                        subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
                     }
                 } else {
                     RCLCPP_INFO(this->get_logger(), "freofkprekfore");
