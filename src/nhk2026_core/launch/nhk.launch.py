@@ -19,8 +19,8 @@ import xacro
 import math
 
 def generate_launch_description():
-    x = -1.3
-    y = 1.0
+    x = -1.47
+    y = 0.45
     z = 0.1
     theata = math.pi / 2
 
@@ -80,22 +80,22 @@ def generate_launch_description():
 
  
 
-#     static_from_odom_to_basefootprint = Node(
-#     package="tf2_ros",
-#     executable="static_transform_publisher",
-#     name="static_odom_to_basefootprint",
-#     output="screen",
-#     arguments=[
-#         "0.25",          # x  [m]
-#         "0.25",          # y  [m]
-#         "0.30",             # z  [m]
-#         "0",             # yaw   [rad]
-#         "0",             # pitch [rad]
-#         "0",             # roll  [rad]
-#         "odom",          # parent  frame
-#         "base_footprint" # child   frame
-#     ]
-# )
+    static_from_odom_to_basefootprint = Node(
+    package="tf2_ros",
+    executable="static_transform_publisher",
+    name="static_odom_to_basefootprint",
+    output="screen",
+    arguments=[
+        "-1.47",          # x  [m]
+        "0.45",          # y  [m]
+        "0.1",             # z  [m]
+        "0",             # yaw   [rad]
+        "0",             # pitch [rad]
+        "0",             # roll  [rad]
+        "odom",          # parent  frame
+        "base_footprint" # child   frame
+    ]
+)
 
     mcl_node = Node(
         package="nhk2026_localization",
@@ -114,6 +114,15 @@ def generate_launch_description():
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
         }],
+    )
+
+    static_laser_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_laser_tf',
+        # 引数: x y z yaw pitch roll parent_frame child_frame
+        # 以下の例は、base_linkから前に10cm、上に20cmの位置にLiDARがある場合
+        arguments=['-0.094036', '0.2255', '0.0755', '0', '0', '1.5707', 'base_link', 'laser']
     )
 
     joy_node = Node(
@@ -142,4 +151,6 @@ def generate_launch_description():
         joy_node,
         joy2Vel_node,
         urg_node2_nl,
+        static_laser_tf,
+        static_from_odom_to_basefootprint,
     ])
