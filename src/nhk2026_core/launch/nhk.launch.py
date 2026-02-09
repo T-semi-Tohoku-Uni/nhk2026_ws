@@ -130,18 +130,6 @@ def generate_launch_description():
         output="screen"
     )
 
-    vel_feedback_node = Node(
-        package="yasarobo2025_26",
-        executable="vel_feedback_uart",
-        output="screen",
-        parameters=[{
-            "Kp_linear": 0.1,
-            "Kp_angular": 0.05,
-            "max_linear_acceleration": 0.5,
-            "max_angular_acceleration": 10.0
-        }]
-    )
-
  
     return LaunchDescription([
         DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
@@ -153,6 +141,5 @@ def generate_launch_description():
         mcl_node,
         joy_node,
         joy2Vel_node,
-        vel_feedback_node,
         urg_node2_nl,
     ])
