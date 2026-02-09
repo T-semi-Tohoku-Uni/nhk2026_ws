@@ -28,6 +28,11 @@
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
 
+struct Point2D {
+  double x;
+  double y;
+};
+
 namespace mcl {
     class Particle {
         public:
@@ -79,6 +84,7 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("zRand", 1.0);
                 this->declare_parameter<double>("lidar_threshold", 1.0/5.0*M_PI);
                 this->declare_parameter<int>("mapZIndex", 4); // 使用するZスライスのインデックス
+                this->declare_parameter("filter_threshold", 0.95);
                 
                 particleNum_ = this->get_parameter("particleNum").as_int();
                 double initial_x = this->get_parameter("initial_x").as_double();
@@ -149,7 +155,7 @@ namespace mcl {
                 // rclcpp::QoS laserScanQos(rclcpp::KeepLast(10));
                 auto laserScanQos = rclcpp::SensorDataQoS();
                 subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>(
-                    "/ldlidar_node/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1)
+                    "/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1)
                 );
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
                 // subOdom_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -171,6 +177,9 @@ namespace mcl {
                 // s_odom_ = create_subscription<nav_msgs::msg::Odometry>(
                 //     "/odom", tmp_qos, std::bind(&MCL::odomCallback, this, std::placeholders::_1)
                 // );
+
+                  
+                scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan_filtered", rclcpp::QoS(10));
 
                 const char *sim = std::getenv("WITH_SIM");
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
@@ -220,8 +229,77 @@ namespace mcl {
                 // RCLCPP_INFO(this->get_logger(), "Yaw (rad): %.3f %.3f %.3f", yaw, msg->twist.twist.angular.z, particles_[0].getTheta());
             // }
 
-            void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr scan) {
-                scan_ = scan;
+            void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+                //scan_ = msg;
+                auto filtered_scan = *msg;
+                double threshold = this->get_parameter("filter_threshold").as_double();
+
+                size_t num_points = msg->ranges.size();
+                
+                // 計算用に座標変換した点を保持するバッファ
+                std::vector<Point2D> points(num_points);
+                std::vector<bool> is_valid(num_points, false);
+
+                // 1. 全点を直交座標(x, y)に変換
+                for (size_t i = 0; i < num_points; ++i) {
+                    double r = msg->ranges[i];
+                    if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max) {
+                        double angle = msg->angle_min + i * msg->angle_increment;
+                        points[i].x = r * std::cos(angle);
+                        points[i].y = r * std::sin(angle);
+                        is_valid[i] = true;
+                    } else {
+                        is_valid[i] = false;
+                    }
+                }
+
+                // 2. 隣り合う2点を評価してフィルタリング
+                // i と i+1 を比較します
+                for (size_t i = 0; i < num_points - 1; ++i) {
+                    if (!is_valid[i] || !is_valid[i+1]) {
+                        continue;
+                    }
+
+                    Point2D pA = points[i];
+                    Point2D pB = points[i+1];
+
+                    // AからBへのベクトル (vec_AB)
+                    Point2D vec_AB = {pB.x - pA.x, pB.y - pA.y};
+                    
+                    // AとBの中点の位置ベクトル (vec_M) ※原点からのベクトル
+                    Point2D vec_M = {(pA.x + pB.x) / 2.0, (pA.y + pB.y) / 2.0};
+
+                    // それぞれの大きさを計算
+                    double norm_AB = std::hypot(vec_AB.x, vec_AB.y);
+                    double norm_M = std::hypot(vec_M.x, vec_M.y);
+
+                    // ゼロ除算回避
+                    if (norm_AB < 1e-6 || norm_M < 1e-6) {
+                        continue;
+                    }
+
+                    // 内積を計算 (正規化してから内積 = cos theta)
+                    // dot = (AB_x * M_x + AB_y * M_y) / (|AB| * |M|)
+                    double dot_product = (vec_AB.x * vec_M.x + vec_AB.y * vec_M.y) / (norm_AB * norm_M);
+                    
+                    // 絶対値をとる
+                    double abs_cos = std::abs(dot_product);
+
+                    // 指定したしきい値(1に近い値)を超えていたら除去
+                    if (abs_cos > threshold) {
+                        // 該当する2点を無効値(infinity)にする
+                        filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
+                        filtered_scan.ranges[i+1] = std::numeric_limits<float>::infinity();
+                        
+                        // Intensityがある場合もゼロにしておく（任意）
+                        if (!filtered_scan.intensities.empty()) {
+                            filtered_scan.intensities[i] = 0;
+                            filtered_scan.intensities[i+1] = 0;
+                        }
+                    }
+                }
+                scan_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
+                scan_pub_->publish(filtered_scan);
             }
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
                 cmdVel_=msg;
@@ -730,7 +808,7 @@ namespace mcl {
                     std::double_t theta_lidar;
                     if (is_sim_) {
                         theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
-                    } else {
+                    } else {//実機の場合
                         theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment - 3.0*M_PI/2.0;
                     }
 
@@ -1144,6 +1222,8 @@ namespace mcl {
             // TODO: delete
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
+
+            rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
