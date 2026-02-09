@@ -155,10 +155,15 @@ namespace mcl {
                 // rclcpp::QoS laserScanQos(rclcpp::KeepLast(10));
                 auto laserScanQos = rclcpp::SensorDataQoS();
                 const char *lidar = std::getenv("WITH_lidar");
+                const char *sim = std::getenv("WITH_SIM");
                 //1:LD 0:hokuyo
                 if (!lidar || std::string(lidar) != "1") {
-                    subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
                     is_lidar_ = false;
+                    if (!sim || std::string(sim) != "1") {
+                        subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
+                    } else {
+                        subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/pointcloud2_front", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
+                    }
                 } else {
                     RCLCPP_INFO(this->get_logger(), "freofkprekfore");
                     subLayerScan_ = create_subscription<sensor_msgs::msg::LaserScan>("/ldlidar_node/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1));
@@ -189,7 +194,7 @@ namespace mcl {
                   
                 scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan_filtered", rclcpp::QoS(10));
 
-                const char *sim = std::getenv("WITH_SIM");
+                
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
                 if (sim) {
                     RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is set to: %s", sim);
@@ -240,7 +245,7 @@ namespace mcl {
             void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
                 if (is_lidar_) {
                     scan_ = msg;
-                } else {//実機の場合
+                } else {
                     auto filtered_scan = *msg;
                     double threshold = this->get_parameter("filter_threshold").as_double();
 
@@ -861,8 +866,18 @@ namespace mcl {
             }
 
             void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v) {
-                std::double_t x_lidar = range*cos(theta) + 0.084;
-                std::double_t y_lidar = range*sin(theta) + 0.013 - 0.013;
+                std::double_t x_lidar;
+                std::double_t y_lidar;
+                if (is_lidar_) {
+                    x_lidar = range*cos(theta) + 0.084;
+                    y_lidar = range*sin(theta) + 0.013 - 0.013;
+                } else {
+                    x_lidar = range * cos(theta + 1.5707) - 0.094036;
+                    y_lidar = range * sin(theta + 1.5707) + 0.2255;
+
+                }
+
+                
                 std::double_t x = x_lidar*cos(pose.theta) - y_lidar*sin(pose.theta) + pose.x;
                 std::double_t y = x_lidar*sin(pose.theta) + y_lidar*cos(pose.theta) + pose.y;
 
