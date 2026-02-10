@@ -314,52 +314,40 @@ namespace mcl {
                         }
                     }
                     scan_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
-                    sensor_msgs::msg::PointCloud2 cloud_msg;
-                    cloud_msg.header.stamp = this->now();
-                    cloud_msg.header.frame_id = "lidar_front"; 
                     
-                    cloud_msg.height = 1;
-                    cloud_msg.width = num_points;
-                    cloud_msg.is_dense = false;
-                    cloud_msg.is_bigendian = false;
-
-                    sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
-                    modifier.setPointCloud2FieldsByString(1, "xyz");
-                    modifier.resize(num_points);
-
-                    sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msg, "x");
-                    sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msg, "y");
-                    sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msg, "z");
-
-                    int valid_points_count = 0;
-
-                    for (size_t i = 0; i < num_points; ++i) {
-                        float r = filtered_scan.ranges[i];
-                        
-                        if (!std::isfinite(r) || r < filtered_scan.range_min || r > filtered_scan.range_max) {
-                            continue;
-                        }
-
-                        double angle = filtered_scan.angle_min + i * filtered_scan.angle_increment;
-
-                        double x_lidar = r * std::cos(angle);
-                        double y_lidar = r * std::sin(angle);
-
-                        *iter_x = static_cast<float>(x_lidar);
-                        *iter_y = static_cast<float>(y_lidar);
-                        *iter_z = 0.0f; // z=0 (センサの高さ平面に平たく表示されます)
-
-                        ++iter_x; 
-                        ++iter_y; 
-                        ++iter_z;
-                        valid_points_count++;
+                    sensor_msgs::msg::PointCloud2 cloud_lidar;
+                    try {
+                        projector_.projectLaser(filtered_scan, cloud_lidar);
+                    } catch (const std::exception& e) {
+                        return;
                     }
 
-                    modifier.resize(valid_points_count);
-                    cloud_msg.width = valid_points_count;
+                    // B. lidar_front -> base_footprint (足元/地面) に変換
+                    sensor_msgs::msg::PointCloud2 cloud_base;
+                    try {
+                        // TFを取得: target="base_footprint", source=msg->header.frame_id ("lidar_front")
+                        geometry_msgs::msg::TransformStamped tf_stamped = tf_buffer_.lookupTransform(
+                            "base_footprint", 
+                            msg->header.frame_id,
+                            tf2::TimePointZero
+                        );
+                        // 変換実行
+                        tf2::doTransform(cloud_lidar, cloud_base, tf_stamped);
 
-                    // トピック名 scan_cloud でパブリッシュ
-                    scan_cloud_pub_->publish(cloud_msg);
+                    } catch (const tf2::TransformException & ex) {
+                        // TFがまだ届いていない場合などはスキップ
+                        // RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
+                        return;
+                    }
+
+                    // C. Z座標を 0.0 に強制書き換え (地面に張り付かせる)
+                    sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_base, "z");
+                    for (; iter_z != iter_z.end(); ++iter_z) {
+                        *iter_z = 0.0f;
+                    }
+
+                    // D. パブリッシュ (frame_idは自動的に "base_footprint" になっています)
+                    scan_cloud_pub_->publish(cloud_base);
                 }
                 
 
