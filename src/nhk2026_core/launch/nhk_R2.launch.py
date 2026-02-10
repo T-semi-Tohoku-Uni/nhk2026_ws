@@ -22,7 +22,7 @@ def generate_launch_description():
     x = -1.47
     y = 0.45
     z = 0.0
-    theata = math.pi / 2
+    theata = 0.0
 
     package_dir = get_package_share_directory("nhk2026_sim")
     urg_node2_nl_pkg = get_package_share_directory('urg_node2_nl')
