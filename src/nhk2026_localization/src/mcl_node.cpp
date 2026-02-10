@@ -257,9 +257,17 @@ namespace mcl {
 
                     // 1. 全点を直交座標(x, y)に変換
                     for (size_t i = 0; i < num_points; ++i) {
+                        double min_angle_limit = -M_PI / 3.0; 
+                        double max_angle_limit = M_PI / 3.0;  
                         double r = msg->ranges[i];
                         if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max) {
                             double angle = msg->angle_min + i * msg->angle_increment;
+
+                            if (angle < min_angle_limit || angle > max_angle_limit) {
+                                filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
+                                is_valid[i] = false;
+                                continue;
+                            }
                             points[i].x = r * std::cos(angle);
                             points[i].y = r * std::sin(angle);
                             is_valid[i] = true;
