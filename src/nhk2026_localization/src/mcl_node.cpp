@@ -84,7 +84,7 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("zRand", 1.0);
                 this->declare_parameter<double>("lidar_threshold", 1.0/5.0*M_PI);
                 this->declare_parameter<int>("mapZIndex", 4); // 使用するZスライスのインデックス
-                this->declare_parameter("filter_threshold", 0.95);
+                this->declare_parameter("filter_threshold", 0.98);
                 
                 particleNum_ = this->get_parameter("particleNum").as_int();
                 double initial_x = this->get_parameter("initial_x").as_double();
