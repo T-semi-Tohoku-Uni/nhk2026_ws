@@ -315,11 +315,13 @@ namespace mcl {
                     }
                     scan_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
                     sensor_msgs::msg::PointCloud2 cloud_msg;
+
+                    sensor_msgs::msg::PointCloud2 cloud_msg;
                     cloud_msg.header.stamp = this->now();
-                    cloud_msg.header.frame_id = "map"; // mapフレーム指定
+                    cloud_msg.header.frame_id = "lidar_front"; 
+                    
                     cloud_msg.height = 1;
-                
-                    cloud_msg.width = num_points; 
+                    cloud_msg.width = num_points;
                     cloud_msg.is_dense = false;
                     cloud_msg.is_bigendian = false;
 
@@ -342,17 +344,12 @@ namespace mcl {
 
                         double angle = filtered_scan.angle_min + i * filtered_scan.angle_increment;
 
-                        
-                        double x_robot = r * std::cos(angle + 1.5707) - 0.094036;
-                        double y_robot = r * std::sin(angle + 1.5707) + 0.2255;
+                        double x_lidar = r * std::cos(angle);
+                        double y_lidar = r * std::sin(angle);
 
-                        
-                        double x_map = x_robot * std::cos(mclPose_.theta) - y_robot * std::sin(mclPose_.theta) + mclPose_.x;
-                        double y_map = x_robot * std::sin(mclPose_.theta) + y_robot * std::cos(mclPose_.theta) + mclPose_.y;
-
-                        *iter_x = static_cast<float>(x_map);
-                        *iter_y = static_cast<float>(y_map);
-                        *iter_z = 0.0f; // z=0 指定
+                        *iter_x = static_cast<float>(x_lidar);
+                        *iter_y = static_cast<float>(y_lidar);
+                        *iter_z = 0.0f; // z=0 (センサの高さ平面に平たく表示されます)
 
                         ++iter_x; 
                         ++iter_y; 
@@ -363,7 +360,7 @@ namespace mcl {
                     modifier.resize(valid_points_count);
                     cloud_msg.width = valid_points_count;
 
-            
+                    // トピック名 scan_cloud でパブリッシュ
                     scan_cloud_pub_->publish(cloud_msg);
                 }
                 
