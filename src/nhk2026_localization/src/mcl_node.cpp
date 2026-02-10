@@ -1031,7 +1031,7 @@ namespace mcl {
                     tf_msg.transform.translation.z = 0.0;
 
                     tf2::Quaternion q;
-                    q.setRPY(0.0, 0.0, theta -M_PI / 2.6);
+                    q.setRPY(0.0, 0.0, theta -M_PI / 2.0);
                     tf_msg.transform.rotation = tf2::toMsg(q);
 
                     tf_broadcaster_->sendTransform(tf_msg);
