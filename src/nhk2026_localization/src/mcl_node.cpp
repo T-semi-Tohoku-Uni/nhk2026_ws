@@ -315,8 +315,6 @@ namespace mcl {
                     }
                     scan_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
                     sensor_msgs::msg::PointCloud2 cloud_msg;
-
-                    sensor_msgs::msg::PointCloud2 cloud_msg;
                     cloud_msg.header.stamp = this->now();
                     cloud_msg.header.frame_id = "lidar_front"; 
                     
