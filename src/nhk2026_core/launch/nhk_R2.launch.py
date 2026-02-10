@@ -132,6 +132,12 @@ def generate_launch_description():
         output="screen"
     )
 
+    vel_feedback_pass_through = Node(
+        package="nhk2026_localization",
+        executable="vel_feedback_pass_through",
+        output="screen",
+    )
+
  
     return LaunchDescription([
         DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
@@ -145,4 +151,5 @@ def generate_launch_description():
         joy2Vel_node,
         urg_node2_nl,
         # static_from_odom_to_basefootprint,
+        vel_feedback_pass_through,
     ])
