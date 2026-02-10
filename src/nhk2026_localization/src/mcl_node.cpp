@@ -192,7 +192,7 @@ namespace mcl {
                 // );
 
                   
-                scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>("scan_filtered", rclcpp::QoS(10));
+                scan_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_filtered", rclcpp::QoS(10));
 
                 
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
@@ -314,7 +314,57 @@ namespace mcl {
                         }
                     }
                     scan_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
-                    scan_pub_->publish(filtered_scan);
+                    sensor_msgs::msg::PointCloud2 cloud_msg;
+                    cloud_msg.header.stamp = this->now();
+                    cloud_msg.header.frame_id = "map"; // mapフレーム指定
+                    cloud_msg.height = 1;
+                
+                    cloud_msg.width = num_points; 
+                    cloud_msg.is_dense = false;
+                    cloud_msg.is_bigendian = false;
+
+                    sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
+                    modifier.setPointCloud2FieldsByString(1, "xyz");
+                    modifier.resize(num_points);
+
+                    sensor_msgs::PointCloud2Iterator<float> iter_x(cloud_msg, "x");
+                    sensor_msgs::PointCloud2Iterator<float> iter_y(cloud_msg, "y");
+                    sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_msg, "z");
+
+                    int valid_points_count = 0;
+
+                    for (size_t i = 0; i < num_points; ++i) {
+                        float r = filtered_scan.ranges[i];
+                        
+                        if (!std::isfinite(r) || r < filtered_scan.range_min || r > filtered_scan.range_max) {
+                            continue;
+                        }
+
+                        double angle = filtered_scan.angle_min + i * filtered_scan.angle_increment;
+
+                        
+                        double x_robot = r * std::cos(angle + 1.5707) - 0.094036;
+                        double y_robot = r * std::sin(angle + 1.5707) + 0.2255;
+
+                        
+                        double x_map = x_robot * std::cos(mclPose_.theta) - y_robot * std::sin(mclPose_.theta) + mclPose_.x;
+                        double y_map = x_robot * std::sin(mclPose_.theta) + y_robot * std::cos(mclPose_.theta) + mclPose_.y;
+
+                        *iter_x = static_cast<float>(x_map);
+                        *iter_y = static_cast<float>(y_map);
+                        *iter_z = 0.0f; // z=0 指定
+
+                        ++iter_x; 
+                        ++iter_y; 
+                        ++iter_z;
+                        valid_points_count++;
+                    }
+
+                    modifier.resize(valid_points_count);
+                    cloud_msg.width = valid_points_count;
+
+            
+                    scan_pub_->publish(cloud_msg);
                 }
                 
 
@@ -1256,7 +1306,7 @@ namespace mcl {
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
 
-            rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_pub_;
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
