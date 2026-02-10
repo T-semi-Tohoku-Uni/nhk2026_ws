@@ -10,6 +10,11 @@ from launch_ros.events.lifecycle import ChangeState
 import lifecycle_msgs.msg
 import launch
 
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from ament_index_python.packages import get_package_share_directory
+import os
+
 def generate_launch_description():
     ld = LaunchDescription()
     name_space = 'r1'
@@ -63,4 +68,16 @@ def generate_launch_description():
         emulate_tty=True,
     )
     ld.add_action(joy_node)
+
+    r1_1st_video_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory('nhk2026_bridge'),
+                'launch',
+                'nhk2026_can_r1.launch.py',
+            )
+        ),
+    )
+    ld.add_action(r1_1st_video_launch)
+
     return ld
