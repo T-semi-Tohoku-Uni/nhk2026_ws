@@ -192,7 +192,7 @@ namespace mcl {
                 // );
 
                   
-                scan_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_filtered", rclcpp::QoS(10));
+                scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
 
                 
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
@@ -364,7 +364,7 @@ namespace mcl {
                     cloud_msg.width = valid_points_count;
 
             
-                    scan_pub_->publish(cloud_msg);
+                    scan_cloud_pub_->publish(cloud_msg);
                 }
                 
 
@@ -1306,7 +1306,8 @@ namespace mcl {
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
 
-            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_pub_;
+            // private 変数として定義
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; // LaserScanから変更
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
