@@ -833,11 +833,6 @@ namespace mcl {
                     } else {
                         theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
                     }
-                    if (is_sim_) {
-                        theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
-                    } else {//実機の場合
-                        theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment - 3.0*M_PI/2.0;
-                    }
 
                     double x_odom, y_odom;
                     int u, v;
