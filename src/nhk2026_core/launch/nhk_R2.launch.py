@@ -80,22 +80,22 @@ def generate_launch_description():
 
  
 
-    static_from_odom_to_basefootprint = Node(
-    package="tf2_ros",
-    executable="static_transform_publisher",
-    name="static_odom_to_basefootprint",
-    output="screen",
-    arguments=[
-        "-1.47",          # x  [m]
-        "0.45",          # y  [m]
-        "0.0",             # z  [m]
-        "0",             # yaw   [rad]
-        "0",             # pitch [rad]
-        "0",             # roll  [rad]
-        "odom",          # parent  frame
-        "base_footprint" # child   frame
-    ]
-)
+    # static_from_odom_to_basefootprint = Node(
+    #     package="tf2_ros",
+    #     executable="static_transform_publisher",
+    #     name="static_odom_to_basefootprint",
+    #     output="screen",
+    #     arguments=[
+    #         "-1.47",          # x  [m]
+    #         "0.45",          # y  [m]
+    #         "0.0",             # z  [m]
+    #         "0",             # yaw   [rad]
+    #         "0",             # pitch [rad]
+    #         "0",             # roll  [rad]
+    #         "odom",          # parent  frame
+    #         "base_footprint" # child   frame
+    #     ]
+    # )
 
     mcl_node = Node(
         package="nhk2026_localization",
@@ -141,8 +141,8 @@ def generate_launch_description():
         node_robot_state_publisher,
         static_from_map_to_odom,
         mcl_node,
-        joy_node,
+        # joy_node,
         joy2Vel_node,
         urg_node2_nl,
-        static_from_odom_to_basefootprint,
+        # static_from_odom_to_basefootprint,
     ])
