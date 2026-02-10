@@ -1028,10 +1028,10 @@ namespace mcl {
 
                     tf_msg.transform.translation.x = x;
                     tf_msg.transform.translation.y = y;
-                    tf_msg.transform.translation.z = 0.3;
+                    tf_msg.transform.translation.z = 0.0;
 
                     tf2::Quaternion q;
-                    q.setRPY(0.0, 0.0, theta);
+                    q.setRPY(0.0, 0.0, theta -M_PI / 2.6);
                     tf_msg.transform.rotation = tf2::toMsg(q);
 
                     tf_broadcaster_->sendTransform(tf_msg);
