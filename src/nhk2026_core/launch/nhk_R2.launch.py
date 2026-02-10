@@ -75,7 +75,7 @@ def generate_launch_description():
         executable="static_transform_publisher",
         name="static_transform_publisher",
         output="screen",
-        arguments=['0', '0', '-0.255', '0', '0', '0', 'map', 'odom']
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
 
  
