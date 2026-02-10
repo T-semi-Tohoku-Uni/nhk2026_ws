@@ -19,6 +19,9 @@ def generate_launch_description():
     ld = LaunchDescription()
     name_space = 'r1'
 
+    bridge_pkg =  get_package_share_directory('nhk2026_bridge')
+    vel_file = os.path.join(bridge_pkg, 'config', 'joy2vel.yml')
+
     vel_joy_node = LifecycleNode(
         package='nhk2026_bridge',
         executable='joy_vel_converter',
@@ -26,6 +29,7 @@ def generate_launch_description():
         namespace=name_space,
         output='screen',
         emulate_tty=True,
+        parameters=[vel_file],
     )
 
     ld.add_action(vel_joy_node)
