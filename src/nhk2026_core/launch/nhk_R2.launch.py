@@ -113,6 +113,7 @@ def generate_launch_description():
             "resampleThreshold": 0.9,
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
+            "mapFile":"src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5",
         }],
     )
 
