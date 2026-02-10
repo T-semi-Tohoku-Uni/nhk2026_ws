@@ -68,7 +68,7 @@ endfunction()
 ros_node_executable(mcl_node src/mcl_node.cpp)
 ros_node_executable(vel_feedback_node src/vel_feedback_node.cpp)
 ros_node_executable(vel_feedback_pass_through src/vel_feedback_pass_through.cpp)
-
+ros_node_executable(joy2vel src/joy2vel.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)
