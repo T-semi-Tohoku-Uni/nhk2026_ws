@@ -257,8 +257,8 @@ namespace mcl {
 
                     // 1. 全点を直交座標(x, y)に変換
                     for (size_t i = 0; i < num_points; ++i) {
-                        double min_angle_limit = -M_PI / 3.0; 
-                        double max_angle_limit = M_PI / 3.0;  
+                        double min_angle_limit = -M_PI / 2.5; 
+                        double max_angle_limit = M_PI / 2.5;  
                         double r = msg->ranges[i];
                         if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max) {
                             double angle = msg->angle_min + i * msg->angle_increment;
