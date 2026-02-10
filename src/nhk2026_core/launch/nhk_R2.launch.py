@@ -126,7 +126,7 @@ def generate_launch_description():
     )
 
     joy2Vel_node = Node(
-        package="yasarobo2025_26",
+        package="nhk2026_localization",
         executable="joy2vel",
         name="joy2vel",
         output="screen"
