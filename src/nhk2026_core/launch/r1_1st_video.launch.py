@@ -54,4 +54,13 @@ def generate_launch_description():
             ]
     ))
     ld.add_action(vel_joy_activate_event_handler)
+
+    joy_node = Node(
+        package='joy_linux',
+        executable='joy_linux_node',
+        remappings=[('/joy', f'/{name_space}/joy')],
+        output='screen',
+        emulate_tty=True,
+    )
+    ld.add_action(joy_node)
     return ld
