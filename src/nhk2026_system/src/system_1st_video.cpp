@@ -148,6 +148,31 @@ rcl_interfaces::msg::SetParametersResult System1stVideo::parameters_callback(
     return result;
 }
 
+void System1stVideo::cmd_vel_ui_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
+{
+
+}
+
+void System1stVideo::cmd_vel_stick_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
+{
+
+}
+
+void System1stVideo::back_arm_robstride_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata)
+{
+    static_cast<void>(rxdata);
+}
+
+void System1stVideo::middle_arm_robstride_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata)
+{
+    static_cast<void>(rxdata);
+}
+
+void System1stVideo::back_robomastar_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata)
+{
+    static_cast<void>(rxdata);
+}
+
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
