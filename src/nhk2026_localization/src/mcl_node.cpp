@@ -156,7 +156,7 @@ namespace mcl {
                 auto laserScanQos = rclcpp::SensorDataQoS();
                 const char *lidar = std::getenv("WITH_lidar");
                 const char *sim = std::getenv("WITH_SIM");
-                //1:LD 0:hokuyo
+                //0:LD 1:hokuyo1 2:hokuyou2
                 if (!lidar || std::string(lidar) != "1") {
                     is_lidar_ = false;
                     if (!sim || std::string(sim) != "1") {
