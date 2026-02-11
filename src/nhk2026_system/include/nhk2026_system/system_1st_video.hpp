@@ -17,4 +17,9 @@ private:
     CallbackReturn on_cleanup(const rclcpp_lifecycle::State &state);
     CallbackReturn on_error(const rclcpp_lifecycle::State &state);
     CallbackReturn on_shutdown(const rclcpp_lifecycle::State &state);
+
+    OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
+    rcl_interfaces::msg::SetParametersResult parameters_callback(
+        const std::vector<rclcpp::Parameter> &parameters
+    );
 };
