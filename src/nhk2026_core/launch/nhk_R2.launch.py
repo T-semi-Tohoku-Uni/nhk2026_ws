@@ -37,7 +37,7 @@ def generate_launch_description():
     urg_node_front = Node(
         package='urg_node2_nl',
         executable='urg_node2_nl_node',
-        name=urg_node_front ,
+        name="urg_node_front" ,
         remappings=[('scan', LaunchConfiguration('scan_topic_name'))],
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether.yaml"])],
         namespace='',
