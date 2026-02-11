@@ -145,6 +145,7 @@ def generate_launch_description():
         DeclareLaunchArgument('scan_topic_name', default_value='scan_front'),
         SetEnvironmentVariable(name='WITH_SIM', value='0'),
         SetEnvironmentVariable(name='RCUTILS_COLORIZED_OUTPUT', value='1'),
+        SetEnvironmentVariable(name='WITH_lidar', value='1'),
         node_robot_state_publisher,
         static_from_map_to_odom,
         mcl_node,
