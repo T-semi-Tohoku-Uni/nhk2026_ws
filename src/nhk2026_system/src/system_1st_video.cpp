@@ -5,16 +5,22 @@ using std::placeholders::_1;
 System1stVideo::System1stVideo()
 : rclcpp_lifecycle::LifecycleNode(std::string("syste,_1st_video"))
 {
-    this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
-        std::bind(&System1stVideo::parameters_callback, this, _1)
-    );
+
 }
 
 System1stVideo::CallbackReturn System1stVideo::on_configure(const rclcpp_lifecycle::State &state)
 {
+    rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+
+    this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
+        std::bind(&System1stVideo::parameters_callback, this, _1)
+    );
+
     this->cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(
         std::string("cmd_vel"),
-        rclcpp::SystemDefaultsQoS()
+        device
     );
 
     RCLCPP_INFO(
@@ -28,36 +34,37 @@ System1stVideo::CallbackReturn System1stVideo::on_configure(const rclcpp_lifecyc
 
 System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycle::State &state)
 {
-    if (this->cmd_vel_publisher_) {
+    rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+
+    if (this->cmd_vel_publisher_)
+    {
         this->cmd_vel_publisher_->on_activate();
     }
 
     this->cmd_vel_ui_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
         std::string("cmd_vel_ui"),
-        rclcpp::SystemDefaultsQoS(),
-        [this](const geometry_msgs::msg::Twist::SharedPtr msg) {
-            if (this->cmd_vel_publisher_ && this->cmd_vel_publisher_->is_activated()) {
-                this->cmd_vel_publisher_->publish(*msg);
-            }
-        }
+        device,
+        std::bind(&System1stVideo::cmd_vel_ui_callback, this, _1)
     );
 
     this->back_arm_robstride_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
         std::string("back_arm_robstride"),
-        rclcpp::SystemDefaultsQoS(),
-        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+        device,
+        std::bind(&System1stVideo::back_arm_robstride_callback, this, _1)
     );
 
     this->middle_arm_robstride_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
         std::string("middle_arm_robstride"),
-        rclcpp::SystemDefaultsQoS(),
-        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+        device,
+        std::bind(&System1stVideo::middle_arm_robstride_callback, this, _1)
     );
 
     this->back_robomastar_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
         std::string("back_robomastar"),
-        rclcpp::SystemDefaultsQoS(),
-        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+        device,
+        std::bind(&System1stVideo::back_robomastar_callback, this, _1)
     );
 
     RCLCPP_INFO(
