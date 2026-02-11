@@ -570,15 +570,17 @@ namespace mcl {
                 if (!cmdVel_) {
                     return;
                 }
-                //RCLCPP_INFO(this->get_logger(), "fkerpofkpoerkfopkarpofjaer");
+                RCLCPP_INFO(this->get_logger(), "cmd_vel ok");
                 
                 if (!scanFront_) {
-                    return;
                     RCLCPP_INFO(this->get_logger(), "lidar not");
+                    return;
                 }         
                 
                 if (lidar_select == 2 && !scanBack_) {
+                    RCLCPP_INFO(this->get_logger(), "lidar back  ok");
                     return; 
+
                 }
                             
                 
