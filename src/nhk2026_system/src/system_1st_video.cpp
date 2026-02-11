@@ -10,6 +10,137 @@ System1stVideo::System1stVideo()
     );
 }
 
+System1stVideo::CallbackReturn System1stVideo::on_configure(const rclcpp_lifecycle::State &state)
+{
+    this->cmd_vel_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>(
+        std::string("cmd_vel"),
+        rclcpp::SystemDefaultsQoS()
+    );
+
+    RCLCPP_INFO(
+        get_logger(),
+        "on_configure() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycle::State &state)
+{
+    if (this->cmd_vel_publisher_) {
+        this->cmd_vel_publisher_->on_activate();
+    }
+
+    this->cmd_vel_ui_subscription_ = this->create_subscription<geometry_msgs::msg::Twist>(
+        std::string("cmd_vel_ui"),
+        rclcpp::SystemDefaultsQoS(),
+        [this](const geometry_msgs::msg::Twist::SharedPtr msg) {
+            if (this->cmd_vel_publisher_ && this->cmd_vel_publisher_->is_activated()) {
+                this->cmd_vel_publisher_->publish(*msg);
+            }
+        }
+    );
+
+    this->back_arm_robstride_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+        std::string("back_arm_robstride"),
+        rclcpp::SystemDefaultsQoS(),
+        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+    );
+
+    this->middle_arm_robstride_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+        std::string("middle_arm_robstride"),
+        rclcpp::SystemDefaultsQoS(),
+        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+    );
+
+    this->back_robomastar_subscription_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
+        std::string("back_robomastar"),
+        rclcpp::SystemDefaultsQoS(),
+        [](const std_msgs::msg::Float32MultiArray::SharedPtr) {}
+    );
+
+    RCLCPP_INFO(
+        get_logger(),
+        "on_activate() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+System1stVideo::CallbackReturn System1stVideo::on_deactivate(const rclcpp_lifecycle::State &state)
+{
+    this->cmd_vel_ui_subscription_.reset();
+    this->back_arm_robstride_subscription_.reset();
+    this->middle_arm_robstride_subscription_.reset();
+    this->back_robomastar_subscription_.reset();
+
+    RCLCPP_INFO(
+        get_logger(),
+        "on_deactivate() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+System1stVideo::CallbackReturn System1stVideo::on_cleanup(const rclcpp_lifecycle::State &state)
+{
+    this->cmd_vel_ui_subscription_.reset();
+    this->back_arm_robstride_subscription_.reset();
+    this->middle_arm_robstride_subscription_.reset();
+    this->back_robomastar_subscription_.reset();
+    this->cmd_vel_publisher_.reset();
+
+    RCLCPP_INFO(
+        get_logger(),
+        "on_cleanup() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+System1stVideo::CallbackReturn System1stVideo::on_error(const rclcpp_lifecycle::State &state)
+{
+    RCLCPP_INFO(
+        get_logger(),
+        "on_error() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+System1stVideo::CallbackReturn System1stVideo::on_shutdown(const rclcpp_lifecycle::State &state)
+{
+    this->cmd_vel_ui_subscription_.reset();
+    this->back_arm_robstride_subscription_.reset();
+    this->middle_arm_robstride_subscription_.reset();
+    this->back_robomastar_subscription_.reset();
+    this->cmd_vel_publisher_.reset();
+
+    RCLCPP_INFO(
+        get_logger(),
+        "on_shutdown() called. state: id=%u, label=%s",
+        state.id(),
+        state.label().c_str());
+
+    return CallbackReturn::SUCCESS;
+}
+
+rcl_interfaces::msg::SetParametersResult System1stVideo::parameters_callback(
+    const std::vector<rclcpp::Parameter> &parameters
+)
+{
+    rcl_interfaces::msg::SetParametersResult result;
+    result.successful = true;
+    result.reason = "success";
+    static_cast<void>(parameters);
+    return result;
+}
+
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
