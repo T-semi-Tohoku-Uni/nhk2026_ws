@@ -157,18 +157,19 @@ namespace mcl {
                 const char *lidar = std::getenv("WITH_lidar");
                 const char *sim = std::getenv("WITH_SIM");
                 //0:LD 1:hokuyo1 2:hokuyou2 lidar_select
+                // 0: LD-Lidar の場合
                 if (!lidar || std::string(lidar) == "0") {
                     lidar_select = 0;
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/ldlidar_node/scan", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1, 0)); 
-                } else if(std::string(lidar) == "1"){
+                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/ldlidar_node/scan", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 0);});
+                }else if(std::string(lidar) == "1"){
                     lidar_select = 1;
-                    // Frontのみ
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1, 1));
+                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
                 } else if(std::string(lidar) == "2"){
                     lidar_select = 2;
-                    // Front と Back 両方
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1, 1));
-                    subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos, std::bind(&MCL::laserScanCallback, this, std::placeholders::_1, 2));
+                    // Front用
+                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
+                    // Back用
+                    subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
                 }
                 
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
@@ -258,126 +259,7 @@ namespace mcl {
                 }
             }
 
-            // void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
-            //     if (lidar_select == 0) {
-            //         scanFront_ = msg;
-            //     } else {
-
-            //         filterScan(msg,scanFront_,-M_PI / 2.6,M_PI / 2.3);
-            //         // auto filtered_scan = *msg;
-            //         // double threshold = this->get_parameter("filter_threshold").as_double();
-
-            //         // size_t num_points = msg->ranges.size();
-                    
-            //         // // 計算用に座標変換した点を保持するバッファ
-            //         // std::vector<Point2D> points(num_points);
-            //         // std::vector<bool> is_valid(num_points, false);
-
-            //         // // 1. 全点を直交座標(x, y)に変換
-            //         // for (size_t i = 0; i < num_points; ++i) {
-            //         //     double min_angle_limit = -M_PI / 2.6; 
-            //         //     double max_angle_limit = M_PI / 2.3;  
-            //         //     double r = msg->ranges[i];
-            //         //     if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max) {
-            //         //         double angle = msg->angle_min + i * msg->angle_increment;
-
-            //         //         if (angle < min_angle_limit || angle > max_angle_limit) {
-            //         //             filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
-            //         //             is_valid[i] = false;
-            //         //             continue;
-            //         //         }
-            //         //         points[i].x = r * std::cos(angle);
-            //         //         points[i].y = r * std::sin(angle);
-            //         //         is_valid[i] = true;
-            //         //     } else {
-            //         //         is_valid[i] = false;
-            //         //     }
-            //         // }
-
-            //         // // 2. 隣り合う2点を評価してフィルタリング
-            //         // // i と i+1 を比較します
-            //         // for (size_t i = 0; i < num_points - 1; ++i) {
-            //         //     if (!is_valid[i] || !is_valid[i+1]) {
-            //         //         continue;
-            //         //     }
-
-            //         //     Point2D pA = points[i];
-            //         //     Point2D pB = points[i+1];
-
-            //         //     // AからBへのベクトル (vec_AB)
-            //         //     Point2D vec_AB = {pB.x - pA.x, pB.y - pA.y};
-                        
-            //         //     // AとBの中点の位置ベクトル (vec_M) ※原点からのベクトル
-            //         //     Point2D vec_M = {(pA.x + pB.x) / 2.0, (pA.y + pB.y) / 2.0};
-
-            //         //     // それぞれの大きさを計算
-            //         //     double norm_AB = std::hypot(vec_AB.x, vec_AB.y);
-            //         //     double norm_M = std::hypot(vec_M.x, vec_M.y);
-
-            //         //     // ゼロ除算回避
-            //         //     if (norm_AB < 1e-6 || norm_M < 1e-6) {
-            //         //         continue;
-            //         //     }
-
-            //         //     // 内積を計算 (正規化してから内積 = cos theta)
-            //         //     // dot = (AB_x * M_x + AB_y * M_y) / (|AB| * |M|)
-            //         //     double dot_product = (vec_AB.x * vec_M.x + vec_AB.y * vec_M.y) / (norm_AB * norm_M);
-                        
-            //         //     // 絶対値をとる
-            //         //     double abs_cos = std::abs(dot_product);
-
-            //         //     // 指定したしきい値(1に近い値)を超えていたら除去
-            //         //     if (abs_cos > threshold) {
-            //         //         // 該当する2点を無効値(infinity)にする
-            //         //         filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
-            //         //         filtered_scan.ranges[i+1] = std::numeric_limits<float>::infinity();
-                            
-            //         //         // Intensityがある場合もゼロにしておく（任意）
-            //         //         if (!filtered_scan.intensities.empty()) {
-            //         //             filtered_scan.intensities[i] = 0;
-            //         //             filtered_scan.intensities[i+1] = 0;
-            //         //         }
-            //         //     }
-            //         // }
-            //         // scanFront_ = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
-                    
-            //         // sensor_msgs::msg::PointCloud2 cloud_lidar;
-            //         // try {
-            //         //     projector_.projectLaser(filtered_scan, cloud_lidar);
-            //         // } catch (const std::exception& e) {
-            //         //     return;
-            //         // }
-
-            //         // // B. lidar_front -> base_footprint (足元/地面) に変換
-            //         // sensor_msgs::msg::PointCloud2 cloud_base;
-            //         // try {
-            //         //     // TFを取得: target="base_footprint", source=msg->header.frame_id ("lidar_front")
-            //         //     geometry_msgs::msg::TransformStamped tf_stamped = tf_buffer_.lookupTransform(
-            //         //         "base_footprint", 
-            //         //         msg->header.frame_id,
-            //         //         tf2::TimePointZero
-            //         //     );
-            //         //     // 変換実行
-            //         //     tf2::doTransform(cloud_lidar, cloud_base, tf_stamped);
-
-            //         // } catch (const tf2::TransformException & ex) {
-            //         //     // TFがまだ届いていない場合などはスキップ
-            //         //     // RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
-            //         //     return;
-            //         // }
-
-            //         // // C. Z座標を 0.0 に強制書き換え (地面に張り付かせる)
-            //         // sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_base, "z");
-            //         // for (; iter_z != iter_z.end(); ++iter_z) {
-            //         //     *iter_z = 0.0f;
-            //         // }
-
-            //         // // D. パブリッシュ (frame_idは自動的に "base_footprint" になっています)
-            //         // scan_cloud_pub_->publish(cloud_base);
-            //     }
-            // }
-
-
+          
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
                 cmdVel_=msg;
             }
@@ -993,12 +875,12 @@ namespace mcl {
                     x_lidar = range*cos(theta) + 0.084;
                     y_lidar = range*sin(theta) + 0.013 - 0.013;
                 } else if(lidar_pose == 1){
-                    x_lidar = range * cos(theta + 1.5707) - 0.094036;
-                    y_lidar = range * sin(theta + 1.5707) + 0.2255;
+                    x_lidar = range * cos(theta + M_PI/2) - 0.094036;
+                    y_lidar = range * sin(theta + M_PI/2) + 0.2255;
                 }else if(lidar_pose == 2){
                     //後で治す。
-                    x_lidar = range * cos(theta + 1.5707) - 0.094036;
-                    y_lidar = range * sin(theta + 1.5707) + 0.2255;
+                    x_lidar = range * cos(theta + M_PI) + 0.2084;
+                    y_lidar = range * sin(theta + M_PI) - 0.2999;
                 }
 
                 
