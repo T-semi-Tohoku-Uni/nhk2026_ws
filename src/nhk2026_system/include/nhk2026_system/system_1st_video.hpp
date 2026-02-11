@@ -4,6 +4,9 @@
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 
+#include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/float32_multi_array.hpp"
+
 class System1stVideo
 : public rclcpp_lifecycle::LifecycleNode
 {
@@ -22,4 +25,8 @@ private:
     rcl_interfaces::msg::SetParametersResult parameters_callback(
         const std::vector<rclcpp::Parameter> &parameters
     );
+    
+    rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_publisher_;
+
+    rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_ui_subscription_;
 };
