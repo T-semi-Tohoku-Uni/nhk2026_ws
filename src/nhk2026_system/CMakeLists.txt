@@ -7,9 +7,39 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+
+include_directories(
+  include
+  include/${PROJECT_NAME}
+)
+
+add_executable(system_1st_video
+  src/system_1st_video.cpp
+)
+
+ament_target_dependencies(system_1st_video
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+  geometry_msgs
+  lifecycle_msgs
+)
+
+install(
+  TARGETS system_1st_video
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# add install
+install(
+  DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
