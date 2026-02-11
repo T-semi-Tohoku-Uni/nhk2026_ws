@@ -78,7 +78,8 @@
         <scan>
           <horizontal>
             <samples>1080</samples>
-            <resolution>1</resolution> <min_angle>-2.35619</min_angle>
+            <resolution>1</resolution> 
+            <min_angle>-2.35619</min_angle>
             <max_angle> 2.35619</max_angle>
           </horizontal>
           <vertical>
@@ -108,13 +109,13 @@
         <scan>
           <horizontal>
             <samples>1080</samples>
-            <resolution>0.25</resolution>
+            <resolution>1</resolution>
             <min_angle>-2.35619</min_angle>
             <max_angle> 2.35619</max_angle>
           </horizontal>
           <vertical>
             <samples>1</samples>
-            <resolution>0.1</resolution>
+            <resolution>1</resolution>
             <min_angle>0.0</min_angle>
             <max_angle>0.0</max_angle>
           </vertical>

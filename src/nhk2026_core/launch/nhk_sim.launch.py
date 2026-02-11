@@ -35,7 +35,7 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
-        launch_arguments=[('gz_args', [f' -r -s {world}'])]
+        launch_arguments=[('gz_args', [f' -r  {world}'])]
     )
 
     xacro_file = os.path.join(package_dir, "urdf", "r2_robot.xacro")
@@ -141,7 +141,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
-        SetEnvironmentVariable(name='WITH_lidar', value='0'),
+        SetEnvironmentVariable(name='WITH_lidar', value='2'),
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,
