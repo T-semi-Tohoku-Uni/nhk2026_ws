@@ -11,7 +11,7 @@ def generate_launch_description():
         package='urg_node2_nl',
         executable='urg_node2_nl_node',
         name='urg_node_front',                    
-        remappings=[('scan', 'front_scan')],    
+        remappings=[('scan', 'scan_front')],    
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether.yaml"])],
         output='screen',
     )
@@ -21,7 +21,7 @@ def generate_launch_description():
         package='urg_node2_nl',
         executable='urg_node2_nl_node',
         name='urg_node_rear',                    
-        remappings=[('scan', 'rear_scan')],       
+        remappings=[('scan', 'scan_back')],       
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether_2nd.yaml"])],
         output='screen',
     )

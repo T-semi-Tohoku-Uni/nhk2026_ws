@@ -34,10 +34,10 @@ def generate_launch_description():
 
 
 
-    urg_node2_nl = Node(
+    urg_node_front = Node(
         package='urg_node2_nl',
         executable='urg_node2_nl_node',
-        name=LaunchConfiguration('node_name'),
+        name=urg_node_front ,
         remappings=[('scan', LaunchConfiguration('scan_topic_name'))],
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether.yaml"])],
         namespace='',
@@ -142,7 +142,7 @@ def generate_launch_description():
  
     return LaunchDescription([
         DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
-        DeclareLaunchArgument('scan_topic_name', default_value='scan'),
+        DeclareLaunchArgument('scan_topic_name', default_value='scan_front'),
         SetEnvironmentVariable(name='WITH_SIM', value='0'),
         SetEnvironmentVariable(name='RCUTILS_COLORIZED_OUTPUT', value='1'),
         node_robot_state_publisher,
@@ -150,7 +150,7 @@ def generate_launch_description():
         mcl_node,
         # joy_node,
         joy2Vel_node,
-        urg_node2_nl,
+        urg_node_front,
         # static_from_odom_to_basefootprint,
         vel_feedback_pass_through,
     ])
