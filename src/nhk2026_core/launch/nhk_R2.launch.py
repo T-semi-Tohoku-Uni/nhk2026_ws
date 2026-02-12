@@ -153,5 +153,5 @@ def generate_launch_description():
         joy2Vel_node,
         urg_node_front,
         # static_from_odom_to_basefootprint,
-        vel_feedback_pass_through,
+        # vel_feedback_pass_through,
     ])
