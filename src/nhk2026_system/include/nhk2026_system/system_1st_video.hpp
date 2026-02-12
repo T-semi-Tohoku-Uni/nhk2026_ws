@@ -48,4 +48,7 @@ private:
         const std::shared_ptr<nhk2026_msgs::srv::SystemR2::Request> request_state,
         std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
     );
+
+    int cmd_vel_mode;
+    using system_request = nhk2026_msgs::srv::SystemR2::Request;
 };

@@ -3,7 +3,8 @@
 using std::placeholders::_1;
 
 System1stVideo::System1stVideo()
-: rclcpp_lifecycle::LifecycleNode(std::string("syste,_1st_video"))
+: rclcpp_lifecycle::LifecycleNode(std::string("syste,_1st_video")),
+cmd_vel_mode(system_request::STANDBY)
 {
 
 }
