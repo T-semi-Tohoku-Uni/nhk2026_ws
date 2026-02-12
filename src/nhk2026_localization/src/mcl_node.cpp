@@ -566,6 +566,7 @@ namespace mcl {
             }
 
             void loop() {
+                rclcpp::Time current_time = this->get_clock()->now();
                 // 並進速度・回転速度を取得
                 if (!cmdVel_) {
                     return;
@@ -582,6 +583,14 @@ namespace mcl {
                     return; 
 
                 }
+
+                if (last_timestamp_.nanoseconds() == 0) {
+                    last_timestamp_ = current_time;
+                    return;
+                }
+
+                double dt = (current_time - last_timestamp_).seconds();
+                last_timestamp_ = current_time;
                             
                 
                 // ロボットから見た座標系
@@ -591,9 +600,9 @@ namespace mcl {
                 
                 //RCLCPP_INFO(this->get_logger(), "cmd_vel -> vx: %.3f, vy: %.3f", vx_, vy_);
                 geometry_msgs::msg::Twist delta_;
-                delta_.linear.x = vx_*0.1;
-                delta_.linear.y = vy_*0.1;
-                delta_.angular.z = omega_*0.1;
+                delta_.linear.x = vx_*dt;
+                delta_.linear.y = vy_*dt;
+                delta_.angular.z = omega_*dt;
 
 
                 updateParticles(delta_);
