@@ -29,6 +29,7 @@ ament_target_dependencies(system_1st_video
   std_msgs
   geometry_msgs
   lifecycle_msgs
+  nhk2026_msgs
 )
 
 install(

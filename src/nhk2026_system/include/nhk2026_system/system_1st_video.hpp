@@ -7,6 +7,8 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 
+#include "nhk2026_msgs/srv/system_r2.hpp"
+
 class System1stVideo
 : public rclcpp_lifecycle::LifecycleNode
 {
