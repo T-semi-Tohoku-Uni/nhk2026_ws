@@ -589,8 +589,9 @@ namespace mcl {
                     return;
                 }
 
-                double dt = (current_time - last_timestamp_).seconds();
-                last_timestamp_ = current_time;
+                //double dt = (current_time - last_timestamp_).seconds();
+                double dt = 0.025;
+                //last_timestamp_ = current_time;
 
                 rclcpp::Time t_front = scanFront_->header.stamp; // 1. Front LiDARの発行時刻
                 double delay_front = (current_time - t_front).seconds(); // 遅延時間
