@@ -598,6 +598,7 @@ namespace mcl {
 
                 updateParticles(delta_);
                 printParticlesMakerOnRviz2();
+                publishScanClouds(scanFront_, scanBack_);
                 if (lidar_select == 2) {
                     caculateMeasurementModel(*scanFront_, *scanBack_);
                 } else {
@@ -1170,37 +1171,6 @@ namespace mcl {
                         }
                     }
                 }
-
-                //以下パブリッシュ
-                sensor_msgs::msg::PointCloud2 cloud_lidar;
-                try {
-                    projector_.projectLaser(filtered_scan, cloud_lidar);
-                } catch (const std::exception& e) {
-                    return;
-                }
-
-                if (scan_cloud_pub_->get_subscription_count() > 0) {
-                    sensor_msgs::msg::PointCloud2 cloud_base;
-                    try {
-                        geometry_msgs::msg::TransformStamped tf_stamped = tf_buffer_.lookupTransform(
-                            "base_footprint", 
-                            filtered_scan.header.frame_id,
-                            tf2::TimePointZero
-                        );
-                        
-                        tf2::doTransform(cloud_lidar, cloud_base, tf_stamped);
-
-                        sensor_msgs::PointCloud2Iterator<float> iter_z(cloud_base, "z");
-                        for (; iter_z != iter_z.end(); ++iter_z) {
-                            *iter_z = 0.0f;
-                        }
-
-                        scan_cloud_pub_->publish(cloud_base);
-
-                    } catch (const tf2::TransformException & ex) {
-                        // RCLCPP_WARN(this->get_logger(), "TF Error: %s", ex.what());
-                    }
-                }
                 return_scan = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
             }
 
@@ -1217,6 +1187,69 @@ namespace mcl {
                 if (u > win_u_max) code |= 2;
                 if (u < win_u_min) code |= 1;
                 return code;
+            }
+
+            void publishScanClouds(const sensor_msgs::msg::LaserScan::SharedPtr scan1, const sensor_msgs::msg::LaserScan::SharedPtr scan2) {
+                if (scan_cloud_pub_->get_subscription_count() == 0) return;
+
+                std::vector<sensor_msgs::msg::PointCloud2> clouds_to_merge;
+                size_t total_points = 0;
+
+                auto process_scan = [&](const sensor_msgs::msg::LaserScan::SharedPtr& scan) {
+                    if (!scan) return;
+                    try {
+                        sensor_msgs::msg::PointCloud2 local_cloud, global_cloud;
+                        projector_.projectLaser(*scan, local_cloud);
+                        
+                        geometry_msgs::msg::TransformStamped tf = tf_buffer_.lookupTransform(
+                            "base_footprint", 
+                            scan->header.frame_id, 
+                            tf2::TimePointZero
+                        );
+                        tf2::doTransform(local_cloud, global_cloud, tf);
+                        
+                        clouds_to_merge.push_back(global_cloud);
+                        total_points += global_cloud.width; 
+                    } catch (const std::exception& e) {
+                        //TFエラー
+                    }
+                };
+
+                process_scan(scan1);
+                process_scan(scan2);
+
+                if (total_points == 0) return;
+
+                sensor_msgs::msg::PointCloud2 combined_cloud;
+                combined_cloud.header.frame_id = "base_footprint";
+                combined_cloud.header.stamp = this->now();
+
+                sensor_msgs::PointCloud2Modifier modifier(combined_cloud);
+                modifier.setPointCloud2FieldsByString(1, "xyz");
+                modifier.resize(total_points);
+
+                // イテレータでデータをコピー
+                sensor_msgs::PointCloud2Iterator<float> iter_x(combined_cloud, "x");
+                sensor_msgs::PointCloud2Iterator<float> iter_y(combined_cloud, "y");
+                sensor_msgs::PointCloud2Iterator<float> iter_z(combined_cloud, "z");
+
+                for (const auto& cloud : clouds_to_merge) {
+                    sensor_msgs::PointCloud2ConstIterator<float> src_x(cloud, "x");
+                    sensor_msgs::PointCloud2ConstIterator<float> src_y(cloud, "y");
+                    // projectLaserの結果には通常zが含まれる
+                    
+                    for (size_t i = 0; i < cloud.width; ++i) {
+                        *iter_x = *src_x;
+                        *iter_y = *src_y;
+                        *iter_z = 0.0f; 
+                        
+                        ++iter_x; ++iter_y; ++iter_z;
+                        ++src_x; ++src_y;
+                    }
+                }
+
+                
+                scan_cloud_pub_->publish(combined_cloud);
             }
 
             void publishOriginMarker() {
