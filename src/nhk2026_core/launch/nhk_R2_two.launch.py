@@ -38,7 +38,7 @@ def generate_launch_description():
         package='urg_node2_nl',
         executable='urg_node2_nl_node',
         name="urg_node_front" ,
-        remappings=[('scan', LaunchConfiguration('scan_topic_name'))],
+        remappings=[('scan', 'scan_back')],
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether.yaml"])],
         namespace='',
         output='screen',
@@ -151,7 +151,6 @@ def generate_launch_description():
  
     return LaunchDescription([
         DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
-        DeclareLaunchArgument('scan_topic_name', default_value='scan_front'),
         SetEnvironmentVariable(name='WITH_SIM', value='0'),
         SetEnvironmentVariable(name='RCUTILS_COLORIZED_OUTPUT', value='1'),
         SetEnvironmentVariable(name='WITH_lidar', value='2'),
