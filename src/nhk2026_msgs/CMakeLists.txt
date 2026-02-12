@@ -23,6 +23,7 @@ set(action_files
 set(srv_files
   "srv/PathPlan.srv"
   "srv/Waypoint.srv"
+  "srv/SystemR2.srv"
   )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
