@@ -192,10 +192,12 @@ void System1stVideo::flag_callback(
     if (this->cmd_vel_mode == system_request::STANDBY)
     {
         this->cmd_vel_mode = request_state->mode;
+        RCLCPP_INFO(this->get_logger(), "mode changes!");
         success->success = true;
     }
     else
     {
+        RCLCPP_INFO(this->get_logger(), "mode is not STANDBY now. please check th mode");
         success->success = false;
     }
 }
