@@ -3,7 +3,7 @@
 using std::placeholders::_1;
 
 System1stVideo::System1stVideo()
-: rclcpp_lifecycle::LifecycleNode(std::string("syste,_1st_video")),
+: rclcpp_lifecycle::LifecycleNode(std::string("syste_1st_video")),
 cmd_vel_mode(system_request::STANDBY)
 {
 
@@ -69,7 +69,7 @@ System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycl
     );
 
     this->flag_server_ = this->create_service<nhk2026_msgs::srv::SystemR2>(
-        std::string("state_callback"),
+        std::string("state_service"),
         std::bind(&System1stVideo::flag_callback, this, std::placeholders::_1, std::placeholders::_2)
     );
 
@@ -189,7 +189,15 @@ void System1stVideo::flag_callback(
     std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
 )
 {
-    
+    if (this->cmd_vel_mode == system_request::STANDBY)
+    {
+        this->cmd_vel_mode = request_state->mode;
+        success->success = true;
+    }
+    else
+    {
+        success->success = false;
+    }
 }
 
 int main(int argc, char *argv[])
