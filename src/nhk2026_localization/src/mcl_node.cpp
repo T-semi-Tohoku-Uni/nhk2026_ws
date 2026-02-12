@@ -215,7 +215,7 @@ namespace mcl {
                 timer_ = rclcpp::create_timer(
                     this,
                     this->get_clock(),
-                    100ms,
+                    25ms,
                     std::bind(&MCL::loop, this)
                 );
                 publishOriginMarker();
