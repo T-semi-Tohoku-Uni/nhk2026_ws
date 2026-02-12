@@ -83,6 +83,8 @@ System1stVideo::CallbackReturn System1stVideo::on_deactivate(const rclcpp_lifecy
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
 
+    this->cmd_vel_publisher_->on_deactivate();
+
     RCLCPP_INFO(
         get_logger(),
         "on_deactivate() called. state: id=%u, label=%s",
