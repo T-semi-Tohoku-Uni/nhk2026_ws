@@ -591,6 +591,30 @@ namespace mcl {
 
                 double dt = (current_time - last_timestamp_).seconds();
                 last_timestamp_ = current_time;
+
+                rclcpp::Time t_front = scanFront_->header.stamp; // 1. Front LiDARの発行時刻
+                double delay_front = (current_time - t_front).seconds(); // 遅延時間
+
+                if (lidar_select == 2) {
+                    // Dual LiDARの場合
+                    rclcpp::Time t_back = scanBack_->header.stamp; // 2. Back LiDARの発行時刻
+                    double delay_back = (current_time - t_back).seconds();
+
+                    // 秒単位で表示（読みやすいように下4桁などを表示するか、そのまま秒数を出す）
+                    RCLCPP_INFO(this->get_logger(), 
+                        "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)\n        Back : %.4f (Delay: %.4fs)",
+                        current_time.seconds(),
+                        t_front.seconds(), delay_front,
+                        t_back.seconds(), delay_back
+                    );
+                } else {
+                    // Single LiDARの場合
+                    RCLCPP_INFO(this->get_logger(), 
+                        "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)",
+                        current_time.seconds(),
+                        t_front.seconds(), delay_front
+                    );
+                }
                             
                 
                 // ロボットから見た座標系
@@ -1010,7 +1034,7 @@ namespace mcl {
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
 
-                RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
+                //RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
             }
 
             void resampleParticles(void) {
