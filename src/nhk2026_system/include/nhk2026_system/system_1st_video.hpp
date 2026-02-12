@@ -36,9 +36,16 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr middle_arm_robstride_subscription_;
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr back_robomastar_subscription_;
 
+    rclcpp::Service<nhk2026_msgs::srv::SystemR2>::SharedPtr flag_server_; 
+
     void cmd_vel_ui_callback(geometry_msgs::msg::Twist::SharedPtr rxdata);
     void cmd_vel_stick_callback(geometry_msgs::msg::Twist::SharedPtr rxdata);
     void back_arm_robstride_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata);
     void middle_arm_robstride_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata);
     void back_robomastar_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata);
+
+    void flag_callback(
+        const std::shared_ptr<nhk2026_msgs::srv::SystemR2::Request> request_state,
+        std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
+    );
 };

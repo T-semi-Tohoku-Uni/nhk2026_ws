@@ -67,6 +67,11 @@ System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycl
         std::bind(&System1stVideo::back_robomastar_callback, this, _1)
     );
 
+    this->flag_server_ = this->create_service<nhk2026_msgs::srv::SystemR2>(
+        std::string("state_callback"),
+        std::bind(&System1stVideo::flag_callback, this, std::placeholders::_1, std::placeholders::_2)
+    );
+
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
@@ -82,6 +87,7 @@ System1stVideo::CallbackReturn System1stVideo::on_deactivate(const rclcpp_lifecy
     this->back_arm_robstride_subscription_.reset();
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
+    this->flag_server_.reset();
 
     this->cmd_vel_publisher_->on_deactivate();
 
@@ -100,6 +106,7 @@ System1stVideo::CallbackReturn System1stVideo::on_cleanup(const rclcpp_lifecycle
     this->back_arm_robstride_subscription_.reset();
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
+    this->flag_server_.reset();
     this->cmd_vel_publisher_.reset();
 
     RCLCPP_INFO(
@@ -128,6 +135,7 @@ System1stVideo::CallbackReturn System1stVideo::on_shutdown(const rclcpp_lifecycl
     this->back_arm_robstride_subscription_.reset();
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
+    this->flag_server_.reset();
     this->cmd_vel_publisher_.reset();
 
     RCLCPP_INFO(
@@ -173,6 +181,14 @@ void System1stVideo::middle_arm_robstride_callback(std_msgs::msg::Float32MultiAr
 void System1stVideo::back_robomastar_callback(std_msgs::msg::Float32MultiArray::SharedPtr rxdata)
 {
     static_cast<void>(rxdata);
+}
+
+void System1stVideo::flag_callback(
+    const std::shared_ptr<nhk2026_msgs::srv::SystemR2::Request> request_state,
+    std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
+)
+{
+    
 }
 
 int main(int argc, char *argv[])
