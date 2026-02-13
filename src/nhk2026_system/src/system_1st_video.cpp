@@ -73,8 +73,8 @@ System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycl
         std::bind(&System1stVideo::flag_callback, this, std::placeholders::_1, std::placeholders::_2)
     );
 
-    using namespace std::chrono_literals;
-    this->timer_ = this->create_wall_timer(50ms, std::bind(&System1stVideo::cmd_vel_timer_callback, this));
+    // using namespace std::chrono_literals;
+    // this->timer_ = this->create_wall_timer(50ms, std::bind(&System1stVideo::cmd_vel_timer_callback, this));
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
