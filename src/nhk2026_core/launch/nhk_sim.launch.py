@@ -14,12 +14,14 @@ import math
 import random
 
 def generate_launch_description():
-    x = 1.0
-    y = 1.0
+    x = -1.47
+    y = 0.45
     z = 0.0
     theta = 0.0
 
+    #これがないと動かん(gpuがのっていないやつは)
     os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
+
     package_dir = get_package_share_directory("nhk2026_sim")
 
     world = os.path.join(
@@ -102,16 +104,22 @@ def generate_launch_description():
     mcl_node = Node(
         package="nhk2026_localization",
         executable="mcl_node",
-        parameters=[
-            {
-                "initial_x": x,
-                "initial_y": y,
-                "initial_theta": theta,
-                "scanStep": 5,
-            },
-        ],
-        remappings=[('clock', '/world/nhk2026/clock')],
-        output="screen"
+        output="screen",
+        parameters=[{
+            "particleNum": 50,
+            "initial_x": x,
+            "initial_y": y,
+            "initial_theta": theta,
+            "odomNoise1": 2.0,
+            "odomNoise2": 0.5,
+            "odomNoise3": 2.0,
+            "odomNoise4": 5.0,
+            "resampleThreshold": 0.9,
+            "scanStep": 5,
+            "lidar_threshold": 3.0/40.0*math.pi,
+            "mapFile":"src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5",
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')]
     )
 
     vel_feedback_node = Node(
