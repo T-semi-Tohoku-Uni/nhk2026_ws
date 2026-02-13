@@ -22,7 +22,7 @@ def generate_launch_description():
     x = -1.47
     y = 0.45
     z = 0.0
-    theata = 0.0
+    theta = 0.0
 
     package_dir = get_package_share_directory("nhk2026_sim")
     urg_node2_nl_pkg = get_package_share_directory('urg_node2_nl')
@@ -105,7 +105,7 @@ def generate_launch_description():
             "particleNum": 50,
             "initial_x": x,
             "initial_y": y,
-            "initial_theta": theata,
+            "initial_theta": theta,
             "odomNoise1": 2.0,
             "odomNoise2": 0.5,
             "odomNoise3": 2.0,
