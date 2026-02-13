@@ -194,17 +194,7 @@ void System1stVideo::flag_callback(
     std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
 )
 {
-    if (this->cmd_vel_mode == system_request::SEQUENCE)
-    {
-        RCLCPP_INFO(this->get_logger(), "robot is busy!");
-        success->success = false;
-    }
-    else
-    {
-        RCLCPP_INFO(this->get_logger(), "mode changes");
-        this->cmd_vel_mode = request_state->mode;
-        success->success = true;
-    }
+    success->success = true;
 }
 
 int main(int argc, char *argv[])
