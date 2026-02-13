@@ -597,7 +597,7 @@ namespace mcl {
                     return;
                 }
 
-                updateSensorTransforms();
+                //updateSensorTransforms();
 
                 //double dt = (current_time - last_timestamp_).seconds();
                 double dt = 0.025;
@@ -915,54 +915,54 @@ namespace mcl {
                 return p_vector;
             }
 
-            // void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v,int lidar_pose) {
-            //     std::double_t x_lidar;
-            //     std::double_t y_lidar;
-            //     if (lidar_pose == 0) {
-            //         x_lidar = range*cos(theta) + 0.084;
-            //         y_lidar = range*sin(theta) + 0.013 - 0.013;
-            //     } else if(lidar_pose == 1){
-            //         x_lidar = range * cos(theta + M_PI/2) - 0.094036;
-            //         y_lidar = range * sin(theta + M_PI/2) + 0.2255;
-            //     }else if(lidar_pose == 2){
-            //         x_lidar = range * cos(theta + M_PI) + 0.2084;
-            //         y_lidar = range * sin(theta + M_PI) - 0.2999;
-            //     }
+            void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v,int lidar_pose) {
+                std::double_t x_lidar;
+                std::double_t y_lidar;
+                if (lidar_pose == 0) {
+                    x_lidar = range*cos(theta) + 0.084;
+                    y_lidar = range*sin(theta) + 0.013 - 0.013;
+                } else if(lidar_pose == 1){
+                    x_lidar = range * cos(theta + M_PI/2) - 0.094036;
+                    y_lidar = range * sin(theta + M_PI/2) + 0.2255;
+                }else if(lidar_pose == 2){
+                    x_lidar = range * cos(theta + M_PI) + 0.2084;
+                    y_lidar = range * sin(theta + M_PI) - 0.2999;
+                }
 
                 
-            //     std::double_t x = x_lidar*cos(pose.theta) - y_lidar*sin(pose.theta) + pose.x;
-            //     std::double_t y = x_lidar*sin(pose.theta) + y_lidar*cos(pose.theta) + pose.y;
-
-            //     *x_odom = x;
-            //     *y_odom = y;
-
-            //     xy2uv(x, y, u, v);
-            // }
-
-            void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v, int lidar_pose) {
-    
-                
-                if (lidar_pose < 0 || lidar_pose >= (int)lidar_transforms_.size()) return;
-
-              
-                double sensor_x   = lidar_transforms_[lidar_pose].x;
-                double sensor_y   = lidar_transforms_[lidar_pose].y;
-                double sensor_yaw = lidar_transforms_[lidar_pose].yaw;
-
-                
-                // x_lidar = 距離 * cos(レーザー角度 + センサの取り付け角度) + センサの取り付け位置X
-                std::double_t x_lidar = range * cos(theta + sensor_yaw) + sensor_x;
-                std::double_t y_lidar = range * sin(theta + sensor_yaw) + sensor_y;
-
-                
-                std::double_t x = x_lidar * cos(pose.theta) - y_lidar * sin(pose.theta) + pose.x;
-                std::double_t y = x_lidar * sin(pose.theta) + y_lidar * cos(pose.theta) + pose.y;
+                std::double_t x = x_lidar*cos(pose.theta) - y_lidar*sin(pose.theta) + pose.x;
+                std::double_t y = x_lidar*sin(pose.theta) + y_lidar*cos(pose.theta) + pose.y;
 
                 *x_odom = x;
                 *y_odom = y;
 
                 xy2uv(x, y, u, v);
             }
+
+            // void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v, int lidar_pose) {
+    
+                
+            //     if (lidar_pose < 0 || lidar_pose >= (int)lidar_transforms_.size()) return;
+
+              
+            //     double sensor_x   = lidar_transforms_[lidar_pose].x;
+            //     double sensor_y   = lidar_transforms_[lidar_pose].y;
+            //     double sensor_yaw = lidar_transforms_[lidar_pose].yaw;
+
+                
+            //     // x_lidar = 距離 * cos(レーザー角度 + センサの取り付け角度) + センサの取り付け位置X
+            //     std::double_t x_lidar = range * cos(theta + sensor_yaw) + sensor_x;
+            //     std::double_t y_lidar = range * sin(theta + sensor_yaw) + sensor_y;
+
+                
+            //     std::double_t x = x_lidar * cos(pose.theta) - y_lidar * sin(pose.theta) + pose.x;
+            //     std::double_t y = x_lidar * sin(pose.theta) + y_lidar * cos(pose.theta) + pose.y;
+
+            //     *x_odom = x;
+            //     *y_odom = y;
+
+            //     xy2uv(x, y, u, v);
+            // }
 
             void publishScanEndpoints()
             {
