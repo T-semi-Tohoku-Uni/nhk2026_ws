@@ -423,7 +423,7 @@ namespace mcl {
                     cv::Mat distFieldIn;
                     cv::distanceTransform(inverted_binary_img, distFieldIn, cv::DIST_L2, 5);
 
-                    // distField_ をSDFとして作成 (プラス: 自由空間, マイナス: 障害物内部)
+                    
                     distField_ = cv::Mat(dim_y, dim_x, CV_64FC1); // メモリ確保
                     for (int y = 0; y < (int)dim_y; ++y) {
                         for (int x = 0; x < (int)dim_x; ++x) {
@@ -438,7 +438,6 @@ namespace mcl {
                     RCLCPP_INFO(this->get_logger(), "Distance Field created. (11, 50) = %lf m", distField_.at<double>(11, 50));
 
                 
-                   // 1. 距離の最大絶対値を見つけて正規化の基準にする
                 double minVal, maxVal;
                 cv::minMaxLoc(distField_, &minVal, &maxVal);
                 // 0除算回避のため小さな値を足しておく
@@ -483,13 +482,6 @@ namespace mcl {
                 cv::imwrite("sdf_color_debug.png", sdf_color_img);
                 RCLCPP_INFO(this->get_logger(), "Saved colored SDF image to sdf_color_debug.png");
 
-                // 古い白黒画像の保存コードは削除またはコメントアウトしてください
-                /*
-                cv::Mat normDist, dist8U, colorImg;
-                cv::normalize(distFieldOut, normDist, 0.0, 255.0, cv::NORM_MINMAX); 
-                // ... (中略) ...
-                cv::imwrite("distField_highlight.png", colorImg);
-                */
 
                 publishVoxelMap(map_data, dim_x, dim_y, dim_z);
 
@@ -903,7 +895,7 @@ namespace mcl {
                             d = sdf_val;
                         } else {
                             // 壁の中（めり込んでいる）: 表面からの絶対距離 + めり込みペナルティ
-                            std::double_t penetration_penalty = 0.5; // ペナルティ(m)
+                            std::double_t penetration_penalty = 1; // ペナルティ(m)
                             d = std::abs(sdf_val) + penetration_penalty;
                         }
                         
