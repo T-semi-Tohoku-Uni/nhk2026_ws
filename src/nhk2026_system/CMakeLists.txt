@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(nhk2026_msgs)
+project(nhk2026_system)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,33 +7,41 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rosidl_default_generators REQUIRED)
-find_package(geometry_msgs REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
 
-set(msg_files
-  "msg/ArucoPose.msg"
-  "msg/MicomStatus.msg"
+include_directories(
+  include
+  include/${PROJECT_NAME}
 )
 
-set(action_files
-  "action/Follow.action"
+add_executable(system_1st_video
+  src/system_1st_video.cpp
 )
 
-set(srv_files
-  "srv/PathPlan.srv"
-  "srv/Waypoint.srv"
-  "srv/SystemR2.srv"
-  )
-
-rosidl_generate_interfaces(${PROJECT_NAME}
-  ${msg_files}
-  ${action_files}
-  ${srv_files}
-  DEPENDENCIES geometry_msgs std_msgs
+ament_target_dependencies(system_1st_video
+  rclcpp
+  rclcpp_lifecycle
+  std_msgs
+  geometry_msgs
+  lifecycle_msgs
+  nhk2026_msgs
 )
 
-ament_export_dependencies(rosidl_default_runtime)
+install(
+  TARGETS system_1st_video
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+# add install
+install(
+  DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

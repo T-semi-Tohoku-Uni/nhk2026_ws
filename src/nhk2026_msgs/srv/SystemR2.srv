@@ -1,0 +1,7 @@
+int32 STANDBY = 0
+int32 MANUAL = 1
+int32 SEQUENCE = 2
+
+int32 mode
+---
+bool success
