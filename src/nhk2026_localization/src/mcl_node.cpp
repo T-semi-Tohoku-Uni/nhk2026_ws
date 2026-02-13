@@ -413,34 +413,85 @@ namespace mcl {
                 
                     mapImg_ = binary_img.clone();
 
-                    
-                    cv::Mat distFieldF;
-                    cv::distanceTransform(binary_img, distFieldF, cv::DIST_L2, 5);
+                    // [MODIFIED] SDF (Signed Distance Field) の導入
+                    cv::Mat distFieldOut;
+                    cv::distanceTransform(binary_img, distFieldOut, cv::DIST_L2, 5);
 
-                  
-                    // distFieldD = d * mapResolution_
+                    cv::Mat inverted_binary_img;
+                    cv::bitwise_not(binary_img, inverted_binary_img);
+
+                    cv::Mat distFieldIn;
+                    cv::distanceTransform(inverted_binary_img, distFieldIn, cv::DIST_L2, 5);
+
+                    // distField_ をSDFとして作成 (プラス: 自由空間, マイナス: 障害物内部)
                     distField_ = cv::Mat(dim_y, dim_x, CV_64FC1); // メモリ確保
                     for (int y = 0; y < (int)dim_y; ++y) {
                         for (int x = 0; x < (int)dim_x; ++x) {
-                            float d_pixel = distFieldF.at<float>(y, x);
-                            distField_.at<double>(y, x) = (double)d_pixel * mapResolution_;
+                            float d_out = distFieldOut.at<float>(y, x);
+                            float d_in  = distFieldIn.at<float>(y, x);
+                            // 障害物の外ならプラス、中ならマイナスになるようにする
+                            double sdf_pixel = d_out - d_in;
+                            distField_.at<double>(y, x) = sdf_pixel * mapResolution_;
                         }
                     }
                     
                     RCLCPP_INFO(this->get_logger(), "Distance Field created. (11, 50) = %lf m", distField_.at<double>(11, 50));
 
                 
-                    cv::Mat normDist, dist8U, colorImg;
-                    cv::normalize(distField_, normDist, 0.0, 255.0, cv::NORM_MINMAX);
-                    normDist.convertTo(dist8U, CV_8U);
-                    cv::cvtColor(dist8U, colorImg, cv::COLOR_GRAY2BGR);
-                    
-                    if (11 < dim_y && 50 < dim_x) {
-                        colorImg.at<cv::Vec3b>(11, 50) = cv::Vec3b(0, 0, 255);
-                        cv::circle(colorImg, cv::Point(0, 0), 3, cv::Scalar(0,255,0), -1); // cv::Point(x, y)
+                   // 1. 距離の最大絶対値を見つけて正規化の基準にする
+                double minVal, maxVal;
+                cv::minMaxLoc(distField_, &minVal, &maxVal);
+                // 0除算回避のため小さな値を足しておく
+                double maxAbsVal = std::max(std::abs(minVal), std::abs(maxVal)) + 1e-6;
+
+                // 2. カラー画像用のMatを作成 (BGR順)
+                cv::Mat sdf_color_img(dim_y, dim_x, CV_8UC3);
+
+                for (int y = 0; y < (int)dim_y; ++y) {
+                    for (int x = 0; x < (int)dim_x; ++x) {
+                        double d = distField_.at<double>(y, x);
+                        
+                        // 境界からの距離の絶対値を 0.0〜1.0 に正規化
+                        double ratio = std::abs(d) / maxAbsVal;
+                        // 色の濃さを計算 (0〜255)。境界(d=0)付近は薄く(255)、遠ざかるほど濃く(0)する
+                        int intensity = 255 - static_cast<int>(ratio * 255.0);
+                        // 安全のため範囲制限
+                        intensity = std::max(0, std::min(255, intensity));
+
+                        cv::Vec3b color;
+                        if (d > 1e-9) { // 壁の外側 (正の値)
+                            // 白 -> 青 のグラデーション (RとGを減らしていく)
+                            color = cv::Vec3b(255, intensity, intensity);
+                        } else if (d < -1e-9) { // 壁の内側 (負の値)
+                            // 白 -> 赤 のグラデーション (BとGを減らしていく)
+                            color = cv::Vec3b(intensity, intensity, 255);
+                        } else { // 境界付近 (ほぼ0)
+                            // 真っ白
+                            color = cv::Vec3b(255, 255, 255);
+                        }
+                        sdf_color_img.at<cv::Vec3b>(y, x) = color;
                     }
-                    cv::imwrite("distField_highlight.png", colorImg);
-                    publishVoxelMap(map_data, dim_x, dim_y, dim_z);
+                }
+
+                // デバッグ用の点描画（既存コードの維持）
+                if (11 < dim_y && 50 < dim_x) {
+                    // OpenCVのPointは(x, y)の順
+                    cv::circle(sdf_color_img, cv::Point(50, 11), 3, cv::Scalar(0, 255, 0), -1); 
+                }
+
+                // 画像を保存
+                cv::imwrite("sdf_color_debug.png", sdf_color_img);
+                RCLCPP_INFO(this->get_logger(), "Saved colored SDF image to sdf_color_debug.png");
+
+                // 古い白黒画像の保存コードは削除またはコメントアウトしてください
+                /*
+                cv::Mat normDist, dist8U, colorImg;
+                cv::normalize(distFieldOut, normDist, 0.0, 255.0, cv::NORM_MINMAX); 
+                // ... (中略) ...
+                cv::imwrite("distField_highlight.png", colorImg);
+                */
+
+                publishVoxelMap(map_data, dim_x, dim_y, dim_z);
 
                 } catch (FileIException& error) {
                     error.printErrorStack();
@@ -599,9 +650,10 @@ namespace mcl {
 
                 //updateSensorTransforms();
 
-                //double dt = (current_time - last_timestamp_).seconds();
+                // double dt = (current_time - last_timestamp_).seconds();
+                // if (dt <= 0.0) dt = 0.025; // 例外処理としてのフォールバック
                 double dt = 0.025;
-                //last_timestamp_ = current_time;
+                last_timestamp_ = current_time;
 
                 rclcpp::Time t_front = scanFront_->header.stamp; // 1. Front LiDARの発行時刻
                 double delay_front = (current_time - t_front).seconds(); // 遅延時間
@@ -678,7 +730,7 @@ namespace mcl {
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
-                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y;
+                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y; 
                 std::double_t dy2 = delta.angular.z * delta.angular.z;
                 // std::double_t dd2 = 0;
                 // std::double_t dy2 = 0;
@@ -842,8 +894,19 @@ namespace mcl {
 
                     // ここから下は一旦関係ない
                     if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
-                        // TODO: 尤度場モデルからdをもってくる
-                        std::double_t d = (std::double_t)distField_.at<std::double_t>(v, u);
+                        // [MODIFIED] SDFを用いた尤度計算とペナルティ
+                        std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
+                        
+                        std::double_t d = 0.0;
+                        if (sdf_val >= 0) {
+                            // 壁の外（正常）: 表面からの距離をそのまま使う
+                            d = sdf_val;
+                        } else {
+                            // 壁の中（めり込んでいる）: 表面からの絶対距離 + めり込みペナルティ
+                            std::double_t penetration_penalty = 0.5; // ペナルティ(m)
+                            d = std::abs(sdf_val) + penetration_penalty;
+                        }
+                        
                         std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_; // 確率密度 <=> 確率の変換は要注意
                         std::double_t p = zHit_*pHit + zRand_*pRand;
 
@@ -887,8 +950,19 @@ namespace mcl {
 
                         // ここから下は一旦関係ない
                         if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
-                            // TODO: 尤度場モデルからdをもってくる
-                            std::double_t d = (std::double_t)distField_.at<std::double_t>(v, u);
+                            // [MODIFIED] SDFを用いた尤度計算とペナルティ (scan2用)
+                            std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
+                            
+                            std::double_t d = 0.0;
+                            if (sdf_val >= 0) {
+                                // 壁の外（正常）
+                                d = sdf_val;
+                            } else {
+                                // 壁の中（めり込んでいる）
+                                std::double_t penetration_penalty = 0.5; // ペナルティ(m)
+                                d = std::abs(sdf_val) + penetration_penalty;
+                            }
+
                             std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_; // 確率密度 <=> 確率の変換は要注意
                             std::double_t p = zHit_*pHit + zRand_*pRand;
 
