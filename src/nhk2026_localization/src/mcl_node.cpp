@@ -135,8 +135,8 @@ namespace mcl {
                 geometry_msgs::msg::Pose2D initialNoise;
                 auto cloud_qos = rclcpp::SensorDataQoS();
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", cloud_qos);
-                initialNoise.set__x(0.07); // var of x
-                initialNoise.set__y(0.07); // var of y
+                initialNoise.set__x(0.5); // var of x
+                initialNoise.set__y(0.5); // var of y
                 initialNoise.set__theta(M_PI/180.0); // var of theta
                 resetParticlesDistribution(initialNoise);
                 printParticlesMakerOnRviz2();
