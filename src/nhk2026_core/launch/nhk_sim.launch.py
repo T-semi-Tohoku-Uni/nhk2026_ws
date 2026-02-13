@@ -74,7 +74,7 @@ def generate_launch_description():
         name='ros_gz_bridge_1',
         arguments=[
             '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
-            '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            # '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
             '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
@@ -149,7 +149,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
-        SetEnvironmentVariable(name='WITH_lidar', value='2'),
+        SetEnvironmentVariable(name='WITH_lidar', value='1'),
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,
