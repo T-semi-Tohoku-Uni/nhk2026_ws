@@ -237,7 +237,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
-        SetEnvironmentVariable(name='WITH_lidar', value='1'),
+        SetEnvironmentVariable(name='WITH_lidar', value='0'),
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,
