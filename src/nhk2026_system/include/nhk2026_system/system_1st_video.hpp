@@ -51,4 +51,9 @@ private:
 
     int cmd_vel_mode;
     using system_request = nhk2026_msgs::srv::SystemR2::Request;
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    void cmd_vel_timer_callback();
+
+    geometry_msgs::msg::Twist::SharedPtr vel_sequence_;
 };

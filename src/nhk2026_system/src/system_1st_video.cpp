@@ -73,6 +73,8 @@ System1stVideo::CallbackReturn System1stVideo::on_activate(const rclcpp_lifecycl
         std::bind(&System1stVideo::flag_callback, this, std::placeholders::_1, std::placeholders::_2)
     );
 
+    using namespace std::chrono_literals;
+    this->timer_ = this->create_wall_timer(50ms, std::bind(&System1stVideo::cmd_vel_timer_callback, this));
     RCLCPP_INFO(
         get_logger(),
         "on_activate() called. state: id=%u, label=%s",
@@ -89,6 +91,7 @@ System1stVideo::CallbackReturn System1stVideo::on_deactivate(const rclcpp_lifecy
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
     this->flag_server_.reset();
+    this->timer_.reset();
 
     this->cmd_vel_publisher_->on_deactivate();
 
@@ -108,6 +111,7 @@ System1stVideo::CallbackReturn System1stVideo::on_cleanup(const rclcpp_lifecycle
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
     this->flag_server_.reset();
+    this->timer_.reset();
     this->cmd_vel_publisher_.reset();
 
     RCLCPP_INFO(
@@ -137,6 +141,7 @@ System1stVideo::CallbackReturn System1stVideo::on_shutdown(const rclcpp_lifecycl
     this->middle_arm_robstride_subscription_.reset();
     this->back_robomastar_subscription_.reset();
     this->flag_server_.reset();
+    this->timer_.reset();
     this->cmd_vel_publisher_.reset();
 
     RCLCPP_INFO(
@@ -161,7 +166,7 @@ rcl_interfaces::msg::SetParametersResult System1stVideo::parameters_callback(
 
 void System1stVideo::cmd_vel_ui_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
 {
-    static_cast<void>(rxdata);
+    this->vel_sequence_ = rxdata;
 }
 
 void System1stVideo::cmd_vel_stick_callback(geometry_msgs::msg::Twist::SharedPtr rxdata)
@@ -189,16 +194,16 @@ void System1stVideo::flag_callback(
     std::shared_ptr<nhk2026_msgs::srv::SystemR2::Response> success
 )
 {
-    if (this->cmd_vel_mode == system_request::STANDBY)
+    if (this->cmd_vel_mode == system_request::SEQUENCE)
     {
-        this->cmd_vel_mode = request_state->mode;
-        RCLCPP_INFO(this->get_logger(), "mode changes!");
-        success->success = true;
+        RCLCPP_INFO(this->get_logger(), "robot is busy!");
+        success->success = false;
     }
     else
     {
-        RCLCPP_INFO(this->get_logger(), "mode is not STANDBY now. please check th mode");
-        success->success = false;
+        RCLCPP_INFO(this->get_logger(), "mode changes");
+        this->cmd_vel_mode = request_state->mode;
+        success->success = true;
     }
 }
 
