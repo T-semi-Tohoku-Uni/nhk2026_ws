@@ -1,0 +1,7 @@
+{
+  mode: "router",
+  listen: { endpoints: ["udp/[::]:7447"] },
+  scouting: { multicast: { enabled: false }, gossip: { enabled: true } },
+  timestamping: { enabled: { router: true, peer: true, client: true } },
+  adminspace: { enabled: true, permissions: { read: true, write: false } }
+}
