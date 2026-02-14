@@ -197,6 +197,11 @@ void System1stVideo::flag_callback(
     success->success = true;
 }
 
+void System1stVideo::cmd_vel_timer_callback()
+{
+    
+}
+
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
