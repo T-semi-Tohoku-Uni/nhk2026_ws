@@ -137,7 +137,7 @@ namespace mcl {
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", cloud_qos);
                 initialNoise.set__x(0.3); // var of x
                 initialNoise.set__y(0.3); // var of y
-                initialNoise.set__theta(M_PI/180.0); // var of theta
+                initialNoise.set__theta(M_PI/18.0); // var of theta
                 resetParticlesDistribution(initialNoise);
                 printParticlesMakerOnRviz2();
                 
