@@ -722,7 +722,7 @@ namespace mcl {
                     std::double_t y = mclPose_.y + randNormal(noise.y);
                     // std::double_t x = mclPose_.x;
                     // std::double_t y = mclPose_.y;
-                    std::double_t theta = mclPose_.theta;
+                    std::double_t theta = mclPose_.theta + randNormal(noise.theta);
                     particles_[i].setPose(x, y, theta);
                     particles_[i].setW(wo);
                 }
