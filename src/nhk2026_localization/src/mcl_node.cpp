@@ -178,6 +178,9 @@ namespace mcl {
                     subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
                     // Back用
                     subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
+                }else if(std::string(lidar) == "3"){
+                    lidar_select = 3;
+                    subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
                 }
                 
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
@@ -228,6 +231,7 @@ namespace mcl {
                 );
                 publishOriginMarker();
                 RCLCPP_INFO(this->get_logger(), "Success initialize");
+                RCLCPP_INFO(this->get_logger(), "initial x:%f,y:%f",initial_x,initial_y);
 
                 // TODO: deleteb
             } 
@@ -624,11 +628,12 @@ namespace mcl {
                 }
                 //RCLCPP_INFO(this->get_logger(), "cmd_vel ok");
                 
-                if (!scanFront_) {
-                    //RCLCPP_INFO(this->get_logger(), "lidar not");
-                    return;
-                }         
+                // if (!scanFront_) {
+                //     //RCLCPP_INFO(this->get_logger(), "lidar not");
+                //     return;
+                // }         
                 
+
                 if (lidar_select == 2 && !scanBack_) {
                     //RCLCPP_INFO(this->get_logger(), "lidar back  ok");
                     return; 
@@ -647,29 +652,29 @@ namespace mcl {
                 double dt = 0.025;
                 last_timestamp_ = current_time;
 
-                rclcpp::Time t_front = scanFront_->header.stamp; // 1. Front LiDARの発行時刻
-                double delay_front = (current_time - t_front).seconds(); // 遅延時間
+                // rclcpp::Time t_front = scanFront_->header.stamp; // 1. Front LiDARの発行時刻
+                // double delay_front = (current_time - t_front).seconds(); // 遅延時間
 
-                if (lidar_select == 2) {
-                    // Dual LiDARの場合
-                    rclcpp::Time t_back = scanBack_->header.stamp; // 2. Back LiDARの発行時刻
-                    double delay_back = (current_time - t_back).seconds();
+                // if (lidar_select == 2) {
+                //     // Dual LiDARの場合
+                //     rclcpp::Time t_back = scanBack_->header.stamp; // 2. Back LiDARの発行時刻
+                //     double delay_back = (current_time - t_back).seconds();
 
-                    // 秒単位で表示（読みやすいように下4桁などを表示するか、そのまま秒数を出す）
-                    RCLCPP_INFO(this->get_logger(), 
-                        "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)\n        Back : %.4f (Delay: %.4fs)",
-                        current_time.seconds(),
-                        t_front.seconds(), delay_front,
-                        t_back.seconds(), delay_back
-                    );
-                } else {
-                    // Single LiDARの場合
-                    RCLCPP_INFO(this->get_logger(), 
-                        "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)",
-                        current_time.seconds(),
-                        t_front.seconds(), delay_front
-                    );
-                }
+                //     // 秒単位で表示（読みやすいように下4桁などを表示するか、そのまま秒数を出す）
+                //     RCLCPP_INFO(this->get_logger(), 
+                //         "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)\n        Back : %.4f (Delay: %.4fs)",
+                //         current_time.seconds(),
+                //         t_front.seconds(), delay_front,
+                //         t_back.seconds(), delay_back
+                //     );
+                // } else {
+                //     // Single LiDARの場合
+                //     RCLCPP_INFO(this->get_logger(), 
+                //         "\n[Times] Est: %.4f\n        Front: %.4f (Delay: %.4fs)",
+                //         current_time.seconds(),
+                //         t_front.seconds(), delay_front
+                //     );
+                // }
                             
                 
                 // ロボットから見た座標系
@@ -689,7 +694,9 @@ namespace mcl {
                 publishScanClouds(scanFront_, scanBack_);
                 if (lidar_select == 2) {
                     caculateMeasurementModel(*scanFront_, *scanBack_);
-                } else {
+                } else if(lidar_select == 3){
+                    caculateMeasurementModel(*scanBack_, *scanBack_);
+                }else{
                     caculateMeasurementModel(*scanFront_, *scanFront_); 
                 }
                 estimatePose();
@@ -879,6 +886,8 @@ namespace mcl {
                     int u, v;
                     if(lidar_select == 0){
                         lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,0);
+                    }else if(lidar_select == 3){
+                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,2);
                     }else {
                         lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,1);
                     }
@@ -990,9 +999,14 @@ namespace mcl {
                 } else if(lidar_pose == 1){
                     x_lidar = range * cos(theta + M_PI/2) - 0.094036;
                     y_lidar = range * sin(theta + M_PI/2) + 0.2255;
+                    //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }else if(lidar_pose == 2){
-                    x_lidar = range * cos(theta + M_PI) + 0.2084;
-                    y_lidar = range * sin(theta + M_PI) - 0.2999;
+                    
+                    //x_lidar = range * cos(theta );
+                    //y_lidar = range * sin(theta );
+                    x_lidar = range * cos(theta ) + 0.2084;
+                    y_lidar = range * sin(theta ) - 0.2999;
+                    //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }
 
                 
