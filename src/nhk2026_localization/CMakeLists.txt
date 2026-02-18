@@ -54,6 +54,7 @@ function(setup_node_dependencies target)
     Eigen3::Eigen
     ${HDF5_LIBRARIES}
     ${HDF5_CXX_LIBRARIES}
+    OpenMP::OpenMP_CXX
   )
 endfunction()
 
