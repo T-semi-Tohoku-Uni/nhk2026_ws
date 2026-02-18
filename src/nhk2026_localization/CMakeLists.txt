@@ -22,7 +22,6 @@ find_package(OpenCV REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
-find_package(OpenMP REQUIRED)
 
 # 依存関係をまとめる関数
 function(setup_node_dependencies target)
@@ -55,7 +54,6 @@ function(setup_node_dependencies target)
     Eigen3::Eigen
     ${HDF5_LIBRARIES}
     ${HDF5_CXX_LIBRARIES}
-    OpenMP::OpenMP_CXX
   )
 endfunction()
 
