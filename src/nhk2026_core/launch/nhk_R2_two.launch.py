@@ -115,7 +115,7 @@ def generate_launch_description():
             "initial_x": x,
             "initial_y": y,
             "initial_theta": theata,
-            "odomNoise1": 4.3,
+            "odomNoise1": 5.5,
             "odomNoise2": 3.0,
             "odomNoise3": 2.5,
             "odomNoise4": 4.5,
