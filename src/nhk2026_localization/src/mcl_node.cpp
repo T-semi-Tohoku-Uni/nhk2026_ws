@@ -267,7 +267,7 @@ namespace mcl {
                 } 
                 else if (lidar_id == 2) {
                     // Back Lidar
-                    filterScan(msg, scanBack_, -M_PI * 3/ 4, M_PI / 6);
+                    filterScan(msg, scanBack_, -M_PI * 3/ 4, -M_PI / 6);
                 }
             }
 
