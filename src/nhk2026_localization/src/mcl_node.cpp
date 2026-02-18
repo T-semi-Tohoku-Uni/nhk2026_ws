@@ -804,16 +804,14 @@ namespace mcl {
                 totalLikelihood_ = 0.0;
                 std::double_t maxLikelihood = 0.0;
 
-                //std::vector<std::vector<double>> likelihood_table;
-                std::vector<std::vector<double>> likelihood_table(particleNum_);
+                std::vector<std::vector<double>> likelihood_table;
                 likelihood_table.reserve(particleNum_);
-
-                #pragma omp parallel for schedule(dynamic)
+                
                 for (std::size_t i = 0; i < particles_.size(); i++ ) {
                     std::double_t likelihood = 0.0;
                     // 尤度場モデル
                     if (measurementModel_ == MeasurementModel::LikelihoodFieldModel) {
-                        likelihood_table[i] = caculateLikelihoodFieldModel(particles_[i].getPose(), scan1, scan2);
+                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), scan1,scan2)));
                     }
                     if (i == 0) {
                         maxLikelihood = likelihood;
@@ -849,7 +847,7 @@ namespace mcl {
             std::vector<std::double_t> caculateLikelihoodFieldModel (geometry_msgs::msg::Pose2D pose, sensor_msgs::msg::LaserScan scan1,sensor_msgs::msg::LaserScan scan2) {
 
                 //
-                //scan_endpoints_.clear();
+                scan_endpoints_.clear();
                 //
 
                 std::double_t var = lfmSigma_*lfmSigma_;
