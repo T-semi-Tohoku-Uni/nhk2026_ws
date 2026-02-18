@@ -823,24 +823,57 @@ namespace mcl {
                     // RCLCPP_INFO(this->get_logger(), "%lf", maxLikelihood);
                 }
                 // RCLCPP_INFO(this->get_logger(), "%lf", maxLikelihood);
-                std::double_t w_sum = 0;
-                for(std::size_t i=0; i<likelihood_table.size(); i++ ) {
-                    std::double_t w = 0;
-                    for (std::size_t j=0; j<likelihood_table.size(); j++ ) {
-                        std::double_t loglikefood_sum=0;
-                        for (std::size_t k=0; k<likelihood_table[i].size(); k++ ) {
-                            // if (std::isnan(likelihood_table[j][k]) || std::isnan(likelihood_table[i][k])) continue;
-                            // if (likelihood_table[j][k]<1e-12 || likelihood_table[i][k]<1e-12) continue;
-                            loglikefood_sum += std::log(likelihood_table[j][k]/likelihood_table[i][k]);
-                            // RCLCPP_INFO(this->get_logger(), "j=%d k=%d %.4f", j, k, likelihood_table[j][k]);
-                        }
-                        w += std::exp(loglikefood_sum);
+                //昔の計算方法
+                // std::double_t w_sum = 0;
+                // for(std::size_t i=0; i<likelihood_table.size(); i++ ) {
+                //     std::double_t w = 0;
+                //     for (std::size_t j=0; j<likelihood_table.size(); j++ ) {
+                //         std::double_t loglikefood_sum=0;
+                //         for (std::size_t k=0; k<likelihood_table[i].size(); k++ ) {
+                //             // if (std::isnan(likelihood_table[j][k]) || std::isnan(likelihood_table[i][k])) continue;
+                //             // if (likelihood_table[j][k]<1e-12 || likelihood_table[i][k]<1e-12) continue;
+                //             loglikefood_sum += std::log(likelihood_table[j][k]/likelihood_table[i][k]);
+                //             // RCLCPP_INFO(this->get_logger(), "j=%d k=%d %.4f", j, k, likelihood_table[j][k]);
+                //         }
+                //         w += std::exp(loglikefood_sum);
+                //     }
+                //     w = 1/w;
+                //     particles_[i].setW(w);
+                //     w_sum += w*w;
+                // }
+                // effectiveSampleSize_ = 1.0 / w_sum;
+
+                std::vector<double> log_weights(particles_.size(),0.0);
+                double max_log_weight = -std::numeric_limits<double>::infinity();
+
+                for (std::size_t i = 0; i < likelihood_table.size(); i++) {
+                    for (std::size_t k = 0; k < likelihood_table[i].size(); k++) {
+                        log_weights[i] += std::log(likelihood_table[i][k]); 
                     }
-                    w = 1/w;
-                    particles_[i].setW(w);
-                    w_sum += w*w;
+                    
+                    if (log_weights[i] > max_log_weight) {
+                        max_log_weight = log_weights[i];
+                    }
+
+                    std::double_t w_sum = 0.0;
+                    std::vector<double> linear_weights(particles_.size(), 0.0);
+
+                    for (std::size_t i = 0; i < particles_.size(); i++) {
+                       
+                        linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
+                        w_sum += linear_weights[i];
+                    }
+
+                    
+                    std::double_t w_sq_sum = 0.0;
+                    for (std::size_t i = 0; i < particles_.size(); i++) {
+                        double normalized_w = linear_weights[i] / w_sum;
+                        particles_[i].setW(normalized_w);
+                        w_sq_sum += normalized_w * normalized_w;
+                    }
+
+                    effectiveSampleSize_ = 1.0 / w_sq_sum;
                 }
-                effectiveSampleSize_ = 1.0 / w_sum;
                 
             }
 
