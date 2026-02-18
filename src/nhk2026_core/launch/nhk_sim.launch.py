@@ -15,7 +15,7 @@ import random
 
 def generate_launch_description():
     x = -1.47
-    y = 2.0
+    y = 0.45
     z = 0.0
     theta = 0.0
 
@@ -73,7 +73,7 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='ros_gz_bridge_1',
         arguments=[
-            # '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
@@ -149,7 +149,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
-        SetEnvironmentVariable(name='WITH_lidar', value='3'),
+        SetEnvironmentVariable(name='WITH_lidar', value='2'),
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,
