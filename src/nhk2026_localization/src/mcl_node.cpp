@@ -734,16 +734,13 @@ namespace mcl {
                 // std::double_t dd2 = 0;
                 // std::double_t dy2 = 0;
                 // RCLCPP_INFO(this->get_logger(), "odomNoise1=%lf", odomNoise1_);
+                std::double_t sigma_xy = std::sqrt(odomNoise1_*dd2 + odomNoise2_*dy2);
+                std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+
                 for (size_t i = 0; i < this->particles_.size(); i++ ) {
-                    std::double_t dx = delta.linear.x + randNormal(
-                        odomNoise1_*dd2 + odomNoise2_*dy2
-                    );
-                    std::double_t dy = delta.linear.y + randNormal(
-                        odomNoise1_*dd2 + odomNoise2_*dy2
-                    );
-                    std::double_t dtheta = delta.angular.z + randNormal(
-                        odomNoise3_*dd2 + odomNoise4_*dy2
-                    );
+                    std::double_t dx = delta.linear.x + randNormal(sigma_xy);
+                    std::double_t dy = delta.linear.y + randNormal(sigma_xy);
+                    std::double_t dtheta = delta.angular.z + randNormal(sigma_theta);
 
                     geometry_msgs::msg::Pose2D pose_ = this->particles_[i].getPose();
                     std::double_t theta_ = pose_.theta;
