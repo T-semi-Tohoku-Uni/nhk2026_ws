@@ -14,8 +14,8 @@ import math
 import random
 
 def generate_launch_description():
-    x = -1.47
-    y = 0.45
+    x = 1.0
+    y = 1.0
     z = 0.0
     theta = 0.0
     frequency = 25.0
@@ -118,7 +118,7 @@ def generate_launch_description():
             "resampleThreshold": 0.9,
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
-            "mapFile":"src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5",
+            
         }],
         remappings=[('clock', '/world/nhk2026/clock')]
     )

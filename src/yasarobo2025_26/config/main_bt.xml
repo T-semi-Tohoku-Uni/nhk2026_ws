@@ -5,16 +5,16 @@
     <Sequence>
       <Sequence>
         <Delay delay_msec="1000">
-          <waypoint x="-0.5"
+          <waypoint x="0.5"
                     y="1.0"/>
         </Delay>
-        <waypoint x="-0.5"
+        <waypoint x="0.5"
                   y="9.0"/>
-        <waypoint x="-5.5"
+        <waypoint x="5.5"
                   y="9.0"/>
-        <waypoint x="-5.5"
+        <waypoint x="5.5"
                   y="2.0"/>
-        <generate_route x="-1.45"
+        <generate_route x="1.45"
                         y="0.45"
                         theta="0.0"/>
         <follow_route/>
