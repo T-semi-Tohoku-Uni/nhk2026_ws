@@ -5,14 +5,14 @@
     <Sequence>
       <Sequence>
         <Delay delay_msec="1000">
-          <generate_route x="-0.3"
+          <generate_route x="-0.4"
                           y="1.0"
-                          theta="1.05"/>
+                          theta="0.0"/>
         </Delay>
         <follow_route/>
-        <generate_route x="-0.3"
+        <generate_route x="-0.4"
                         y="6.0"
-                        theta="1.05"/>
+                        theta="0.0"/>
         <follow_route/>
       </Sequence>
     </Sequence>
