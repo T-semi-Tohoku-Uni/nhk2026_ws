@@ -5,27 +5,15 @@
     <Sequence>
       <Sequence>
         <Delay delay_msec="1000">
-          <generate_route x="-0.5"
-                          y="1.0"
-                          theta="0.0"/>
+          <waypoint x="-0.5"
+                    y="1.0"/>
         </Delay>
-        <follow_route/>
-        <generate_route x="-0.5"
-                        y="6.0"
-                        theta="0.0"/>
-        <follow_route/>
-        <generate_route x="-0.5"
-                        y="8.7"
-                        theta="0.0"/>
-        <follow_route/>
-        <generate_route x="-5.5"
-                        y="8.7"
-                        theta="0.0"/>
-        <follow_route/>
-        <generate_route x="-5.5"
-                        y="2.0"
-                        theta="0.0"/>
-        <follow_route/>
+        <waypoint x="-0.5"
+                  y="9.0"/>
+        <waypoint x="-5.5"
+                  y="9.0"/>
+        <waypoint x="-5.5"
+                  y="2.0"/>
         <generate_route x="-1.45"
                         y="0.45"
                         theta="0.0"/>
@@ -44,6 +32,11 @@
       <input_port name="y">TODO</input_port>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="waypoint"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
     </Action>
   </TreeNodesModel>
 
