@@ -18,6 +18,7 @@ def generate_launch_description():
     y = 0.45
     z = 0.0
     theta = 0.0
+    frequency = 25.0
 
     #これがないと動かん(gpuがのっていないやつは)
     os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
@@ -130,18 +131,68 @@ def generate_launch_description():
     )
 
     # joy
-    joy_node = Node(
-        package="joy",
-        executable="joy_node",
-        name="joy_node",
+    # joy_node = Node(
+    #     package="joy",
+    #     executable="joy_node",
+    #     name="joy_node",
+    #     output="screen",
+    #     remappings=[('clock', '/world/nhk2026/clock')],
+    # )
+
+    # joy2Vel_node = Node(
+    #     package="nhk2026_localization",
+    #     executable="joy2vel",
+    #     name="joy2vel",
+    #     output="screen",
+    #     remappings=[('clock', '/world/nhk2026/clock')],
+    # )
+
+    path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="path_planner",
         output="screen",
+        parameters=[
+            {
+                "initial_x": x,
+                "initial_y": y,
+                "initial_theta": theta,
+                "sample_parameter": frequency,
+            },
+        ],
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
-    joy2Vel_node = Node(
-        package="nhk2026_localization",
-        executable="joy2vel",
-        name="joy2vel",
+    pursuit = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 0.10,
+            "max_angular_speed": 0.7,
+            "max_linear_tolerance": 0.05,
+            "max_theta_tolerance": 0.10,
+            "max_reaching_distance": 0.05,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 0.80,
+            "Ki_tan": 0.0,
+            "Kd_tan": 0.0,
+            "Kp_normal": 0.80,
+            "Ki_normal": 0.00,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.0,
+            "Ki_theta": 0.00,
+            "Kd_theta": 0.00,
+            "x": 10,
+        },
+        ],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    bt_node = Node (
+        package="yasarobo2025_26",
+        executable="bt_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
     )
@@ -157,7 +208,10 @@ def generate_launch_description():
         rviz,
         static_from_map_to_odom,
         mcl_node,
-        joy_node,
-        joy2Vel_node,
+        # joy_node,
+        # joy2Vel_node,
         vel_feedback_node,
+        path_planner,
+        pursuit,
+        bt_node,
     ])
