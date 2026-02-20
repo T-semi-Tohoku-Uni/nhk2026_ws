@@ -63,8 +63,8 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='ros_gz_bridge_1',
         arguments=[
-            '/pointcloud2_front/points@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
-            '/pointcloud2_back/points@sensor_msgs/msg/PointCloud2@ignition.msgs.PointCloudPacked',
+            '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/odom@nav_msgs/msg/Odometry@ignition.msgs.Odometry',
             '/cmd_vel@geometry_msgs/msg/Twist@ignition.msgs.Twist',
             '/tf@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',

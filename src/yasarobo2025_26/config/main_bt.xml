@@ -5,10 +5,30 @@
     <Sequence>
       <Sequence>
         <Delay delay_msec="1000">
-          <generate_route x="3.0３"
-                          y="0.5"
-                          theta="1.05"/>
+          <generate_route x="-0.5"
+                          y="1.0"
+                          theta="0.0"/>
         </Delay>
+        <follow_route/>
+        <generate_route x="-0.5"
+                        y="6.0"
+                        theta="0.0"/>
+        <follow_route/>
+        <generate_route x="-0.5"
+                        y="9.0"
+                        theta="0.0"/>
+        <follow_route/>
+        <generate_route x="-5.5"
+                        y="9.0"
+                        theta="0.0"/>
+        <follow_route/>
+        <generate_route x="-5.5"
+                        y="1.0"
+                        theta="0.0"/>
+        <follow_route/>
+        <generate_route x="-1.45"
+                        y="0.45"
+                        theta="0.0"/>
         <follow_route/>
       </Sequence>
     </Sequence>
