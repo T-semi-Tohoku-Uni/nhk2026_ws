@@ -1,6 +1,11 @@
 #include <rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <geometry_msgs/msg/pose2_d.hpp>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2_ros/buffer.h>
+#include <laser_geometry/laser_geometry.hpp>
+#include <sensor_msgs/point_cloud2_iterator.hpp>
 
 namespace lidar_filter{
     class Lidar_filter: public rclcpp::Node{
@@ -8,6 +13,7 @@ namespace lidar_filter{
             Lidar_filter():Node("lidar_filter"){
                 auto lidarScanqos = rclcpp::SensorDataQoS();
                 subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front",lidarScanqos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg){this -> laserScanCallback(msg,1);});
+                scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
             }
 
 
@@ -79,10 +85,76 @@ namespace lidar_filter{
                 }
                 return_scan = std::make_shared<sensor_msgs::msg::LaserScan>(filtered_scan);
             }
+
+            void publishScanClouds(const sensor_msgs::msg::LaserScan::SharedPtr scan1, const sensor_msgs::msg::LaserScan::SharedPtr scan2) {
+                if (scan_cloud_pub_->get_subscription_count() == 0) return;
+
+                std::vector<sensor_msgs::msg::PointCloud2> clouds_to_merge;
+                size_t total_points = 0;
+
+                auto process_scan = [&](const sensor_msgs::msg::LaserScan::SharedPtr& scan) {
+                    if (!scan) return;
+                    try {
+                        sensor_msgs::msg::PointCloud2 local_cloud, global_cloud;
+                        projector_.projectLaser(*scan, local_cloud);
+                        
+                        geometry_msgs::msg::TransformStamped tf = tf_buffer_.lookupTransform(
+                            "base_footprint", 
+                            scan->header.frame_id, 
+                            tf2::TimePointZero
+                        );
+                        tf2::doTransform(local_cloud, global_cloud, tf);
+                        
+                        clouds_to_merge.push_back(global_cloud);
+                        total_points += global_cloud.width; 
+                    } catch (const std::exception& e) {
+                        //TFエラー
+                    }
+                };
+
+                process_scan(scan1);
+                process_scan(scan2);
+
+                if (total_points == 0) return;
+
+                sensor_msgs::msg::PointCloud2 combined_cloud;
+                combined_cloud.header.frame_id = "base_footprint";
+                combined_cloud.header.stamp = this->now();
+
+                sensor_msgs::PointCloud2Modifier modifier(combined_cloud);
+                modifier.setPointCloud2FieldsByString(1, "xyz");
+                modifier.resize(total_points);
+
+                // イテレータでデータをコピー
+                sensor_msgs::PointCloud2Iterator<float> iter_x(combined_cloud, "x");
+                sensor_msgs::PointCloud2Iterator<float> iter_y(combined_cloud, "y");
+                sensor_msgs::PointCloud2Iterator<float> iter_z(combined_cloud, "z");
+
+                for (const auto& cloud : clouds_to_merge) {
+                    sensor_msgs::PointCloud2ConstIterator<float> src_x(cloud, "x");
+                    sensor_msgs::PointCloud2ConstIterator<float> src_y(cloud, "y");
+                    // projectLaserの結果には通常zが含まれる
+                    
+                    for (size_t i = 0; i < cloud.width; ++i) {
+                        *iter_x = *src_x;
+                        *iter_y = *src_y;
+                        *iter_z = 0.0f; 
+                        
+                        ++iter_x; ++iter_y; ++iter_z;
+                        ++src_x; ++src_y;
+                    }
+                }
+
+                
+                scan_cloud_pub_->publish(combined_cloud);
+            }
             
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanFront_;
             sensor_msgs::msg::LaserScan::SharedPtr scanFront_;
             sensor_msgs::msg::LaserScan::SharedPtr scanBack_;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; 
+            laser_geometry::LaserProjection projector_;
+            tf2_ros::Buffer tf_buffer_;
             
             struct Point2D {
                 double x;
