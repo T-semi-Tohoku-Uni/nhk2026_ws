@@ -170,9 +170,9 @@ def generate_launch_description():
         executable="pursuit",
         output="screen",
         parameters=[{
-            "max_linear_speed": 0.10,
+            "max_linear_speed": 1.0,
             "max_angular_speed": 0.7,
-            "max_linear_tolerance": 0.05,
+            "max_linear_tolerance": 0.15,
             "max_theta_tolerance": 0.10,
             "max_reaching_distance": 0.05,
             "max_reaching_theta": 0.10,
