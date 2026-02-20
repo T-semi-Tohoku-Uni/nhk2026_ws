@@ -1,0 +1,33 @@
+name: ROS2 Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  colcon:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build CI image
+        run: docker build -t nhk2026-ci -f docker/ci/Dockerfile .
+
+      - name: Build in Docker
+        run: |
+          docker run --rm \
+            -v "$PWD:/ws" \
+            -w /ws \
+            -e WITH_SIM=1 \
+            nhk2026-ci \
+            bash -lc '
+              set -euo pipefail
+              source /opt/ros/humble/setup.bash
+              rosdep install --from-paths src --ignore-src --rosdistro humble -r -y --skip-keys "librealsense2"
+              colcon build --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
+              
