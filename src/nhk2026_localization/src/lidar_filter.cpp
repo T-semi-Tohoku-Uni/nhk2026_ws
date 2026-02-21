@@ -21,8 +21,8 @@ namespace lidar_filter{
                 auto lidarScanqos = rclcpp::SensorDataQoS();
                 subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front",lidarScanqos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg){this -> laserScanCallback(msg,1);});
                 subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back",lidarScanqos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg){this -> laserScanCallback(msg,2);});
-                scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
-                multi_scan_pub_ = this->create_publisher<nhk2026_msgs::msg::MultiLaserScan>("multi_scan", 10);
+                scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scan_cloud", 10);
+                multi_scan_pub_ = this->create_publisher<nhk2026_msgs::msg::MultiLaserScan>("/multi_scan", 10);
                 
                 this->declare_parameter("filter_threshold", 0.98);
                 this->declare_parameter("max_filter_distance", 3.0);
