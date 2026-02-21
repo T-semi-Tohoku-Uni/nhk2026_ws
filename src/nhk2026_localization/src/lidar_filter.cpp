@@ -1,10 +1,12 @@
 #include <rclcpp/rclcpp.hpp>
 #include <algorithm>
+#include <cmath> // std::isfinite 等のために追加
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h> // TransformListenerのために追加
 #include <laser_geometry/laser_geometry.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
@@ -14,21 +16,27 @@ namespace lidar_filter{
     class Lidar_filter: public rclcpp::Node{
         public:
             Lidar_filter(): Node("lidar_filter"), tf_buffer_(this->get_clock()){
+                tf_listener_ = std::make_shared<tf2_ros::TransformListener>(tf_buffer_);
+
                 auto lidarScanqos = rclcpp::SensorDataQoS();
                 subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front",lidarScanqos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg){this -> laserScanCallback(msg,1);});
                 subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back",lidarScanqos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg){this -> laserScanCallback(msg,2);});
                 scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
                 multi_scan_pub_ = this->create_publisher<nhk2026_msgs::msg::MultiLaserScan>("multi_scan", 10);
+                
                 this->declare_parameter("filter_threshold", 0.98);
                 this->declare_parameter("max_filter_distance", 3.0);
 
-                double threshold = this->get_parameter("filter_threshold").as_double();
-                double max_distance = this->get_parameter("max_filter_distance").as_double(); 
-            
+                threshold = this->get_parameter("filter_threshold").as_double();
+                max_distance = this->get_parameter("max_filter_distance").as_double(); 
             }
 
-
         private:
+            struct Point2D {
+                double x;
+                double y;
+            };
+
             void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg, int lidar_id) {
                 if (lidar_id == 0) {
                     // LD-Lidar: そのまま保存
@@ -44,14 +52,11 @@ namespace lidar_filter{
                 }
 
                 multi_scan_pub_->publish(multi_scan_msg_);
-
                 publishScanClouds(multi_scan_msg_);
             }
 
             void filterScan(const sensor_msgs::msg::LaserScan::SharedPtr msg,  double min_angle, double max_angle) {
                 sensor_msgs::msg::LaserScan filtered_scan = *msg; 
-                
-
                 size_t num_points = msg->ranges.size();
                 
                 std::vector<Point2D> points(num_points);
@@ -60,7 +65,6 @@ namespace lidar_filter{
                 for (size_t i = 0; i < num_points; ++i) {
                     double r = msg->ranges[i];
                     
-                
                     if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max && r <= max_distance) {
                         double angle = msg->angle_min + i * msg->angle_increment;
                         if (angle < min_angle || angle > max_angle) {
@@ -105,7 +109,6 @@ namespace lidar_filter{
                 updateOrAddScan(multi_scan_msg_, filtered_scan);
             }
 
-  
             void publishScanClouds(const nhk2026_msgs::msg::MultiLaserScan& multi_scan) {
                 if (scan_cloud_pub_->get_subscription_count() == 0) return;
 
@@ -129,8 +132,8 @@ namespace lidar_filter{
                         clouds_to_merge.push_back(global_cloud);
                         total_points += global_cloud.width; 
                     } catch (const std::exception& e) {
-                        // TFエラー時の処理
-                        // RCLCPP_WARN(this->get_logger(), "TF Error: %s", e.what());
+                        // エラーが起きた場合は警告を出したほうがデバッグが楽です
+                        RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "TF Error: %s", e.what());
                     }
                 };
 
@@ -155,7 +158,6 @@ namespace lidar_filter{
                 for (const auto& cloud : clouds_to_merge) {
                     sensor_msgs::PointCloud2ConstIterator<float> src_x(cloud, "x");
                     sensor_msgs::PointCloud2ConstIterator<float> src_y(cloud, "y");
-                    
                     
                     for (size_t i = 0; i < cloud.width; ++i) {
                         *iter_x = *src_x;
@@ -190,23 +192,16 @@ namespace lidar_filter{
             sensor_msgs::msg::LaserScan::SharedPtr scanBack_;
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; 
             laser_geometry::LaserProjection projector_;
+            
             tf2_ros::Buffer tf_buffer_;
+            std::shared_ptr<tf2_ros::TransformListener> tf_listener_; // 追加
+
             nhk2026_msgs::msg::MultiLaserScan multi_scan_msg_;
             rclcpp::Publisher<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr multi_scan_pub_;
 
             std::double_t threshold;
             std::double_t max_distance;
-            
-            struct Point2D {
-                double x;
-                double y;
-            };
-
-
-
     };
-
-
 }
 
 int main(int argc, char **argv) {
