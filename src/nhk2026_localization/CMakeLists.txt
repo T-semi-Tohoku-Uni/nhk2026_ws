@@ -22,6 +22,7 @@ find_package(OpenCV REQUIRED)
 find_package(nanoflann REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
 
 # 依存関係をまとめる関数
 function(setup_node_dependencies target)
@@ -36,6 +37,7 @@ function(setup_node_dependencies target)
     "tf2_geometry_msgs"
     "laser_geometry"
     "tf2_sensor_msgs"
+    "nhk2026_msgs"
   )
 
   target_include_directories(${target}
@@ -69,6 +71,7 @@ ros_node_executable(mcl_node src/mcl_node.cpp)
 ros_node_executable(vel_feedback_node src/vel_feedback_node.cpp)
 ros_node_executable(vel_feedback_pass_through src/vel_feedback_pass_through.cpp)
 ros_node_executable(joy2vel src/joy2vel.cpp)
+ros_node_executable(lidar_filter src/lidar_filter.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)
