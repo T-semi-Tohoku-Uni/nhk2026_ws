@@ -65,7 +65,7 @@ namespace lidar_filter{
                 for (size_t i = 0; i < num_points; ++i) {
                     double r = msg->ranges[i];
                     
-                    if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max ) {
+                    if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max && r <= max_distance) {
                         double angle = msg->angle_min + i * msg->angle_increment;
                         if (angle < min_angle || angle > max_angle) {
                             filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
