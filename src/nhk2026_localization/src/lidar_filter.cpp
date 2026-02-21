@@ -25,7 +25,7 @@ namespace lidar_filter{
                 multi_scan_pub_ = this->create_publisher<nhk2026_msgs::msg::MultiLaserScan>("/multi_scan", 10);
                 
                 this->declare_parameter("filter_threshold", 0.98);
-                this->declare_parameter("max_filter_distance", 3.0);
+                this->declare_parameter("max_filter_distance", 100.0);
 
                 threshold = this->get_parameter("filter_threshold").as_double();
                 max_distance = this->get_parameter("max_filter_distance").as_double(); 
