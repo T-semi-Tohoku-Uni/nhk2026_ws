@@ -69,7 +69,7 @@ def generate_launch_description():
         name="lidar_filter",
         output="screen",
         parameters=[{
-            "filter_threshold": 0.98, # C++側で読み込んでいるパラメータ（必要に応じて調整）
+            "filter_threshold": 0.98, 
         }],
     )
 

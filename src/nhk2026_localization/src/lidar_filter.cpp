@@ -65,7 +65,7 @@ namespace lidar_filter{
                 for (size_t i = 0; i < num_points; ++i) {
                     double r = msg->ranges[i];
                     
-                    if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max && r <= max_distance) {
+                    if (std::isfinite(r) && r >= msg->range_min && r <= msg->range_max ) {
                         double angle = msg->angle_min + i * msg->angle_increment;
                         if (angle < min_angle || angle > max_angle) {
                             filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
@@ -132,7 +132,6 @@ namespace lidar_filter{
                         clouds_to_merge.push_back(global_cloud);
                         total_points += global_cloud.width; 
                     } catch (const std::exception& e) {
-                        // エラーが起きた場合は警告を出したほうがデバッグが楽です
                         RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "TF Error: %s", e.what());
                     }
                 };
