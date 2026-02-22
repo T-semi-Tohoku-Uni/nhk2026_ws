@@ -3,22 +3,16 @@
       main_tree_to_execute="MainBT">
   <BehaviorTree ID="MainBT">
     <Sequence>
-      <Sequence>
-        <Delay delay_msec="1000">
-          <waypoint x="0.5"
-                    y="1.0"/>
-        </Delay>
-        <waypoint x="0.5"
-                  y="9.0"/>
-        <waypoint x="5.5"
-                  y="9.0"/>
-        <waypoint x="5.5"
-                  y="2.0"/>
-        <generate_route x="1.45"
-                        y="0.45"
-                        theta="0.0"/>
-        <follow_route/>
-      </Sequence>
+      <waypoint x="0.61"
+                y="1.25"/>
+      <waypoint x="1.05"
+                y="0.45"/>
+      <waypoint x="1.65"
+                y="3.5"/>
+      <generate_route x="1.65"
+                      y="4.1"
+                      theta="0.0"/>
+      <follow_route/>
     </Sequence>
   </BehaviorTree>
 

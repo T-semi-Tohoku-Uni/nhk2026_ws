@@ -14,14 +14,14 @@ import math
 import random
 
 def generate_launch_description():
-    x = 1.0
-    y = 1.0
-    z = 0.0
+    x = 1.47
+    y = 0.45
+    z = 0.1
     theta = 0.0
     frequency = 25.0
 
     #これがないと動かん(gpuがのっていないやつは)
-    os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
+    # os.environ['LIBGL_ALWAYS_SOFTWARE'] = '1'
 
     package_dir = get_package_share_directory("nhk2026_sim")
 
