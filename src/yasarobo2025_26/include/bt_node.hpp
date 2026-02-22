@@ -38,6 +38,9 @@ namespace ActionNodes {
             );
             void rotateResultCallback(const rclcpp_action::ClientGoalHandle<inrof2025_ros_type::action::Rotate>::WrappedResult result);
             bool isRotateRuning();
+
+            const std::string & getBtXmlFile() const { return bt_xml_file_; };
+
         private:
             rclcpp::Client<inrof2025_ros_type::srv::GenRoute>::SharedPtr srvGenRoute_;
             rclcpp::Client<inrof2025_ros_type::srv::Vacume>::SharedPtr srvVacume_;
@@ -51,5 +54,6 @@ namespace ActionNodes {
             rclcpp_action::Client<inrof2025_ros_type::action::Rotate>::SharedPtr actRotate_;
             bool isRun_{false};
             bool isRotateRun_{false};
+            std::string bt_xml_file_;
     };
 }

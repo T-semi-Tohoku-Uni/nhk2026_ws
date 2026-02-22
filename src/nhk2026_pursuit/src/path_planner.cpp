@@ -85,10 +85,11 @@ namespace path {
             double cost;
         };
 
-        void xy2uv(std::double_t x, std::double_t y, std::int32_t *u, std::int32_t *v) {
-            *u = (std::int32_t)(x / mapResolution_);
-            *v = mapHeight_ - 1 - (std::int32_t)(y / mapResolution_);
-        };
+        std::pair<int, int> xy2uv(double x, double y){
+            int u = static_cast<int>(x / mapResolution_);
+            int v = mapHeight_ -1 - static_cast<int>(y / mapResolution_);
+            return std::make_pair(u, v);
+        }
 
         struct Cell {
             int u, v;
@@ -262,8 +263,13 @@ namespace path {
             
 
             int su, sv, gu, gv;
-            xy2uv(sx, sy, &su, &sv);
-            xy2uv(gx, gy, &gu, &gv);
+            std::pair<int, int> uv_start = xy2uv(sx, sy);
+            std::pair<int, int> uv_goal  = xy2uv(gx, gy);
+            su = uv_start.first;
+            sv = uv_start.second;
+            gu = uv_goal.first;
+            gv = uv_goal.second;
+            
 
             // RCLCPP_INFO(this->get_logger(), "start %d %d", su, sv);
 
@@ -426,7 +432,9 @@ namespace path {
 
                     
                     std::int32_t u_origin, v_origin;
-                    xy2uv(0.0, 0.0, &u_origin, &v_origin);
+                    std::pair<int, int> uv_origin = xy2uv(0.0, 0.0);
+                    u_origin = uv_origin.first;
+                    v_origin = uv_origin.second;
 
                     
                     if (u_origin >= 0 && u_origin < (int)dim_x && v_origin >= 0 && v_origin < (int)dim_y) {
@@ -439,8 +447,11 @@ namespace path {
 
                     
                     std::int32_t u_init, v_init;
+                    std::pair<int, int> uv_init = xy2uv(0.25, 0.25); 
+                    u_init = uv_init.first;
+                    v_init = uv_init.second;
                     
-                    xy2uv(0.25, 0.25, &u_init, &v_init); 
+                    
 
                     if (u_init >= 0 && u_init < binary_img.cols && v_init >= 0 && v_init < binary_img.rows) {
                 
