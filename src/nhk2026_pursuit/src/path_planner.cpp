@@ -254,13 +254,22 @@ namespace path {
             double gy = goal_point.second;
 
             std::priority_queue<Cell, std::vector<Cell>, std::greater<Cell>> q;
-            std::vector<std::vector<double>> distances(
-                this->mapHeight_, std::vector<double>(this->mapWidth_, std::numeric_limits<double>::infinity())
-            );
-            std::vector<std::vector<std::pair<int, int>>> previous(
-                this->mapHeight_, std::vector<std::pair<int, int>>(this->mapWidth_, {-1, -1})
-            );
-            
+            std::map<std::pair<int, int> ,double> distances;
+            for (int v = 0; v < this->mapHeight_; v++) {
+                for (int u = -mapWidth_; u < this->mapWidth_; u++) {
+                    distances[{v, u}] = std::numeric_limits<double>::infinity();
+                }
+            }
+
+            // std::vector<std::vector<std::pair<int, int>>> previous(
+            //     this->mapHeight_, std::vector<std::pair<int, int>>(this->mapWidth_, {-1, -1})
+            // );
+            std::map<std::pair<int, int>, std::pair<int, int>> previous;
+            for (int v = 0; v < this->mapHeight_; v++) {
+                for (int u = -mapWidth_; u < this->mapWidth_; u++) {
+                    previous[{v, u}] = std::make_pair(std::numeric_limits<int>::infinity(), std::numeric_limits<int>::infinity());
+                }
+            }
 
             int su, sv, gu, gv;
             std::pair<int, int> uv_start = xy2uv(sx, sy);
@@ -269,11 +278,11 @@ namespace path {
             sv = uv_start.second;
             gu = uv_goal.first;
             gv = uv_goal.second;
-            
+
 
             // RCLCPP_INFO(this->get_logger(), "start %d %d", su, sv);
 
-            distances[sv][su] = 0;
+            distances[{sv,su}] = 0;
             q.push({su, sv, 0});
 
             const int du[4] = {-1, 1, 0, 0};
@@ -287,23 +296,23 @@ namespace path {
                     int nu = cur.u + du[dir];
                     int nv = cur.v + dv[dir];
 
-                    if (nu >= 0 && nu < this->mapWidth_ && nv >= 0 && nv < this->mapHeight_) {
-                        double cost = cur.cost + distField_.at<double>(nv, nu);
-                        if (cost < distances[nv][nu]) {
-                            distances[nv][nu] = cost;
-                            previous[nv][nu] = {cur.u, cur.v};
+                    if (nu >= -mapWidth_ && nu < this->mapWidth_ && nv >= 0 && nv < this->mapHeight_) {
+                        double cost = cur.cost + distField_.at<double>(nv, std::abs(nu));
+                        if (cost < distances[{nv,nu}]) {
+                            distances[{nv,nu}] = cost;
+                            previous[{nv,nu}] = std::make_pair(cur.u, cur.v);
                             q.push({nu, nv, cost});
                         }
                     }
                 }
             }
-            
 
             // 経路再構築
             std::vector<std::pair<int, int>> path_g;
-            for (int u = gu, v = gv; u != -1 && v != -1; ) {
+            int idx=0;
+            for (int u = gu, v = gv; u != std::numeric_limits<int>::infinity() && v != std::numeric_limits<int>::infinity();) {
                 path_g.push_back({u, v});
-                std::tie(u, v) = previous[v][u];
+                std::tie(u, v) = previous[{v,u}];
             }
 
             std::reverse(path_g.begin(), path_g.end());

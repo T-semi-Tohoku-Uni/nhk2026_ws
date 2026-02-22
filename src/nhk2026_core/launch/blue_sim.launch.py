@@ -14,7 +14,7 @@ import math
 import random
 
 def generate_launch_description():
-    x = 1.47
+    x = -1.47
     y = 0.45
     z = 0.1
     theta = 0.0
