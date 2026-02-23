@@ -26,11 +26,15 @@ jobs:
             -e WITH_SIM=1 \
             nhk2026-ci \
             bash -lc "
-              set -euo pipefail
+              set -eo pipefail
+              set +u
               source /opt/ros/humble/setup.bash
+              set -u
               rosdep install --from-paths src --ignore-src --rosdistro humble -r -y --skip-keys 'librealsense2'
               colcon build --event-handlers console_direct+ --cmake-args -DCMAKE_BUILD_TYPE=Release
+              set +u
               source install/setup.bash
+              set -u
               colcon test --event-handlers console_direct+ --return-code-on-test-failure
               colcon test-result --verbose
             "
