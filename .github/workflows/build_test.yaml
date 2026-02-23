@@ -1,0 +1,59 @@
+name: ROS2 Build Test
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    container: ros:humble-ros-base
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install apt repository
+        run: |
+            sudo apt-get update
+            sudo apt-get install -y libzmq3-dev libboost-dev qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libopencv-dev libudev-dev libnanoflann-dev libhdf5-dev
+
+      - name: Behaivor Tree cache restore
+        id: cache-behaivor-tree
+        uses: actions/cache@v4
+        with:
+            path: ./BehaviorTree.CPP
+            key: ${{ runner.os }}-build-behaivor-tree-${{ hashFiles('**/package-lock.json')}}
+            restore-keys:
+                ${{ runner.os }}-build-behaivor-tree-
+
+      - if: ${{ steps.cache-behaivor-tree.outputs.cache-hit != 'true' }}
+        name: Build Behaivor Tree
+        run: |
+            git clone https://github.com/BehaviorTree/BehaviorTree.CPP.git
+            cd BehaviorTree.CPP
+            git checkout tags/4.7.0
+            mkdir build
+            cd build
+            cmake ..
+            make -j8
+
+      - name: Install behaivor tree
+        run: |
+            cd BehaviorTree.CPP/build
+            sudo make install
+
+      - name: rosdep
+        run: |
+            rosdep update
+            rosdep install --from-paths src -y --ignore-src 
+
+      - name: Build 
+        run: |
+            source /opt/ros/humble/setup.bash
+            colcon build 
