@@ -22,9 +22,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <nav_msgs/msg/occupancy_grid.hpp>
-// HDF5 C++ API
 #include <H5Cpp.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include "nhk2026_msgs/msg/multi_laser_scan.hpp"
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -91,7 +91,7 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("zMax", 0.0);
                 this->declare_parameter<std::double_t>("zRand", 1.0);
                 this->declare_parameter<double>("lidar_threshold", 1.0/5.0*M_PI);
-                this->declare_parameter<int>("mapZIndex", 4); // 使用するZスライスのインデックス
+                this->declare_parameter<int>("mapZIndex", 4); 
                 this->declare_parameter("filter_threshold", 0.98);
                 
                 particleNum_ = this->get_parameter("particleNum").as_int();
@@ -121,7 +121,6 @@ namespace mcl {
             
                 // init robot pos
                 geometry_msgs::msg::Pose2D pose;
-                // TODO: get parameter from user
                 pose.set__x(initial_x);
                 pose.set__y(initial_y);
                 pose.set__theta(initial_theta);
@@ -139,16 +138,15 @@ namespace mcl {
                 initialNoise.set__y(0.3); // var of y
                 initialNoise.set__theta(M_PI/18.0); // var of theta
                 resetParticlesDistribution(initialNoise);
-                printParticlesMakerOnRviz2();
+                //printParticlesMakerOnRviz2();
                 
 
                 // set mesurementModel
                 measurementModel_ = MeasurementModel::LikelihoodFieldModel;
 
-
+                //  mapの読み込みパブリッシュ
                 rclcpp::QoS map_qos(rclcpp::KeepLast(1));
                 map_qos.transient_local().reliable();
-                // PointCloud2型のパブリッシャーに変更
                 pubMapCloud_ = create_publisher<sensor_msgs::msg::PointCloud2>("voxel_map_cloud", map_qos);
                 MCL::readMap();
                 
@@ -159,29 +157,30 @@ namespace mcl {
                     "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL::cmdVelCallback, this, std::placeholders::_1)
                 );
 
-                // TODO: ポーリングするなにかをつくりたいな（いじっているときに値が変更する可能性があるおがキモい）
-                // rclcpp::QoS laserScanQos(rclcpp::KeepLast(10));
+               
                 auto laserScanQos = rclcpp::SensorDataQoS();
                 const char *lidar = std::getenv("WITH_lidar");
                 const char *sim = std::getenv("WITH_SIM");
                 //0:LD 1:hokuyo1 2:hokuyou2 lidar_select
                 // 0: LD-Lidar の場合
-                if (!lidar || std::string(lidar) == "0") {
-                    lidar_select = 0;
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/ldlidar_node/scan", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 0);});
-                }else if(std::string(lidar) == "1"){
-                    lidar_select = 1;
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
-                } else if(std::string(lidar) == "2"){
-                    lidar_select = 2;
-                    // Front用
-                    subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
-                    // Back用
-                    subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
-                }else if(std::string(lidar) == "3"){
-                    lidar_select = 3;
-                    subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
-                }
+                // if (!lidar || std::string(lidar) == "0") {
+                //     lidar_select = 0;
+                //     subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/ldlidar_node/scan", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 0);});
+                // }else if(std::string(lidar) == "1"){
+                //     lidar_select = 1;
+                //     subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
+                // } else if(std::string(lidar) == "2"){
+                //     lidar_select = 2;
+                //     // Front用
+                //     subScanFront_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_front", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 1);});
+                //     // Back用
+                //     subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
+                // }else if(std::string(lidar) == "3"){
+                //     lidar_select = 3;
+                //     subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
+                // }
+
+                subScan_ = create_subscription<nhk2026_msgs::msg::MultiLaserScan>("/multi_scan",laserScanQos,std::bind(&MCL::laserScanCallback,this,std::placeholders::_1));
                 
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
                 // subOdom_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -233,7 +232,7 @@ namespace mcl {
                 RCLCPP_INFO(this->get_logger(), "Success initialize");
                 RCLCPP_INFO(this->get_logger(), "initial x:%f,y:%f",initial_x,initial_y);
 
-                // TODO: deleteb
+              
             } 
 
         private:
@@ -256,19 +255,22 @@ namespace mcl {
                 // RCLCPP_INFO(this->get_logger(), "Yaw (rad): %.3f %.3f %.3f", yaw, msg->twist.twist.angular.z, particles_[0].getTheta());
             // }
 
-            void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg, int lidar_id) {
-                if (lidar_id == 0) {
-                    // LD-Lidar: そのまま保存
-                    scanFront_ = msg;
-                } 
-                else if (lidar_id == 1) {
-                    // Front Lidar
-                    filterScan(msg, scanFront_, -M_PI / 2.6, M_PI / 2.3);
-                } 
-                else if (lidar_id == 2) {
-                    // Back Lidar
-                    filterScan(msg, scanBack_, -M_PI * 3/ 4, -M_PI / 6);
-                }
+            // void laserScanCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg, int lidar_id) {
+            //     if (lidar_id == 0) {
+            //         // LD-Lidar: そのまま保存
+            //         scanFront_ = msg;
+            //     } 
+            //     else if (lidar_id == 1) {
+            //         // Front Lidar
+            //         filterScan(msg, scanFront_, -M_PI / 2.6, M_PI / 2.3);
+            //     } 
+            //     else if (lidar_id == 2) {
+            //         // Back Lidar
+            //         filterScan(msg, scanBack_, -M_PI * 3/ 4, -M_PI / 6);
+            //     }
+            // }
+            void laserScanCallback (const nhk2026_msgs::msg::MultiLaserScan::SharedPtr msg){
+                scan_ = msg;
             }
 
           
@@ -1559,6 +1561,9 @@ namespace mcl {
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subLayerScan_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanFront_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanBack_;
+
+            rclcpp::Subscription<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr subScan_;
+            nhk2026_msgs::msg::MultiLaserScan::SharedPtr scan_;
 
             bool is_sim_;
             int lidar_select;
