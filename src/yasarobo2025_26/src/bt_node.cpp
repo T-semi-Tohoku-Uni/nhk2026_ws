@@ -32,7 +32,11 @@ using namespace BT;
 
 namespace ActionNodes {
     BTNode::BTNode(const rclcpp::NodeOptions & options): Node("bt_node", options) {
-        // create service client
+        declare_parameter<std::string>("bt_xml_file", "");
+        get_parameter("bt_xml_file", bt_xml_file_);
+
+
+        // create service clients
         srvGenRoute_ = this->create_client<inrof2025_ros_type::srv::GenRoute>("generate_route");
         srvVacume_ = this->create_client<inrof2025_ros_type::srv::Vacume>("/srv/vacume");
         srvBall_ = this->create_client<inrof2025_ros_type::srv::BallPose> ("ball_detect");
@@ -343,8 +347,7 @@ int main(int argc, char* argv[]) {
     factory.registerNodeType<ControlNodes::WhileDoElseBreakNode>("WhileDoElseBreak");
     factory.registerNodeType<ControlNodes::SwitchColor>("SwitchColor");
 
-    std::string package_path = ament_index_cpp::get_package_share_directory("yasarobo2025_26");
-    factory.registerBehaviorTreeFromFile(package_path + "/config/main_bt.xml");
+    factory.registerBehaviorTreeFromFile(ros_node->getBtXmlFile());
 
     BT::Tree tree = factory.createTree("MainBT");
 

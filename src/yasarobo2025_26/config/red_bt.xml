@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="MainBT">
+  <BehaviorTree ID="MainBT">
+    <Sequence>
+      <waypoint x="0.61"
+                y="1.25"/>
+      <waypoint x="1.05"
+                y="0.45"/>
+      <waypoint x="1.8"
+                y="3.5"/>
+      <generate_route x="1.8"
+                      y="4.55"
+                      theta="0.0"/>
+      <follow_route/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x">TODO</input_port>
+      <input_port name="y">TODO</input_port>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
+    <Action ID="waypoint"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

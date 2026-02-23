@@ -195,6 +195,9 @@ def generate_launch_description():
         executable="bt_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
+        parameters=[{
+            "bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "red_bt.xml")
+        }]
     )
 
 
