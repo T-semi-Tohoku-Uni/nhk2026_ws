@@ -142,8 +142,8 @@ namespace path {
                 start_point = waypoint_array_[i];
             }
 
-            //ここでスプライン補完を消している
-            // path = splineSmoothEigen(path);
+            
+            path = splineSmoothEigen(path);
 
             // create path message
             nav_msgs::msg::Path pathMsg;
