@@ -201,6 +201,16 @@ def generate_launch_description():
         parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
     )
 
+    lidar_filter_node = Node(
+        package="nhk2026_localization",
+        executable="lidar_filter",
+        name="lidar_filter",
+        output="screen",
+        parameters=[{
+            "filter_threshold": 0.98, 
+        }],
+    )
+
  
     return LaunchDescription([
         DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
@@ -219,4 +229,5 @@ def generate_launch_description():
         path_planner,
         pursuit,
         bt_node,
+        lidar_filter_node,
     ])

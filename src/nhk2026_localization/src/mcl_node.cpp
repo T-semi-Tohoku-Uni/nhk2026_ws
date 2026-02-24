@@ -894,9 +894,8 @@ namespace mcl {
                         std::double_t r = scan.ranges[i];
                         
                         // ※修正: 無効なデータの場合はここでcontinueして無駄な計算を省く
-                        if (std::isnan(r) || r < scan.range_min || scan.range_max < r) {
-                            p_vector.push_back(zRand_*pRand);
-                            continue; 
+                        if (std::isnan(r)  || r < scan.range_min || scan.range_max < r) {
+                            p_vector.push_back(zRand_*pRand); 
                         }
 
                         std::double_t theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
@@ -917,7 +916,7 @@ namespace mcl {
                             if (sdf_val >= 0) {
                                 d = sdf_val;
                             } else {
-                                std::double_t penetration_penalty = (current_lidar_pose == 2) ? 0.5 : 1.0; 
+                                std::double_t penetration_penalty = 1; 
                                 d = std::abs(sdf_val) + penetration_penalty;
                             }
                             
@@ -1097,7 +1096,7 @@ namespace mcl {
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
 
-                // RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
+                 RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
             }
 
             void resampleParticles(void) {
