@@ -1,0 +1,10 @@
+geometry_msgs/PoseStamped target
+float32 max_speed
+float32 max_acc
+---
+geometry_msgs/PoseStamped current
+float32 pos_error
+string msg
+---
+bool success
+string msg
