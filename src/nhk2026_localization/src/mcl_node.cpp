@@ -628,19 +628,11 @@ namespace mcl {
                 if (!cmdVel_) {
                     return;
                 }
-                //RCLCPP_INFO(this->get_logger(), "cmd_vel ok");
-                
-                // if (!scanFront_) {
-                //     //RCLCPP_INFO(this->get_logger(), "lidar not");
-                //     return;
-                // }         
-                
 
-                if (lidar_select == 2 && !scanBack_) {
-                    //RCLCPP_INFO(this->get_logger(), "lidar back  ok");
+                if (!scan_ || scan_->scans.empty()) {
                     return; 
-
                 }
+
 
                 if (last_timestamp_.nanoseconds() == 0) {
                     last_timestamp_ = current_time;
@@ -693,14 +685,7 @@ namespace mcl {
 
                 updateParticles(delta_);
                 printParticlesMakerOnRviz2();
-                publishScanClouds(scanFront_, scanBack_);
-                if (lidar_select == 2) {
-                    caculateMeasurementModel(*scanFront_, *scanBack_);
-                } else if(lidar_select == 3){
-                    caculateMeasurementModel(*scanBack_, *scanBack_);
-                }else{
-                    caculateMeasurementModel(*scanFront_, *scanFront_); 
-                }
+                caculateMeasurementModel(*scan_);
                 estimatePose();
                 resampleParticles();
                 printTrajectoryOnRviz2();
@@ -799,7 +784,7 @@ namespace mcl {
                 return cloud_out;
             }
 
-            void caculateMeasurementModel(sensor_msgs::msg::LaserScan scan1,sensor_msgs::msg::LaserScan scan2) {
+            void caculateMeasurementModel(nhk2026_msgs::msg::MultiLaserScan multi_scan) {
                 totalLikelihood_ = 0.0;
                 std::double_t maxLikelihood = 0.0;
 
@@ -810,7 +795,7 @@ namespace mcl {
                     std::double_t likelihood = 0.0;
                     // 尤度場モデル
                     if (measurementModel_ == MeasurementModel::LikelihoodFieldModel) {
-                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), scan1,scan2)));
+                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), scan_)));
                     }
                     if (i == 0) {
                         maxLikelihood = likelihood;
@@ -876,7 +861,7 @@ namespace mcl {
                 
             }
 
-            std::vector<std::double_t> caculateLikelihoodFieldModel (geometry_msgs::msg::Pose2D pose, sensor_msgs::msg::LaserScan scan1,sensor_msgs::msg::LaserScan scan2) {
+            std::vector<std::double_t> caculateLikelihoodFieldModel (geometry_msgs::msg::Pose2D pose, const nhk2026_msgs::msg::MultiLaserScan::SharedPtr multi_scan) {
 
                 //
                 scan_endpoints_.clear();
@@ -884,8 +869,9 @@ namespace mcl {
 
                 std::double_t var = lfmSigma_*lfmSigma_;
                 std::double_t normConst = 1.0 / (sqrt(2.0*M_PI*var));
+                std::vector<double> p_vector;
+
                 std::double_t pMax = 1.0 / mapResolution_; // <- mapResolution_で割る必要なくない？
-                std::double_t pRand = 1.0 / scan1.range_max * mapResolution_;
                 std::double_t w = 0.0;
 
                 // sensor_msgs::msg::PointCloud2 pointCloud = layerScan2PointCloud(scan);
@@ -893,133 +879,63 @@ namespace mcl {
                 // sensor_msgs::PointCloud2ConstIterator<float> it_y(pointCloud, "y");
                 // sensor_msgs::PointCloud2ConstIterator<float> it_z(pointCloud, "z");
 
-
-                std::vector<double> p_vector;
-
-                for (std::size_t i = 0; i < scan1.ranges.size(); i+=scanStep_) {
-                    std::double_t r = scan1.ranges[i];
-                    if (std::isnan(r) || r < scan1.range_min || scan1.range_max < r) {
-                        // p_vector.push_back(zRand_*pRand); // TODO: add pMax
-                        p_vector.push_back(zRand_*pRand);
-                    }
-
-                    std::double_t theta_lidar;
-                    if (lidar_select == 0) {
-                         if (is_sim_) {
-                            theta_lidar = scan1.angle_min + ((std::double_t)(i))*scan1.angle_increment;
-                        } else {//実機の場合
-                            theta_lidar = scan1.angle_min + ((std::double_t)(i))*scan1.angle_increment - 3.0*M_PI/2.0;
-                        }
-                    } else {
-                        theta_lidar = scan1.angle_min + ((std::double_t)(i))*scan1.angle_increment;
-                    }
-
-                    double x_odom, y_odom;
-                    int u, v;
-                    if(lidar_select == 0){
-                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,0);
-                    }else if(lidar_select == 3){
-                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,2);
-                    }else {
-                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,1);
-                    }
+                for (const auto& scan : multi_scan->scans) {
+                    std::double_t pRand = 1.0 / scan.range_max * mapResolution_;
                     
-
-                    // ここから下は一旦関係ない
-                    if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
-                        // [MODIFIED] SDFを用いた尤度計算とペナルティ
-                        std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
-                        
-                        std::double_t d = 0.0;
-                        if (sdf_val >= 0) {
-                            // 壁の外（正常）: 表面からの距離をそのまま使う
-                            d = sdf_val;
-                        } else {
-                            // 壁の中（めり込んでいる）: 表面からの絶対距離 + めり込みペナルティ
-                            std::double_t penetration_penalty = 1; // ペナルティ(m)
-                            d = std::abs(sdf_val) + penetration_penalty;
-                        }
-                        
-                        std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_; // 確率密度 <=> 確率の変換は要注意
-                        std::double_t p = zHit_*pHit + zRand_*pRand;
-
-                        // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", d, pHit);
-
-                        if (p > 1.0) p = 1.0;
-                        p_vector.push_back(p);
-
-                        // RCLCPP_INFO(this->get_logger(), "%d %d %lf %lf", u, v, d, log(p));
-                        
-                        //
-                        // scan_endpoints_.push_back(pt);
-                        // particleMarker_->publish(cloud_tf);
-                        //
-                    } else {
-                        // RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
-                        p_vector.push_back(zRand_*pRand);
-                        // w += log(zRand_ * pRand); // TODO
+                    // ★追加: frame_idからどのLiDARのデータかを判定 (0:LD, 1:Front, 2:Back)
+                    int current_lidar_pose = 1; // デフォルトはFront
+                    if (scan.header.frame_id.find("/scan_back") != std::string::npos) {
+                        current_lidar_pose = 2;
+                    } else if (scan.header.frame_id.find("ldlidar") != std::string::npos) {
+                        current_lidar_pose = 0;
                     }
-                    // RCLCPP_INFO(this->get_logger(), "##############################");
-                    
-                }
-              
-                pRand = 1.0 / scan2.range_max * mapResolution_;
-                if(lidar_select == 2){
-                    for (std::size_t i = 0; i < scan2.ranges.size(); i+=scanStep_) {
-                        std::double_t r = scan2.ranges[i];
-                        if (std::isnan(r) || r < scan2.range_min || scan2.range_max < r) {
-                            // p_vector.push_back(zRand_*pRand); // TODO: add pMax
+
+                    for (std::size_t i = 0; i < scan.ranges.size(); i += scanStep_) {
+                        std::double_t r = scan.ranges[i];
+                        
+                        // ※修正: 無効なデータの場合はここでcontinueして無駄な計算を省く
+                        if (std::isnan(r) || r < scan.range_min || scan.range_max < r) {
                             p_vector.push_back(zRand_*pRand);
+                            continue; 
                         }
 
-                        std::double_t theta_lidar;
-                       
-                        theta_lidar = scan2.angle_min + ((std::double_t)(i))*scan2.angle_increment;
+                        std::double_t theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
                         
+                        // LD-Lidarの場合の角度補正
+                        if (current_lidar_pose == 0 && !is_sim_) {
+                            theta_lidar -= 3.0*M_PI/2.0;
+                        }
 
                         double x_odom, y_odom;
                         int u, v;
-                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v,2);
+                        // 判定した current_lidar_pose を渡す
+                        lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v, current_lidar_pose);
 
-                        // ここから下は一旦関係ない
                         if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
-                            // [MODIFIED] SDFを用いた尤度計算とペナルティ (scan2用)
                             std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
-                            
                             std::double_t d = 0.0;
                             if (sdf_val >= 0) {
-                                // 壁の外（正常）
                                 d = sdf_val;
                             } else {
-                                // 壁の中（めり込んでいる）
-                                std::double_t penetration_penalty = 0.5; // ペナルティ(m)
+                                std::double_t penetration_penalty = (current_lidar_pose == 2) ? 0.5 : 1.0; 
                                 d = std::abs(sdf_val) + penetration_penalty;
                             }
-
-                            std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_; // 確率密度 <=> 確率の変換は要注意
+                            
+                            std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_;
                             std::double_t p = zHit_*pHit + zRand_*pRand;
-
-                            // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", d, pHit);
 
                             if (p > 1.0) p = 1.0;
                             p_vector.push_back(p);
-
-                            // RCLCPP_INFO(this->get_logger(), "%d %d %lf %lf", u, v, d, log(p));
-                            
-                            //
-                            // scan_endpoints_.push_back(pt);
-                            // particleMarker_->publish(cloud_tf);
-                            //
                         } else {
-                            // RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                             p_vector.push_back(zRand_*pRand);
-                            // w += log(zRand_ * pRand); // TODO
                         }
-                        // RCLCPP_INFO(this->get_logger(), "##############################");
-                        
                     }
                 }
                 return p_vector;
+
+
+               
+              
             }
 
             void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v,int lidar_pose) {

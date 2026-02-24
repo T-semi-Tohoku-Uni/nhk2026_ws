@@ -102,6 +102,17 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')]
     )
 
+
+    lidar_filter_node = Node(
+        package="nhk2026_localization",
+        executable="lidar_filter",
+        name="lidar_filter",
+        output="screen",
+        parameters=[{
+            "filter_threshold": 0.98, 
+        }],
+    )
+
     mcl_node = Node(
         package="nhk2026_localization",
         executable="mcl_node",
