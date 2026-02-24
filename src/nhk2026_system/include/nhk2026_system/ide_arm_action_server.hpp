@@ -12,8 +12,13 @@ public:
     IdeArmActionServer();
 
 private:
+    using ArmMove = nhk2026_msgs::action::ArmMove;
+    using GoalHandleArmMove = rclcpp_action::ServerGoalHandle<ArmMove>;
+
     OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
     rcl_interfaces::msg::SetParametersResult parameters_callback(
         const std::vector<rclcpp::Parameter> &parameters
     );
+
+    rclcpp_action::Server<ArmMove> action_server_;
 };
