@@ -5,6 +5,8 @@
 
 #include "nhk2026_msgs/action/arm_move.hpp"
 
+using namespace std::placeholders;
+
 class IdeArmActionServer
 : public rclcpp::Node
 {
@@ -21,4 +23,12 @@ private:
     );
 
     rclcpp_action::Server<ArmMove> action_server_;
+
+    rclcpp_action::GoalResponse handle_goal(
+        const rclcpp_action::GoalUUID &,
+        std::shared_ptr<const ArmMove::Goal> goal
+    )
+    {
+
+    }
 };
