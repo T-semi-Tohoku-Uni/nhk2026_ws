@@ -19,7 +19,7 @@ import xacro
 import math
 
 def generate_launch_description():
-    x = -1.47
+    x = -1.25
     y = 0.45
     z = 0.0
     theata = 0.0

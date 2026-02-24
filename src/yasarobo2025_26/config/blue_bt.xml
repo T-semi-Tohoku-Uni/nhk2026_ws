@@ -3,9 +3,9 @@
       main_tree_to_execute="MainBT">
   <BehaviorTree ID="MainBT">
     <Sequence>
-      <waypoint x="-0.3"
+      <waypoint x="-0.4"
                 y="1.0"/>
-      <waypoint x="-0.3"
+      <waypoint x="-0.4"
                 y="9.0"/>
       <waypoint x="-5.5"
                 y="9.0"/>
