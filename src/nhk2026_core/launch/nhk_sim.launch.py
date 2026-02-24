@@ -14,7 +14,7 @@ import math
 import random
 
 def generate_launch_description():
-    x = 1.47
+    x = -1.47
     y = 0.45
     z = 0.1
     theta = 0.0
@@ -195,6 +195,7 @@ def generate_launch_description():
         executable="bt_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
+        parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
     )
 
 

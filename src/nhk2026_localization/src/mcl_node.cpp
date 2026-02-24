@@ -1027,8 +1027,8 @@ namespace mcl {
                     x_lidar = range*cos(theta) + 0.084;
                     y_lidar = range*sin(theta) + 0.013 - 0.013;
                 } else if(lidar_pose == 1){
-                    x_lidar = range * cos(theta + M_PI/2) - 0.094036;
-                    y_lidar = range * sin(theta + M_PI/2) + 0.2255;
+                    x_lidar = range * sin(theta) - 0.094036;
+                    y_lidar = range * cos(theta) + 0.2255;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }else if(lidar_pose == 2){
                     
