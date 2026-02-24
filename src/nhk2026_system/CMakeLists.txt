@@ -9,6 +9,7 @@ endif()
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
+find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
@@ -37,11 +38,27 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
+add_executable(ide_arm_action_server
+  src/ide_arm_action_server.cpp
+)
+
+ament_target_dependencies(ide_arm_action_server
+  rclcpp
+  rclcpp_action
+  geometry_msgs
+  nhk2026_msgs
+)
+
+install(
+  TARGETS ide_arm_action_server
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # add install
-# install(
-#   DIRECTORY config launch
-#   DESTINATION share/${PROJECT_NAME}
-# )
+install(
+  DIRECTORY config launch
+  DESTINATION share/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
