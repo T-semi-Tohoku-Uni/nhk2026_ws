@@ -226,4 +226,5 @@ def generate_launch_description():
         path_planner,
         pursuit,
         bt_node,
+        lidar_filter_node,
     ])
