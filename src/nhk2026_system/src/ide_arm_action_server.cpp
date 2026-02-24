@@ -1,9 +1,6 @@
-#include <rclcpp/rclcpp.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-
-#include "nhk2026_msgs/action/arm_move.hpp"
+#include "ide_arm_action_server.hpp"
 
 int main()
 {
-    
+
 }
