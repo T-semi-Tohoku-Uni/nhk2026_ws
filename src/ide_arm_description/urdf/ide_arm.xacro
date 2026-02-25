@@ -12,14 +12,14 @@
   <visual>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://ide_arm_description/meshes/base_link.stl" scale="1.0 1.0 1.0"/>
+      <mesh filename="package://ide_arm_description/meshes/base_link_ide_arm.stl" scale="1.0 1.0 1.0"/>
     </geometry>
     <material name="_"/>
   </visual>
   <collision>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://ide_arm_description/meshes/base_link.stl" scale="1.0 1.0 1.0"/>
+      <mesh filename="package://ide_arm_description/meshes/base_link_ide_arm.stl" scale="1.0 1.0 1.0"/>
     </geometry>
   </collision>
 </link>
