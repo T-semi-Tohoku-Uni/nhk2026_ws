@@ -6,6 +6,7 @@
 #include "nhk2026_msgs/action/arm_move.hpp"
 #include <std_msgs/msg/float32_multi_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 
 using namespace std::placeholders;
 
@@ -43,4 +44,9 @@ private:
     void feedback_timer_callback();
 
     bool disable_set_parameter{false};
+    geometry_msgs::msg::PoseStamped goal_pos_;
+    geometry_msgs::msg::PoseStamped now_pos_;
+
+    rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber;
+    void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata);
 };

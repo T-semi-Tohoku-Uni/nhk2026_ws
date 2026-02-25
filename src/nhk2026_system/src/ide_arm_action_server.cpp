@@ -5,12 +5,22 @@ using namespace std::chrono_literals;
 IdeArmActionServer::IdeArmActionServer()
 : rclcpp::Node("ide_arm_action_server")
 {
+    rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+
     this->action_server_ = rclcpp_action::create_server<ArmMove>(
         this,
         "ide_arm",
         std::bind(&IdeArmActionServer::handle_goal, this, _1, _2),
         std::bind(&IdeArmActionServer::handle_cancel,this, _1),
         std::bind(&IdeArmActionServer::handle_accepted, this, _1)
+    );
+
+    this->joint_states_subscriber = this->create_subscription<sensor_msgs::msg::JointState>(
+        std::string("/joint_states"),
+        device,
+        std::bind(&IdeArmActionServer::joint_state_callback, this, _1)
     );
 
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
@@ -94,6 +104,11 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
 void IdeArmActionServer::feedback_timer_callback()
 {
 
+}
+
+void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
+{
+    
 }
 
 int main()

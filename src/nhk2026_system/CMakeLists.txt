@@ -12,6 +12,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
 
@@ -47,6 +48,7 @@ ament_target_dependencies(ide_arm_action_server
   rclcpp_action
   std_msgs
   geometry_msgs
+  sensor_msgs
   nhk2026_msgs
 )
 
