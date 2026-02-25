@@ -72,6 +72,7 @@ ros_node_executable(vel_feedback_node src/vel_feedback_node.cpp)
 ros_node_executable(vel_feedback_pass_through src/vel_feedback_pass_through.cpp)
 ros_node_executable(joy2vel src/joy2vel.cpp)
 ros_node_executable(lidar_filter src/lidar_filter.cpp)
+ros_node_executable(mcl_3d_node src/mcl_3d_node.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)
