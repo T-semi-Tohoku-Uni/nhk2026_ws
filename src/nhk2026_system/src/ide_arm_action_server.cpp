@@ -43,19 +43,24 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     std::shared_ptr<const ArmMove::Goal> goal
 )
 {
-    
+    // todo アームの到達範囲をチェック
+    RCLCPP_INFO(this->get_logger(), "arm start to move!");
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
 rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
     const std::shared_ptr<GoalHandleArmMove> goal_handle
 )
 {
-
+    // todo 動作の終了とか？
+    RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
+    return rclcpp_action::CancelResponse::ACCEPT;
 }
 
 void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
-
+    RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
+    std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
 
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
