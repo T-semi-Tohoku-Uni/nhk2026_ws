@@ -172,46 +172,51 @@ namespace mcl {
             void publishSDFCloud() {
                 if (distField3D_.empty()) return;
 
-                RCLCPP_INFO(this->get_logger(), "Generating PointCloud for 3D SDF visualization...");
+                RCLCPP_INFO(this->get_logger(), "Generating PointCloud for 3D SDF visualization (1/1000 downsampled)...");
 
-                // 可視化する距離の閾値 (例: 障害物の表面から ±0.15m 以内の点だけを描画)
-                const float VIZ_THRESHOLD = 0.15f; 
-
-                // 一時保存用の構造体
                 struct PointRGB {
                     float x, y, z;
                     uint8_t r, g, b;
                 };
                 std::vector<PointRGB> viz_points;
 
+                // 色を変化させる最大距離(m)の目安（これより遠いと同じ色になります）
+                const float MAX_DIST = 1.0f;
+
                 for (size_t z = 0; z < dim_z_; ++z) {
                     for (size_t y = 0; y < dim_y_; ++y) {
                         for (size_t x = 0; x < dim_x_; ++x) {
+                            
+                            // 【間引き処理】 X, Y, Z それぞれ10個に1個だけ描画する (1/1000)
+                            if (x % 10 != 0 || y % 10 != 0 || z % 10 != 0) {
+                                continue;
+                            }
+
                             float d = distField3D_[getIdx3D(x, y, z)];
 
-                            // 表面付近のポイントのみを抽出してRVizを軽くする
-                            if (std::abs(d) > VIZ_THRESHOLD) continue;
-
                             PointRGB p;
-                            // ボクセルのインデックスから物理座標(m)へ変換
                             p.x = static_cast<float>(x) * mapResolution_ + mapOrigin_[0];
                             p.y = static_cast<float>(y) * mapResolution_ + mapOrigin_[1];
                             p.z = static_cast<float>(z) * mapResolution_ + mapOrigin_[2];
 
-                            // 距離に応じて色分け (グラデーション)
-                            // 障害物内部(マイナス) は赤、表面(0) は白、外部(プラス) は青
-                            if (d < 0.0f) {
-                                // 内部: 濃い赤 〜 薄い赤
-                                float ratio = std::max(0.0f, 1.0f - (std::abs(d) / VIZ_THRESHOLD));
-                                p.r = 255;
-                                p.g = static_cast<uint8_t>(255 * ratio);
-                                p.b = static_cast<uint8_t>(255 * ratio);
+                            // 【SDFの値に応じた色分け】
+                            if (std::abs(d) < 0.05f) {
+                                // 障害物の表面付近 (±5cm以内): 緑色で強調
+                                p.r = 0; p.g = 255; p.b = 0;
+                            } else if (d < 0.0f) {
+                                // 障害物内部 (マイナス): 赤色ベース
+                                // 深くなるほど濃い赤（黒っぽく）なる
+                                float ratio = std::max(0.0f, 1.0f - (std::abs(d) / MAX_DIST));
+                                p.r = static_cast<uint8_t>(100 + 155 * ratio); // 100~255
+                                p.g = 0;
+                                p.b = 0;
                             } else {
-                                // 外部: 白 〜 青
-                                float ratio = std::max(0.0f, 1.0f - (d / VIZ_THRESHOLD));
-                                p.r = static_cast<uint8_t>(255 * ratio);
-                                p.g = static_cast<uint8_t>(255 * ratio);
-                                p.b = 255;
+                                // 自由空間 (プラス): 青色ベース
+                                // 遠くなるほど濃い青（黒っぽく）なる
+                                float ratio = std::max(0.0f, 1.0f - (d / MAX_DIST));
+                                p.r = 0;
+                                p.g = 0;
+                                p.b = static_cast<uint8_t>(100 + 155 * ratio); // 100~255
                             }
                             viz_points.push_back(p);
                         }
@@ -221,13 +226,12 @@ namespace mcl {
                 // PointCloud2 メッセージの作成
                 sensor_msgs::msg::PointCloud2 cloud_msg;
                 cloud_msg.header.stamp = this->now();
-                cloud_msg.header.frame_id = "map"; // 地図座標系
+                cloud_msg.header.frame_id = "map";
                 cloud_msg.height = 1;
                 cloud_msg.width = viz_points.size();
                 cloud_msg.is_dense = true;
                 cloud_msg.is_bigendian = false;
 
-                // xyz と rgb のフィールドを設定
                 sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
                 modifier.setPointCloud2FieldsByString(2, "xyz", "rgb");
                 modifier.resize(viz_points.size());
@@ -239,7 +243,6 @@ namespace mcl {
                 sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(cloud_msg, "g");
                 sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(cloud_msg, "b");
 
-                // データを詰める
                 for (const auto& vp : viz_points) {
                     *iter_x = vp.x; *iter_y = vp.y; *iter_z = vp.z;
                     *iter_r = vp.r; *iter_g = vp.g; *iter_b = vp.b;
@@ -249,9 +252,8 @@ namespace mcl {
                 }
 
                 sdf_cloud_pub_->publish(cloud_msg);
-                RCLCPP_INFO(this->get_logger(), "Published SDF PointCloud with %zu points.", viz_points.size());
+                RCLCPP_INFO(this->get_logger(), "Published Downsampled SDF PointCloud with %zu points.", viz_points.size());
             }
-
 
             std::string mapFile_;
             double mapResolution_;
