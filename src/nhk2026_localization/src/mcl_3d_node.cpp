@@ -15,7 +15,7 @@ namespace mcl {
     class MCL_3D: public rclcpp::Node{
         public:
             explicit MCL_3D(const rclcpp::NodeOptions & options = rclcpp::NodeOptions()): Node("mcl_node", options), tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_) {
-                this->declare_parameter<std::string>("mapFile", "src/nhk2026_localization/map/nhk2026_field.h5"); // HDF5ファイルのパス
+                this->declare_parameter<std::string>("mapFile", "src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5"); // HDF5ファイルのパス
                 this->declare_parameter<double>("mapResolution", 0.01); // 解像度のパラメータも追加
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
