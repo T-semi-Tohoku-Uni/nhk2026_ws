@@ -1,5 +1,7 @@
 #include "ide_arm_action_server.hpp"
 
+using namespace std::chrono_literals;
+
 IdeArmActionServer::IdeArmActionServer()
 : rclcpp::Node("ide_arm_action_server")
 {
@@ -75,12 +77,21 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
         std::string("j3"),
         device
     );
+    this->feedback_timer_ = this->create_wall_timer(
+        0.05s,
+        std::bind(&IdeArmActionServer::feedback_timer_callback, this)
+    );
 
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
 
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
+{
+
+}
+
+void IdeArmActionServer::feedback_timer_callback()
 {
 
 }

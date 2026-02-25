@@ -45,6 +45,7 @@ add_executable(ide_arm_action_server
 ament_target_dependencies(ide_arm_action_server
   rclcpp
   rclcpp_action
+  std_msgs
   geometry_msgs
   nhk2026_msgs
 )

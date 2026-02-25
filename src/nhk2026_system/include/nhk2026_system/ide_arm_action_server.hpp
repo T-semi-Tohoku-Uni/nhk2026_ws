@@ -5,6 +5,7 @@
 
 #include "nhk2026_msgs/action/arm_move.hpp"
 #include <std_msgs/msg/float32_multi_array.hpp>
+#include <geometry_msgs/msg/pose_stamped.hpp>
 
 using namespace std::placeholders;
 
@@ -37,6 +38,9 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j1_motor_publisher_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j2_motor_publisher_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j3_motor_publisher_;
+
+    rclcpp::TimerBase::SharedPtr feedback_timer_;
+    void feedback_timer_callback();
 
     bool disable_set_parameter{false};
 };
