@@ -64,7 +64,7 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
     const std::shared_ptr<GoalHandleArmMove> goal_handle
 )
 {
-    // todo 動作の終了とか？
+    // todo 位置を元に戻す
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -98,17 +98,18 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
 
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
-
+    std::vector<float> joints[3];
 }
 
 void IdeArmActionServer::feedback_timer_callback()
 {
-
+    ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
+    
 }
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
-    
+
 }
 
 int main()
