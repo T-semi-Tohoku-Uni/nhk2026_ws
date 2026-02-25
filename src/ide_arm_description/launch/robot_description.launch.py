@@ -27,11 +27,11 @@ def generate_launch_description():
 
     return LaunchDescription([
         Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
             output='screen',
-            parameters=[robot_description]),
+        ),
         Node(
             package='robot_state_publisher',
             executable='robot_state_publisher',
