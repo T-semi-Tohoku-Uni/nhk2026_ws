@@ -20,7 +20,22 @@ rcl_interfaces::msg::SetParametersResult IdeArmActionServer::parameters_callback
     const std::vector<rclcpp::Parameter> &parameters
 )
 {
+    rcl_interfaces::msg::SetParametersResult result;
 
+    if (disable_set_parameter)
+    {
+        result.successful = false;
+        result.reason = "action is processing";
+        return result;
+    }
+
+    for (const auto &param : parameters) {
+        
+    }
+
+    result.successful = true;
+    result.reason = "success";
+    return result;
 }
 
 rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(

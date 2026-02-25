@@ -34,4 +34,6 @@ private:
     );
 
     void handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle);
+
+    bool disable_set_parameter{false};
 };
