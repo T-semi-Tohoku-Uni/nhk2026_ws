@@ -58,6 +58,11 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
 
 }
 
+void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
+{
+
+}
+
 int main()
 {
 

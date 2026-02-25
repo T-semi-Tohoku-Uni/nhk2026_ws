@@ -23,17 +23,16 @@ private:
     );
 
     rclcpp_action::Server<ArmMove>::SharedPtr action_server_;
-
     rclcpp_action::GoalResponse handle_goal(
         const rclcpp_action::GoalUUID &,
         std::shared_ptr<const ArmMove::Goal> goal
     );
-
     rclcpp_action::CancelResponse handle_cancel(
         const std::shared_ptr<GoalHandleArmMove> goal_handle
     );
-
     void handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle);
+
+    void execute(const std::shared_ptr<GoalHandleArmMove> goal_handle);
 
     bool disable_set_parameter{false};
 };
