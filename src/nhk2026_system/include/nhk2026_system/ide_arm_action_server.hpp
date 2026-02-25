@@ -36,7 +36,7 @@ private:
 
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j1_motor_publisher_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j2_motor_publisher_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j3_motor_publsiher_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j3_motor_publisher_;
 
     bool disable_set_parameter{false};
 };

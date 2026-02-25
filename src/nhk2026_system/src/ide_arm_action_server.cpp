@@ -59,6 +59,23 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
 
 void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
+    rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
+
+    this->j1_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("j1"),
+        device
+    );
+    this->j2_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("j2"),
+        device
+    );
+    this->j3_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("j3"),
+        device
+    );
+
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
