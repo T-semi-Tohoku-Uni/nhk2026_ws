@@ -101,8 +101,8 @@ namespace lidar_filter{
                         filtered_scan.ranges[i] = std::numeric_limits<float>::infinity();
                         filtered_scan.ranges[i+1] = std::numeric_limits<float>::infinity();
                         if (!filtered_scan.intensities.empty()) {
-                            filtered_scan.intensities[i] = std::numeric_limits<float>::infinity();
-                            filtered_scan.intensities[i+1] = std::numeric_limits<float>::infinity();
+                            filtered_scan.intensities[i] = 0;
+                            filtered_scan.intensities[i+1] = 0;
                         }
                     }
                 }

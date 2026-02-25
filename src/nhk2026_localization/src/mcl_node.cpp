@@ -881,10 +881,11 @@ namespace mcl {
 
                 for (const auto& scan : multi_scan->scans) {
                     std::double_t pRand = 1.0 / scan.range_max * mapResolution_;
-                    
+                    std::string frame_id = scan.header.frame_id;
                     // ★追加: frame_idからどのLiDARのデータかを判定 (0:LD, 1:Front, 2:Back)
+                    RCLCPP_INFO(this->get_logger(), "Received frame_id: '%s'", frame_id.c_str());
                     int current_lidar_pose = 1; // デフォルトはFront
-                    if (scan.header.frame_id.find("/scan_back") != std::string::npos) {
+                    if (scan.header.frame_id.find("lidar_back") != std::string::npos) {
                         current_lidar_pose = 2;
                     } else if (scan.header.frame_id.find("ldlidar") != std::string::npos) {
                         current_lidar_pose = 0;
@@ -1096,7 +1097,7 @@ namespace mcl {
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
 
-                 RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
+                // RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
             }
 
             void resampleParticles(void) {

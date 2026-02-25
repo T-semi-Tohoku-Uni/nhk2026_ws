@@ -142,21 +142,21 @@ def generate_launch_description():
     )
 
     # joy
-    # joy_node = Node(
-    #     package="joy",
-    #     executable="joy_node",
-    #     name="joy_node",
-    #     output="screen",
-    #     remappings=[('clock', '/world/nhk2026/clock')],
-    # )
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
 
-    # joy2Vel_node = Node(
-    #     package="nhk2026_localization",
-    #     executable="joy2vel",
-    #     name="joy2vel",
-    #     output="screen",
-    #     remappings=[('clock', '/world/nhk2026/clock')],
-    # )
+    joy2Vel_node = Node(
+        package="nhk2026_localization",
+        executable="joy2vel",
+        name="joy2vel",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
 
     path_planner = Node(
         package="nhk2026_pursuit",
