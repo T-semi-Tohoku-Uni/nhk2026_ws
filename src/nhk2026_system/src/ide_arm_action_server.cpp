@@ -115,7 +115,7 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
     std::shared_ptr<IdeArmActionServer> node = std::make_shared<IdeArmActionServer>();

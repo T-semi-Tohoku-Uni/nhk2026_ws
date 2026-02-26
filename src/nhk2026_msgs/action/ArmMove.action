@@ -1,4 +1,4 @@
-geometry_msgs/PoseStamped target
+sensor_msgs/JointState joint_states
 float32 max_speed
 float32 max_acc
 ---
