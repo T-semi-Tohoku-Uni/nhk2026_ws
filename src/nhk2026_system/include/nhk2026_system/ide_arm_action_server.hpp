@@ -8,6 +8,8 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
+#include <atomic>
+
 using namespace std::placeholders;
 
 class IdeArmActionServer
@@ -43,7 +45,7 @@ private:
     rclcpp::TimerBase::SharedPtr feedback_timer_;
     void feedback_timer_callback();
 
-    bool disable_set_parameter{false};
+    std::atomic_bool goal_active_{false};
     geometry_msgs::msg::PoseStamped goal_pos_;
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;

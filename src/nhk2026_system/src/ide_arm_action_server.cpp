@@ -24,6 +24,9 @@ IdeArmActionServer::IdeArmActionServer()
         std::bind(&IdeArmActionServer::joint_state_callback, this, _1)
     );
 
+    this->declare_parameter<double>("kPosTolerance", 0.01);
+    this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
+
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&IdeArmActionServer::parameters_callback, this, _1)
     );
@@ -35,7 +38,7 @@ rcl_interfaces::msg::SetParametersResult IdeArmActionServer::parameters_callback
 {
     rcl_interfaces::msg::SetParametersResult result;
 
-    if (disable_set_parameter)
+    if (this->goal_active_)
     {
         result.successful = false;
         result.reason = "action is processing";
@@ -43,7 +46,11 @@ rcl_interfaces::msg::SetParametersResult IdeArmActionServer::parameters_callback
     }
 
     for (const auto &param : parameters) {
-        
+        if (param.get_name() == "kPosTolerance" && param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
+        {
+            this->kPosTolerance_ = param.as_double();
+            RCLCPP_INFO(this->get_logger(), "kPosTolerance changed!");
+        }
     }
 
     result.successful = true;
@@ -70,7 +77,15 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         return rclcpp_action::GoalResponse::REJECT;
     }
 
+    bool expected = false;
+    if (!this->goal_active_.compare_exchange_strong(expected, true))
+    {
+        RCLCPP_ERROR(this->get_logger(), "action server is active");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
+    
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -114,7 +129,6 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
 {
     const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
     ArmMove::Result::SharedPtr result = std::make_shared<ArmMove::Result>();
-    disable_set_parameter = true;
 
     rclcpp::Rate loop_rate(100.0);
     while (rclcpp::ok())
@@ -124,7 +138,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             result->success = false;
             result->msg = "goal canceled";
             goal_handle->canceled(result);
-            disable_set_parameter = false;
+            this->goal_active_ = false;
             return;
         }
 
@@ -154,7 +168,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             result->success = true;
             result->msg = "goal reached";
             goal_handle->succeed(result);
-            disable_set_parameter = false;
+            this->goal_active_ = false;
             return;
         }
 
@@ -164,7 +178,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     result->success = false;
     result->msg = "rclcpp shutdown";
     goal_handle->abort(result);
-    disable_set_parameter = false;
+    this->goal_active_ = false;
 
 }
 
