@@ -117,5 +117,9 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
 int main()
 {
-
+    rclcpp::init(argc, argv);
+    std::shared_ptr<IdeArmActionServer> node = std::make_shared<IdeArmActionServer>();
+    rclcpp::spin(node->get_node_base_interface());
+    rclcpp::shutdown();
+    return 0;
 }
