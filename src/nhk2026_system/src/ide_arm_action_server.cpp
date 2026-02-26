@@ -99,18 +99,20 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
     std::vector<float> joints[3];
+
+    rclcpp::Rate loop_rate(0.01);
+    // todo j1から順に動かしていく目的地に到達するまで繰り返し送る
 }
 
 void IdeArmActionServer::feedback_timer_callback()
 {
     ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
-    
-    rclcpp::Rate loop_rate(0.01);
+    // todo フィードバックを送る
 }
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
-
+    // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
 
 int main()
