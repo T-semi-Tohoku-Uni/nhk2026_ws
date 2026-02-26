@@ -102,6 +102,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
 
     rclcpp::Rate loop_rate(0.01);
     // todo j1から順に動かしていく目的地に到達するまで繰り返し送る
+
 }
 
 void IdeArmActionServer::feedback_timer_callback()
@@ -112,6 +113,7 @@ void IdeArmActionServer::feedback_timer_callback()
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
+    now_joint_ = *rxdata;
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
 

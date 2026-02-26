@@ -46,6 +46,7 @@ private:
     bool disable_set_parameter{false};
     geometry_msgs::msg::PoseStamped goal_pos_;
     geometry_msgs::msg::PoseStamped now_pos_;
+    sensor_msgs::msg::JointState now_joint_;
 
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber;
     void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata);
