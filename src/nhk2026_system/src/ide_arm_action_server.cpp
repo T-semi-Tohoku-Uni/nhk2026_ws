@@ -181,6 +181,7 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
         RCLCPP_WARN(this->get_logger(), "joint size is invalid");
         return;
     }
+    this->joint_subscribe_flag_ = true;
     this->now_joint_ = *rxdata;
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
