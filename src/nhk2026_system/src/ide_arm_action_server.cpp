@@ -176,7 +176,11 @@ void IdeArmActionServer::feedback_timer_callback()
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
-    if (rxdata->position.size() != 3) return;
+    if (rxdata->position.size() != 3)
+    {
+        RCLCPP_WARN(this->get_logger(), "joint size is invalid");
+        return;
+    }
     this->now_joint_ = *rxdata;
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
