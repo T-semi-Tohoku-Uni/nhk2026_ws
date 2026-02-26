@@ -26,8 +26,26 @@ namespace mcl {
         double x, y, z;
     };
 
+    struct SensorTransform {
+        double x = 0.0;
+        double y = 0.0;
+        double yaw = 0.0;
+        bool valid = false; 
+    };
+
     class Particle {
         public:
+            
+            Particle() : w_(0.0) {
+                pose_.position.x = 0.0;
+                pose_.position.y = 0.0;
+                pose_.position.z = 0.0;
+                pose_.orientation.x = 0.0;
+                pose_.orientation.y = 0.0;
+                pose_.orientation.z = 0.0;
+                pose_.orientation.w = 1.0;
+            }
+
             const double getX() const { return pose_.position.x; }
             const double getY() const { return pose_.position.y; }
             const double getZ() const { return pose_.position.z; }
@@ -46,14 +64,13 @@ namespace mcl {
             const geometry_msgs::msg::Pose& getPose() const { return pose_; }
             const double getW() const { return w_; }
 
-            // 修正: RollとPitchの引数を削除し、内部で完全に 0.0 に固定する
             void setPose(double x, double y, double z, double yaw) {
                 pose_.position.x = x;
                 pose_.position.y = y;
                 pose_.position.z = z;
                 
                 tf2::Quaternion q;
-                q.setRPY(0.0, 0.0, yaw); // ここでRollとPitchを0にロック！
+                q.setRPY(0.0, 0.0, yaw); 
                 
                 pose_.orientation.x = q.x();
                 pose_.orientation.y = q.y();
@@ -79,6 +96,10 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("lfmSigma", 0.03);
                 
                 this->declare_parameter<int>("particleNum", 100);
+                this->declare_parameter<std::float_t>("initial_x", -1.0);
+                this->declare_parameter<std::float_t>("initial_y", 1.0);
+                this->declare_parameter<std::float_t>("initial_theta", M_PI/2);
+
                 this->declare_parameter<std::double_t>("zHit", 0.9);
                 this->declare_parameter<std::double_t>("zRand", 0.1);
                 this->declare_parameter<double>("odomNoise1", 1.0);
@@ -91,9 +112,13 @@ namespace mcl {
                 this->mapResolution_ = this->get_parameter("mapResolution").as_double();
                 this->lfmSigma_ = this->get_parameter("lfmSigma").as_double();
                 this->particleNum_ = this->get_parameter("particleNum").as_int();
+                
+                double initial_x = this->get_parameter("initial_x").as_double();
+                double initial_y = this->get_parameter("initial_y").as_double();
+                double initial_theta = this->get_parameter("initial_theta").as_double();
+
                 this->zHit_ = this->get_parameter("zHit").as_double();
                 this->zRand_ = this->get_parameter("zRand").as_double();
-
                 this->odomNoise1_ = this->get_parameter("odomNoise1").as_double();
                 this->odomNoise2_ = this->get_parameter("odomNoise2").as_double();
                 this->odomNoise3_ = this->get_parameter("odomNoise3").as_double();
@@ -103,9 +128,24 @@ namespace mcl {
                 particles_.resize(particleNum_);
                 measurementModel_ = MeasurementModel::LikelihoodFieldModel;
 
-                
-                mclPose_.position.x = 0.0; mclPose_.position.y = 0.0; mclPose_.position.z = 0.0;
-                mclPose_.orientation.x = 0.0; mclPose_.orientation.y = 0.0; mclPose_.orientation.z = 0.0; mclPose_.orientation.w = 1.0;
+                // mclPose_の初期化
+                mclPose_.position.x = initial_x;
+                mclPose_.position.y = initial_y;
+                mclPose_.position.z = 0.0;
+                tf2::Quaternion init_q;
+                init_q.setRPY(0.0, 0.0, initial_theta);
+                mclPose_.orientation.x = init_q.x();
+                mclPose_.orientation.y = init_q.y();
+                mclPose_.orientation.z = init_q.z();
+                mclPose_.orientation.w = init_q.w();
+
+                // 2. パーティクル群の初期位置・重みのセットアップ
+                double initial_w = 1.0 / particleNum_;
+                geometry_msgs::msg::Pose initialNoise;
+                initialNoise.position.x = 0.3; // xの分散
+                initialNoise.position.y = 0.3; // yの分散
+                // quaternionのx,y,z,wを分散として流用するのは不適切なので、専用に渡す
+                resetParticlesDistribution(initialNoise.position.x, initialNoise.position.y, M_PI/18.0, initial_w);
 
                 // 各種パブリッシャの初期化
                 rclcpp::QoS qos_transient(rclcpp::KeepLast(1));
@@ -118,7 +158,7 @@ namespace mcl {
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
 
-                //サブスクライバの処理
+                // サブスクライバの処理
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
                     "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
@@ -129,31 +169,49 @@ namespace mcl {
 
                 // 地図の読み込み
                 MCL_3D::readMap();
-
                 
                 timer_ = rclcpp::create_timer(this, this->get_clock(), 100ms, std::bind(&MCL_3D::loop, this));
 
-                RCLCPP_INFO(this->get_logger(), "Success initialize");
+                RCLCPP_INFO(this->get_logger(), "Success initialize. Initial Pose x:%f, y:%f, theta:%f", initial_x, initial_y, initial_theta);
             }
 
         private:
-            //コールバック関数群
+            // コールバック関数群
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
                 cmdVel_ = msg;
             }
+            
             double randNormal(double sigma) {
                 if (sigma <= 0.0) return 0.0;
                 std::normal_distribution<double> dist(0.0, sigma);
                 return dist(gen_);
             }
 
+            // 初期位置周辺にパーティクルを散らす (3D用に引数を変更)
+            void resetParticlesDistribution(double noise_x, double noise_y, double noise_theta, double initial_w) {
+                for (std::size_t i = 0; i < particles_.size(); i++ ) {
+                    double x = mclPose_.position.x + randNormal(noise_x);
+                    double y = mclPose_.position.y + randNormal(noise_y);
+                    
+                    // 現在のmclPose_のYawを取得
+                    tf2::Quaternion q(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
+                    tf2::Matrix3x3 m(q);
+                    double r, p, yaw;
+                    m.getRPY(r, p, yaw);
+
+                    double theta = yaw + randNormal(noise_theta);
+                    
+                    particles_[i].setPose(x, y, 0.0, theta);
+                    particles_[i].setW(initial_w);
+                }
+            }
+
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
                 
-                // cmdVel_ が受信されていなければスキップ
                 if (!cmdVel_) return;
 
-                double dt = 0.100; // 簡易的に固定 (実際の時間差分を取るのが望ましい)
+                double dt = 0.100; // 100ms
                             
                 std::double_t vx_ = cmdVel_->linear.x;
                 std::double_t vy_ = cmdVel_->linear.y;
@@ -166,7 +224,6 @@ namespace mcl {
 
                 updateParticles(delta_);
                 printParticlesMakerOnRviz2();
-
                
                 caculateMeasurementModel();
                 
@@ -206,7 +263,6 @@ namespace mcl {
             }
 
             void estimatePose() {
-                // 現在のmclPose_からYawを取得
                 tf2::Quaternion q_old(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
                 tf2::Matrix3x3 m(q_old);
                 double roll, pitch, tmpTheta;
@@ -217,7 +273,7 @@ namespace mcl {
                     std::double_t w = particles_[i].getW();
                     x += particles_[i].getX() * w;
                     y += particles_[i].getY() * w;
-                    z += particles_[i].getZ() * w; // 3D対応
+                    z += particles_[i].getZ() * w; 
                     
                     std::double_t dTheta = tmpTheta - particles_[i].getTheta();
                     while (dTheta < -M_PI) dTheta += 2.0*M_PI;
@@ -226,7 +282,6 @@ namespace mcl {
                 }
                 theta = tmpTheta - theta;
 
-                // mclPose_ (geometry_msgs::msg::Pose) の更新
                 mclPose_.position.x = x;
                 mclPose_.position.y = y;
                 mclPose_.position.z = z;
@@ -248,7 +303,7 @@ namespace mcl {
 
                     tf_msg.transform.translation.x = x;
                     tf_msg.transform.translation.y = y;
-                    tf_msg.transform.translation.z = z; // 3D対応
+                    tf_msg.transform.translation.z = z; 
                     tf_msg.transform.rotation = mclPose_.orientation;
 
                     tf_broadcaster_->sendTransform(tf_msg);
@@ -270,11 +325,9 @@ namespace mcl {
                     std::double_t theta_ = this->particles_[i].getTheta();
                     std::double_t x_ = this->particles_[i].getX() + std::cos(theta_)*dx - std::sin(theta_)*dy;
                     std::double_t y_ = this->particles_[i].getY() + std::sin(theta_)*dx + std::cos(theta_)*dy;
-                    std::double_t z_ = this->particles_[i].getZ(); // Zはそのまま維持
+                    std::double_t z_ = this->particles_[i].getZ(); 
                     
                     theta_ += dtheta;
-                    
-                    // 修正: 引数が x, y, z, yaw の4つだけになる
                     particles_[i].setPose(x_, y_, z_, theta_);
                 }
             }
@@ -296,7 +349,6 @@ namespace mcl {
                     for (size_t j=0; j<particles_.size(); j++ ) {
                         if (darts < wBuffer[j]) {
                             geometry_msgs::msg::Pose tmpPos = tmpParticles[j].getPose();
-                            // 修正: 引数が x, y, z, yaw の4つだけになる
                             particles_[i].setPose(tmpPos.position.x, tmpPos.position.y, tmpPos.position.z, tmpParticles[j].getTheta());
                             particles_[i].setW(wo);
                             break;
@@ -310,7 +362,6 @@ namespace mcl {
                 stamped.header.stamp = this->now();
                 stamped.header.frame_id = path_.header.frame_id;
                 
-                // Pose2DではなくPoseを使用
                 stamped.pose.position.x = mclPose_.position.x;
                 stamped.pose.position.y = mclPose_.position.y;
                 stamped.pose.position.z = mclPose_.position.z;
@@ -345,7 +396,7 @@ namespace mcl {
                 for (const Particle &p: particles_) {
                     *iter_x = p.getX();
                     *iter_y = p.getY();
-                    *iter_z = p.getZ(); // 3D対応
+                    *iter_z = p.getZ(); 
 
                     *iter_r = 0;
                     *iter_g = 0;
@@ -358,9 +409,45 @@ namespace mcl {
                 particleMarker_->publish(cloud_);
             }
             
-            
             void publishVelocityMarker() {
-                // visualization_msgs::msg::Marker などの処理
+                if (!cmdVel_) return;
+
+                visualization_msgs::msg::Marker marker;
+                marker.header.frame_id = "map";
+                marker.header.stamp = this->now();
+                marker.ns = "velocity";
+                marker.id = 1;
+                marker.type = visualization_msgs::msg::Marker::ARROW;
+                marker.action = visualization_msgs::msg::Marker::ADD;
+
+                marker.pose.position.x = mclPose_.position.x;
+                marker.pose.position.y = mclPose_.position.y;
+                marker.pose.position.z = 0.1; 
+
+                double vel_angle = std::atan2(cmdVel_->linear.y, cmdVel_->linear.x);
+                double speed = std::sqrt(cmdVel_->linear.x * cmdVel_->linear.x + cmdVel_->linear.y * cmdVel_->linear.y);
+
+                tf2::Quaternion q_mcl(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
+                tf2::Matrix3x3 m(q_mcl);
+                double r, p, current_yaw;
+                m.getRPY(r, p, current_yaw);
+
+                tf2::Quaternion q_marker;
+                q_marker.setRPY(0, 0, current_yaw + vel_angle);
+                marker.pose.orientation.x = q_marker.x();
+                marker.pose.orientation.y = q_marker.y();
+                marker.pose.orientation.z = q_marker.z();
+                marker.pose.orientation.w = q_marker.w();
+
+                marker.scale.x = speed * 0.5 + 0.05; 
+                marker.scale.y = 0.05; 
+                marker.scale.z = 0.05; 
+
+                marker.color.r = 1.0f;
+                marker.color.g = 1.0f;
+                marker.color.b = 0.0f;
+                marker.color.a = 1.0f;
+                vel_marker_pub_->publish(marker);
             }
 
             void readMap() {
@@ -460,6 +547,9 @@ namespace mcl {
             }
 
             void caculateMeasurementModel() {
+                // local_points_ が空の場合は尤度計算をスキップ
+                if (local_points_.empty()) return;
+
                 totalLikelihood_ = 0.0;
                 std::double_t maxLikelihood = 0.0;
 
@@ -522,10 +612,19 @@ namespace mcl {
                 double scan_range_max = 30.0; 
                 double pRand = 1.0 / scan_range_max * mapResolution_;
 
+                // 修正: パーティクルごとのYawで回転させる処理 (事前回転を行わない場合)
+                tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+                double cos_theta = std::cos(yaw);
+                double sin_theta = std::sin(yaw);
+
                 for (const auto& pt : local_points) {
-                    double map_x, map_y,map_z;
-                    map_x = pt.x + pose.position.x;
-                    map_y = pt.y + pose.position.y;
+                    double map_x, map_y, map_z;
+                    // ロボット座標系の点(pt)をパーティクルのYawで回転させ、マップ上の位置(pose)を足す
+                    map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
+                    map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
                     map_z = pt.z + pose.position.z; 
 
                     int u, v, w;
@@ -676,16 +775,14 @@ namespace mcl {
             geometry_msgs::msg::Twist::SharedPtr cmdVel_;
             nav_msgs::msg::Path path_;
             std::vector<Point3D> local_points_;
-            std::mt19937 gen_; // 乱数ジェネレータ
-            geometry_msgs::msg::Twist::SharedPtr cmdVel_;
-            
+            std::mt19937 gen_; 
 
             // 各種パラメータ
             std::double_t zHit_, zShort_, zMax_, zRand_;
             std::double_t lfmSigma_;
             double odomNoise1_, odomNoise2_, odomNoise3_, odomNoise4_;
             double resampleThreshold_;
-            bool is_sim_ = false; // シミュレータフラグ
+            bool is_sim_ = false; 
     };
 }
 
