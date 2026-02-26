@@ -52,4 +52,5 @@ private:
     void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata);
 
     float kPosTolerance_;
+    bool joint_subscribe_flag_{false};
 };

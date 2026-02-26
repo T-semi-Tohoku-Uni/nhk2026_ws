@@ -58,6 +58,12 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
 {
     // todo アームの到達範囲をチェック
 
+    if (!this->joint_subscribe_flag_)
+    {
+        RCLCPP_ERROR(this->get_logger(), "please start joint state publisher");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
     if (goal->joint_states.position.size() < 3)
     {
         RCLCPP_ERROR(this->get_logger(), "joint states' size is short");
@@ -122,7 +128,6 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             return;
         }
 
-        // 
         if (std::fabs(this->now_joint_.position[0] - goal->joint_states.position[0]) > this->kPosTolerance_)
         {
             std_msgs::msg::Float32MultiArray cmd;
@@ -130,14 +135,18 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             cmd.data = cmd_data;
             j1_motor_publisher_->publish(cmd);
         }
-        else if (!is_reached(1))
+        else if (std::fabs(this->now_joint_.position[1] - goal->joint_states.position[1]) > this->kPosTolerance_)
         {
-            cmd.data = joints[1];
+            std_msgs::msg::Float32MultiArray cmd;
+            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[1]), goal->max_speed, goal->max_acc};
+            cmd.data = cmd_data;
             j2_motor_publisher_->publish(cmd);
         }
-        else if (!is_reached(2))
+        else if (std::fabs(this->now_joint_.position[2] - goal->joint_states.position[2]) > this->kPosTolerance_)
         {
-            cmd.data = joints[2];
+            std_msgs::msg::Float32MultiArray cmd;
+            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
+            cmd.data = cmd_data;
             j3_motor_publisher_->publish(cmd);
         }
         else
@@ -167,7 +176,8 @@ void IdeArmActionServer::feedback_timer_callback()
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
-    now_joint_ = *rxdata;
+    if (rxdata->position.size() != 3) return;
+    this->now_joint_ = *rxdata;
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
 }
 
