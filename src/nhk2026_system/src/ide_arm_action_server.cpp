@@ -60,7 +60,8 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
 
     if (goal->joint_states.position.size() < 3)
     {
-        // return rclcpp_action::GoalResponse::
+        RCLCPP_ERROR(this->get_logger(), "joint states' size is short");
+        return rclcpp_action::GoalResponse::REJECT;
     }
 
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
@@ -105,13 +106,11 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
 
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
-    const auto goal = goal_handle->get_goal();
-    ArmMove::Result::shared_ptr result = std::make_shared<ArmMove::Result>();
+    const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
+    ArmMove::Result::SharedPtr result = std::make_shared<ArmMove::Result>();
     disable_set_parameter = true;
 
-    std_msgs::msg::Float32MultiArray cmd;
-
-    rclcpp::Rate loop_rate(100.0, this->get_clock());
+    rclcpp::Rate loop_rate(100.0);
     while (rclcpp::ok())
     {
         if (goal_handle->is_canceling())
@@ -123,9 +122,12 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             return;
         }
 
-        if (!is_reached(0))
+        // 
+        if (std::fabs(this->now_joint_.position[0] - goal->joint_states.position[0]) > this->kPosTolerance_)
         {
-            cmd.data = joints[0];
+            std_msgs::msg::Float32MultiArray cmd;
+            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[0]), goal->max_speed, goal->max_acc};
+            cmd.data = cmd_data;
             j1_motor_publisher_->publish(cmd);
         }
         else if (!is_reached(1))
