@@ -1,4 +1,5 @@
 #include "ide_arm_action_server.hpp"
+#include <cmath>
 
 using namespace std::chrono_literals;
 
@@ -56,6 +57,12 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
 )
 {
     // todo アームの到達範囲をチェック
+
+    if (goal->joint_states.position.size() < 3)
+    {
+        // return rclcpp_action::GoalResponse::
+    }
+
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -98,10 +105,55 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
 
 void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
-    std::vector<float> joints[3];
+    const auto goal = goal_handle->get_goal();
+    ArmMove::Result::shared_ptr result = std::make_shared<ArmMove::Result>();
+    disable_set_parameter = true;
 
-    rclcpp::Rate loop_rate(0.01);
-    // todo j1から順に動かしていく目的地に到達するまで繰り返し送る
+    std_msgs::msg::Float32MultiArray cmd;
+
+    rclcpp::Rate loop_rate(100.0, this->get_clock());
+    while (rclcpp::ok())
+    {
+        if (goal_handle->is_canceling())
+        {
+            result->success = false;
+            result->msg = "goal canceled";
+            goal_handle->canceled(result);
+            disable_set_parameter = false;
+            return;
+        }
+
+        if (!is_reached(0))
+        {
+            cmd.data = joints[0];
+            j1_motor_publisher_->publish(cmd);
+        }
+        else if (!is_reached(1))
+        {
+            cmd.data = joints[1];
+            j2_motor_publisher_->publish(cmd);
+        }
+        else if (!is_reached(2))
+        {
+            cmd.data = joints[2];
+            j3_motor_publisher_->publish(cmd);
+        }
+        else
+        {
+            result->success = true;
+            result->msg = "goal reached";
+            goal_handle->succeed(result);
+            disable_set_parameter = false;
+            return;
+        }
+
+        loop_rate.sleep();
+    }
+
+    result->success = false;
+    result->msg = "rclcpp shutdown";
+    goal_handle->abort(result);
+    disable_set_parameter = false;
 
 }
 

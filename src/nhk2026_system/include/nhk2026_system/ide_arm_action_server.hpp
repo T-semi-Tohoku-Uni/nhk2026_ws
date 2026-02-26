@@ -50,4 +50,6 @@ private:
 
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber;
     void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata);
+
+    float kPosTolerance_;
 };
