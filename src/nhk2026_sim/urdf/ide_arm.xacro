@@ -3,26 +3,6 @@
 
 <xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro" />
 <xacro:include filename="$(find nhk2026_sim)/urdf/ide_arm.trans" />
-<link name="base_link">
-  <inertial>
-    <origin xyz="0.0 0.0 -0.0005" rpy="0 0 0"/>
-    <mass value="0.019624999999999997"/>
-    <inertia ixx="4e-06" iyy="4e-06" izz="8e-06" ixy="0.0" iyz="0.0" ixz="0.0"/>
-  </inertial>
-  <visual>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="package://nhk2026_sim/meshes/base_link_ide_arm.stl" scale="1.0 1.0 1.0"/>
-    </geometry>
-    <material name="_"/>
-  </visual>
-  <collision>
-    <origin xyz="0 0 0" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="package://nhk2026_sim/meshes/base_link_ide_arm.stl" scale="1.0 1.0 1.0"/>
-    </geometry>
-  </collision>
-</link>
 
 <link name="link_1_v2_1">
   <inertial>
@@ -109,12 +89,6 @@
 </link>
 
 <link name="tcp_link"/>
-
-<joint name="fix" type="fixed">
-  <origin xyz="0.0 0.0 0.0" rpy="0 0 0"/>
-  <parent link="base_link"/>
-  <child link="arm_base_v2_1"/>
-</joint>
 
 <joint name="joint1" type="revolute">
   <origin xyz="-0.005751 0.088 0.13" rpy="0 0 0"/>
