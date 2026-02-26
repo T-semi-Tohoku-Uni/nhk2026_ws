@@ -105,6 +105,7 @@ void IdeArmActionServer::feedback_timer_callback()
 {
     ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
     
+    rclcpp::Rate loop_rate(0.01);
 }
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
