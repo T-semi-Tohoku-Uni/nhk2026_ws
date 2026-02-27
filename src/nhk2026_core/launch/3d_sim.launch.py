@@ -238,7 +238,7 @@ def generate_launch_description():
         map_publisher,
         path_planner,
         pursuit,
-        bt_node,
+        #bt_node,
         mcl_3d_node,
         delayed_bt_node,
     ])
