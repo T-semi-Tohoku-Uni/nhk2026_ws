@@ -8,6 +8,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch.actions import SetEnvironmentVariable
 import launch_ros
+from launch.actions import TimerAction
 
 import xacro
 import math
@@ -128,6 +129,10 @@ def generate_launch_description():
             ('/livox', '/livox/points'),
         ],
     )
+    delayed_bt_node = TimerAction(
+        period=180.0, 
+        actions=[bt_node]
+    )
 
 
 
@@ -233,6 +238,7 @@ def generate_launch_description():
         map_publisher,
         path_planner,
         pursuit,
-        bt_node,
+        # bt_node,
         mcl_3d_node,
+        delayed_bt_node,
     ])

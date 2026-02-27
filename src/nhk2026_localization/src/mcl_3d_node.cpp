@@ -230,7 +230,7 @@ namespace mcl {
                     float y = *iter_y;
                     float z = *iter_z;
 
-                    // 無効な値(NaN)や、近すぎる/遠すぎるノイズを除去
+                    
                     if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
                     
                     double dist_sq = x*x + y*y + z*z;
