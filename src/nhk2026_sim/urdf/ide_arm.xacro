@@ -4,6 +4,8 @@
 <xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro" />
 <xacro:include filename="$(find nhk2026_sim)/urdf/ide_arm.trans" />
 
+<link name="arm_base"/>
+
 <link name="link_1_v2_1">
   <inertial>
     <origin xyz="0.017436936078169506 0.19863903889518106 -0.005800117560290835" rpy="0 0 0"/>
@@ -15,7 +17,7 @@
     <geometry>
       <mesh filename="package://nhk2026_sim/meshes/link_1_v2_1.stl" scale="1.0 1.0 1.0"/>
     </geometry>
-    <material name="_"/>
+    <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="0.005751 -0.088 -0.13" rpy="0 0 0"/>
@@ -36,7 +38,7 @@
     <geometry>
       <mesh filename="package://nhk2026_sim/meshes/link_2_v1_1.stl" scale="1.0 1.0 1.0"/>
     </geometry>
-    <material name="_"/>
+    <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="-0.021249 -0.527289 -0.090178" rpy="0 0 0"/>
@@ -57,7 +59,7 @@
     <geometry>
       <mesh filename="package://nhk2026_sim/meshes/end_effector_v1_1.stl" scale="1.0 1.0 1.0"/>
     </geometry>
-    <material name="_"/>
+    <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="0.032751 -0.722789 -0.147378" rpy="0 0 0"/>
@@ -78,7 +80,7 @@
     <geometry>
       <mesh filename="package://nhk2026_sim/meshes/arm_base_v2_1.stl" scale="1.0 1.0 1.0"/>
     </geometry>
-    <material name="_"/>
+    <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="-0.0 -0.0 -0.0" rpy="0 0 0"/>
@@ -89,6 +91,11 @@
 </link>
 
 <link name="tcp_link"/>
+
+<joint name="fix" type="fixed">
+  <parent link="arm_base"/>
+  <child link="arm_base_v2_1"/>
+</joint>
 
 <joint name="joint1" type="revolute">
   <origin xyz="-0.005751 0.088 0.13" rpy="0 0 0"/>
