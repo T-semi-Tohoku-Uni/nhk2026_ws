@@ -17,6 +17,7 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -164,6 +165,11 @@ namespace mcl {
                     "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
                 );
 
+                auto lidarQos = rclcpp::SensorDataQoS();
+                subCloud_ = create_subscription<sensor_msgs::msg::PointCloud2>(
+                    "/livox", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
+                );
+
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
                 path_.header.frame_id = "map";
 
@@ -179,6 +185,72 @@ namespace mcl {
             // コールバック関数群
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
                 cmdVel_ = msg;
+            }
+
+            void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+                // 古い点群データをクリア
+                local_points_.clear();
+
+                sensor_msgs::msg::PointCloud2 cloud_out;
+
+                try {
+                    // 1. LiDARの座標系 (livox_frame) からロボットの基準座標系 (base_footprint) への変換を取得
+                    // URDFで定義された xyz="-0.25 0.30 0.80" rpy="3.14159 0 0" の変換が自動で適用されます
+                    geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
+                        "base_footprint", 
+                        msg->header.frame_id, 
+                        tf2::TimePointZero
+                    );
+
+                    // 2. 点群全体を base_footprint 座標系に変換
+                    tf2::doTransform(*msg, cloud_out, transform);
+
+                } catch (const tf2::TransformException & ex) {
+                    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+                        "Could not transform %s to base_footprint: %s", 
+                        msg->header.frame_id.c_str(), ex.what());
+                    return;
+                }
+
+                // 3. 変換後の点群から X, Y, Z の座標を取り出して構造体に詰める
+                sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
+                sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
+                sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
+
+                // 【重要】3D LiDARの点は膨大（数万点）なので、計算量を減らすために間引く（ダウンサンプリング）
+                // 例: 20点に1点だけを計算に使う (実機の負荷を見て調整してください)
+                int step = 20; 
+                int count = 0;
+
+                for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+                    count++;
+                    if (count % step != 0) continue;
+
+                    float x = *iter_x;
+                    float y = *iter_y;
+                    float z = *iter_z;
+
+                    // 無効な値(NaN)や、近すぎる/遠すぎるノイズを除去
+                    if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
+                    
+                    double dist_sq = x*x + y*y + z*z;
+                    if (dist_sq < 0.2*0.2 || dist_sq > 30.0*30.0) continue; // 0.2m以下、30m以上は無視
+
+                    // 【Zカットの適用】(超重要)
+                    // 床面(z近傍)や高すぎる天井の点群は、壁などの特徴的な障害物ではないため尤度計算の邪魔になります。
+                    // 例: 床から 0.2m ～ 1.5m の高さにある障害物（壁や柱）だけを抽出する
+                    if (z < 0.2 || z > 1.5) continue;
+
+                    Point3D pt;
+                    pt.x = x;
+                    pt.y = y;
+                    pt.z = z;
+                    local_points_.push_back(pt);
+                }
+
+                // デバッグ用: 何点抽出されたか表示
+                // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+                //    "Extracted %zu points for MCL.", local_points_.size());
             }
             
             double randNormal(double sigma) {
@@ -769,6 +841,7 @@ namespace mcl {
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vel_marker_pub_;
 
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
+            rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
 
             // 状態変数
             geometry_msgs::msg::Pose mclPose_;

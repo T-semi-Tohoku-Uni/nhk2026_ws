@@ -14,9 +14,9 @@ import math
 import random
 
 def generate_launch_description():
-    x = -1.47
-    y = 0.45
-    z = 0.1
+    x = -1.0
+    y = 1.0
+    z = 0.0
     theta = 0.0
     frequency = 25.0
 
@@ -102,6 +102,33 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')]
     )
 
+    mcl_3d_node = Node(
+        package="nhk2026_localization",
+        executable="mcl_3d_node", 
+        name="mcl_3d_node",
+        output="screen",
+        parameters=[
+            {
+                # ロボットの初期位置(x, y, theta)とMCLの初期位置を一致させる
+                "initial_x": x,
+                "initial_y": y,
+                "initial_theta": theta,
+                
+                # マップファイルの絶対パスを正しく指定する
+                "mapFile": os.path.join(get_package_share_directory("nhk2026_localization"), "map", "nhk2026_field_tamokuteki.h5"),
+                
+                # MCLのパラメータ
+                "particleNum": 100,
+                "mapResolution": 0.01,
+                "lfmSigma": 0.03,
+            },
+        ],
+        remappings=[
+            ('clock', '/world/nhk2026/clock'),
+            ('/livox', '/livox/points'),
+        ],
+    )
+
 
 
     
@@ -130,6 +157,65 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
+    map_publisher = Node(
+        package="nhk2026_localization",
+        executable="map_mesh_publisher",
+        name="map_mesh_publisher",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="path_planner",
+        output="screen",
+        parameters=[
+            {
+                "initial_x": x,
+                "initial_y": y,
+                "initial_theta": theta,
+                "sample_parameter": frequency,
+            },
+        ],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    pursuit = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 1.75,
+            "max_angular_speed": 0.7,
+            "max_linear_tolerance": 0.15,
+            "max_theta_tolerance": 0.10,
+            "max_reaching_distance": 0.05,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 0.80,
+            "Ki_tan": 0.0,
+            "Kd_tan": 0.0,
+            "Kp_normal": 0.80,
+            "Ki_normal": 0.00,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.0,
+            "Ki_theta": 0.00,
+            "Kd_theta": 0.00,
+            "x": 10,
+        },
+        ],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    bt_node = Node (
+        package="yasarobo2025_26",
+        executable="bt_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+        parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
+    )
+
    
 
 
@@ -141,7 +227,12 @@ def generate_launch_description():
         bridge,
         rviz,
         static_from_map_to_odom,
-        joy_node,
-        joy2Vel_node,
+        # joy_node,
+        # joy2Vel_node,
         vel_feedback_node,
+        map_publisher,
+        path_planner,
+        pursuit,
+        bt_node,
+        mcl_3d_node,
     ])
