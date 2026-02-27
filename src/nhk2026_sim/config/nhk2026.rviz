@@ -9,7 +9,6 @@ Panels:
         - /Marker1/Topic1
         - /Path1/Topic1
         - /Marker2/Topic1
-        - /Path2
         - /Path2/Topic1
         - /Path2/Offset1
       Splitter Ratio: 0.5
@@ -66,6 +65,8 @@ Visualization Manager:
           Value: true
         lidar_front:
           Value: true
+        livox_frame:
+          Value: true
         map:
           Value: false
         odom:
@@ -83,6 +84,8 @@ Visualization Manager:
                 lidar_back:
                   {}
                 lidar_front:
+                  {}
+                livox_frame:
                   {}
       Update Interval: 0
       Value: true
@@ -152,6 +155,10 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
         lidar_front:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        livox_frame:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -346,6 +353,19 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /route
+      Value: true
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Marker
+      Namespaces:
+        waypoint_marker: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /waypoint_marker
       Value: true
   Enabled: true
   Global Options:

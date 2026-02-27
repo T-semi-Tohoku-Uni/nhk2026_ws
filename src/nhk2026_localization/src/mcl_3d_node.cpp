@@ -174,6 +174,19 @@ namespace mcl {
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
                 path_.header.frame_id = "map";
 
+                const char *sim = std::getenv("WITH_SIM");
+                if (sim) {
+                    RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is set to: %s", sim);
+                } else {
+                    RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is NOT set.");
+                }
+                if (!sim || std::string(sim) != "1") {
+                    is_sim_ = false;
+                } else {
+                    RCLCPP_INFO(this->get_logger(), "freofkprekfore");
+                    is_sim_ = true;
+                }
+
                 // 地図の読み込み
                 MCL_3D::readMap();
                 
@@ -899,7 +912,7 @@ namespace mcl {
             std::double_t lfmSigma_;
             double odomNoise1_, odomNoise2_, odomNoise3_, odomNoise4_;
             double resampleThreshold_;
-            bool is_sim_ = false; 
+            bool is_sim_; 
     };
 }
 
