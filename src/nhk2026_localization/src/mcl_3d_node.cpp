@@ -159,6 +159,7 @@ namespace mcl {
                 pubPath_ = this->create_publisher<nav_msgs::msg::Path>("trajectory", qos_default);
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
+                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scan_cloud", qos_default);
 
                 // サブスクライバの処理
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
@@ -208,15 +209,13 @@ namespace mcl {
                 sensor_msgs::msg::PointCloud2 cloud_out;
 
                 try {
-                    // 1. LiDARの座標系 (livox_frame) からロボットの基準座標系 (base_footprint) への変換を取得
-                    // URDFで定義された xyz="-0.25 0.30 0.80" rpy="3.14159 0 0" の変換が自動で適用されます
                     geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
                         "base_footprint", 
                         msg->header.frame_id, 
                         tf2::TimePointZero
                     );
 
-                    // 2. 点群全体を base_footprint 座標系に変換
+                    
                     tf2::doTransform(*msg, cloud_out, transform);
 
                 } catch (const tf2::TransformException & ex) {
@@ -226,13 +225,12 @@ namespace mcl {
                     return;
                 }
 
-                // 3. 変換後の点群から X, Y, Z の座標を取り出して構造体に詰める
+                
                 sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
 
-                // 【重要】3D LiDARの点は膨大（数万点）なので、計算量を減らすために間引く（ダウンサンプリング）
-                // 例: 20点に1点だけを計算に使う (実機の負荷を見て調整してください)
+               
                 int step = 20; 
                 int count = 0;
 
@@ -253,7 +251,7 @@ namespace mcl {
                     // 【Zカットの適用】(超重要)
                     // 床面(z近傍)や高すぎる天井の点群は、壁などの特徴的な障害物ではないため尤度計算の邪魔になります。
                     // 例: 床から 0.2m ～ 1.5m の高さにある障害物（壁や柱）だけを抽出する
-                    if (z < 0.2 || z > 1.5) continue;
+                    if (z < 0.05 || z > 1.5) continue;
 
                     Point3D pt;
                     pt.x = x;
@@ -265,6 +263,33 @@ namespace mcl {
                 // デバッグ用: 何点抽出されたか表示
                 // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
                 //    "Extracted %zu points for MCL.", local_points_.size());
+
+                if (!local_points_.empty()) {
+                    sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
+                    filtered_cloud_msg.header.stamp = msg->header.stamp; // 元のLiDARのタイムスタンプを使用
+                    filtered_cloud_msg.header.frame_id = "base_footprint"; // 変換済みの座標系
+                    filtered_cloud_msg.height = 1;
+                    filtered_cloud_msg.width = local_points_.size();
+                    filtered_cloud_msg.is_dense = true;
+                    filtered_cloud_msg.is_bigendian = false;
+
+                    sensor_msgs::PointCloud2Modifier modifier(filtered_cloud_msg);
+                    modifier.setPointCloud2FieldsByString(1, "xyz");
+                    modifier.resize(local_points_.size());
+
+                    sensor_msgs::PointCloud2Iterator<float> out_x(filtered_cloud_msg, "x");
+                    sensor_msgs::PointCloud2Iterator<float> out_y(filtered_cloud_msg, "y");
+                    sensor_msgs::PointCloud2Iterator<float> out_z(filtered_cloud_msg, "z");
+
+                    for (const auto& pt : local_points_) {
+                        *out_x = pt.x;
+                        *out_y = pt.y;
+                        *out_z = pt.z;
+                        ++out_x; ++out_y; ++out_z;
+                    }
+
+                    filtered_cloud_pub_->publish(filtered_cloud_msg);
+                }
             }
             
             double randNormal(double sigma) {
@@ -896,6 +921,7 @@ namespace mcl {
             rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr particleMarker_;
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vel_marker_pub_;
+            rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr filtered_cloud_pub_;
 
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
