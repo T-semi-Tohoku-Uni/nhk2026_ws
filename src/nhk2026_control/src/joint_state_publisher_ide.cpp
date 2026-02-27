@@ -22,7 +22,16 @@ JointStatePublisherIde::JointStatePublisherIde()
 
 void JointStatePublisherIde::motor_callback(const std_msgs::msg::Float32MultiArray::SharedPtr rxdata)
 {
+    sensor_msgs::msg::JointState txdata;
+    txdata.name = {"joint1", "joint2", "joint3"};
+    txdata.position = {
+        rxdata->data[0],
+        rxdata->data[1],
+        rxdata->data[2]
+    };
+    txdata.header.stamp = this->get_clock()->now();
 
+    this->joint_state_publisher_->publish(txdata);
 }
 
 int main(int argc, char *argv[])
