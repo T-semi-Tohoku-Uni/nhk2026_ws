@@ -18,6 +18,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
+#include <fstream> 
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -524,8 +525,9 @@ namespace mcl {
 
             void readMap() {
                 try {
-                    RCLCPP_INFO(this->get_logger(), "Loading 3D map from: %s", this->mapFile_.c_str());
+                    RCLCPP_INFO(this->get_logger(), "Loading 3D map metadata from: %s", this->mapFile_.c_str());
                     
+                    // 1. マップのサイズや原点などのメタデータは常にHDF5から読み込む
                     H5File file(this->mapFile_, H5F_ACC_RDONLY);
                     DataSet dataset = file.openDataSet("map_data");
                     DataSpace dataspace = dataset.getSpace();
@@ -553,35 +555,75 @@ namespace mcl {
                     }
 
                     size_t total_size = dim_x_ * dim_y_ * dim_z_;
-                    std::vector<uint8_t> map_data(total_size);
-                    dataset.read(map_data.data(), PredType::NATIVE_UINT8);
 
-                    const float INF = 1e9;
-                    std::vector<float> distFieldOut(total_size, 0.0f);
-                    std::vector<float> distFieldIn(total_size, 0.0f);
+                    // --- 追加: SDFキャッシュの読み書き処理 ---
+                    // キャッシュファイル名の生成 (元のHDF5ファイル名 + ".sdf.bin")
+                    std::string cacheFile = this->mapFile_ + ".sdf.bin";
+                    bool cache_loaded = false;
 
-                    for (size_t i = 0; i < total_size; ++i) {
-                        if (map_data[i] == 1) {
-                            distFieldOut[i] = 0.0f;
-                            distFieldIn[i]  = INF;
+                    // キャッシュファイルをバイナリモードで開き、存在確認とサイズ確認を行う
+                    std::ifstream ifs(cacheFile, std::ios::binary | std::ios::ate);
+                    if (ifs.is_open()) {
+                        std::streamsize size = ifs.tellg(); // ファイルサイズを取得
+                        ifs.seekg(0, std::ios::beg);
+                        
+                        // ファイルサイズが現在のマップ設定と一致するか確認
+                        if (size == static_cast<std::streamsize>(total_size * sizeof(float))) {
+                            RCLCPP_INFO(this->get_logger(), "Found SDF cache! Loading from: %s", cacheFile.c_str());
+                            distField3D_.resize(total_size);
+                            if (ifs.read(reinterpret_cast<char*>(distField3D_.data()), size)) {
+                                cache_loaded = true;
+                                RCLCPP_INFO(this->get_logger(), "SDF cache loaded successfully (Lightning fast!).");
+                            } else {
+                                RCLCPP_WARN(this->get_logger(), "Failed to read SDF cache. Recalculating...");
+                            }
                         } else {
-                            distFieldOut[i] = INF;
-                            distFieldIn[i]  = 0.0f;
+                            RCLCPP_WARN(this->get_logger(), "SDF cache size mismatch (Map might have changed). Recalculating...");
                         }
                     }
 
-                    RCLCPP_INFO(this->get_logger(), "Computing 3D SDF...");
-                    compute3DEDT(distFieldOut);
-                    compute3DEDT(distFieldIn);
+                    // キャッシュが読めなかった場合（初回起動時、またはマップが更新された時）は計算する
+                    if (!cache_loaded) {
+                        RCLCPP_INFO(this->get_logger(), "Computing 3D SDF from scratch... This may take a few seconds.");
 
-                    distField3D_.resize(total_size);
-                    for (size_t i = 0; i < total_size; ++i) {
-                        float d_out = std::sqrt(distFieldOut[i]);
-                        float d_in  = std::sqrt(distFieldIn[i]);
-                        distField3D_[i] = (d_out - d_in) * mapResolution_;
+                        std::vector<uint8_t> map_data(total_size);
+                        dataset.read(map_data.data(), PredType::NATIVE_UINT8);
+
+                        const float INF = 1e9;
+                        std::vector<float> distFieldOut(total_size, 0.0f);
+                        std::vector<float> distFieldIn(total_size, 0.0f);
+
+                        for (size_t i = 0; i < total_size; ++i) {
+                            if (map_data[i] == 1) {
+                                distFieldOut[i] = 0.0f;
+                                distFieldIn[i]  = INF;
+                            } else {
+                                distFieldOut[i] = INF;
+                                distFieldIn[i]  = 0.0f;
+                            }
+                        }
+
+                        compute3DEDT(distFieldOut);
+                        compute3DEDT(distFieldIn);
+
+                        distField3D_.resize(total_size);
+                        for (size_t i = 0; i < total_size; ++i) {
+                            float d_out = std::sqrt(distFieldOut[i]);
+                            float d_in  = std::sqrt(distFieldIn[i]);
+                            distField3D_[i] = (d_out - d_in) * mapResolution_;
+                        }
+
+                        // 計算結果をバイナリファイルとして保存
+                        std::ofstream ofs(cacheFile, std::ios::binary);
+                        if (ofs.is_open()) {
+                            ofs.write(reinterpret_cast<const char*>(distField3D_.data()), total_size * sizeof(float));
+                            RCLCPP_INFO(this->get_logger(), "Saved computed SDF to cache: %s", cacheFile.c_str());
+                        } else {
+                            RCLCPP_WARN(this->get_logger(), "Failed to save SDF cache. Check directory permissions.");
+                        }
+
+                        RCLCPP_INFO(this->get_logger(), "3D Distance Field successfully created.");
                     }
-
-                    RCLCPP_INFO(this->get_logger(), "3D Distance Field successfully created.");
                     
                     publishSDFCloud();
                 } catch (const std::exception& e) {
