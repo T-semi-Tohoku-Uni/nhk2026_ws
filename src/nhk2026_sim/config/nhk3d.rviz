@@ -313,7 +313,7 @@ Visualization Manager:
       Position Transformer: ""
       Selectable: true
       Size (Pixels): 3
-      Size (m): 0.009999999776482582
+      Size (m): 0.6000000238418579
       Style: Flat Squares
       Topic:
         Depth: 5
@@ -321,7 +321,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /livox/points
+        Value: /cloud
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
@@ -446,7 +446,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 2.16975736618042
+      Distance: 0.8657889366149902
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -461,10 +461,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5547971129417419
+      Pitch: 0.4547972083091736
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.753610610961914
+      Yaw: 5.54861307144165
     Saved: ~
 Window Geometry:
   Displays:
