@@ -10,7 +10,7 @@ JointStatePublisherIde::JointStatePublisherIde()
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
     this->joint_state_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
-        "joint_state",
+        "joint_states",
         device
     );
     this->motor_feedback_subscriber_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
