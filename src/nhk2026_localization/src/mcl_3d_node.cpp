@@ -304,6 +304,7 @@ namespace mcl {
                 resampleParticles();
                 printTrajectoryOnRviz2();
                 publishVelocityMarker();
+                
             }
 
             // 1次元の2乗距離変換
@@ -381,6 +382,7 @@ namespace mcl {
 
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
+                RCLCPP_INFO(this->get_logger(), "%.4f %.4f %.4f", x, y, theta);
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
