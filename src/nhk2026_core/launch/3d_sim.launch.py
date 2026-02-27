@@ -115,8 +115,6 @@ def generate_launch_description():
                 "initial_y": y,
                 "initial_theta": theta,
                 
-                # マップファイルの絶対パスを正しく指定する
-                "mapFile": os.path.join(get_package_share_directory("nhk2026_localization"), "map", "nhk2026_field_tamokuteki.h5"),
                 
                 # MCLのパラメータ
                 "particleNum": 100,
@@ -228,19 +226,19 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
-        gazebo,
-        node_robot_state_publisher,
-        gz_spawn_entity,
-        bridge,
+        # gazebo,
+        # node_robot_state_publisher,
+        # gz_spawn_entity,
+        # bridge,
         rviz,
-        static_from_map_to_odom,
-        # joy_node,
-        # joy2Vel_node,
-        vel_feedback_node,
-        map_publisher,
-        path_planner,
-        pursuit,
+        # static_from_map_to_odom,
+        # # joy_node,
+        # # joy2Vel_node,
+        # vel_feedback_node,
+        # map_publisher,
+        # path_planner,
+        # pursuit,
         # bt_node,
         mcl_3d_node,
-        delayed_bt_node,
+        #delayed_bt_node,
     ])
