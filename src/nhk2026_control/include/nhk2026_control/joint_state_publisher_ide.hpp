@@ -12,5 +12,8 @@ class JointStatePublisherIde
 public:
     JointStatePublisherIde();
 private:
-    
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
+
+    void motor_callback(const std_msgs::msg::Float32MultiArray::SharedPtr rxdata);
+    rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr motor_feedback_subscriber_;
 };
