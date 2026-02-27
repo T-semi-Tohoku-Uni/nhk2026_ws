@@ -15,9 +15,9 @@ import math
 import random
 
 def generate_launch_description():
-    x = -1.0
-    y = 1.0
-    z = 0.0
+    x = -1.47
+    y = 0.45
+    z = 0.1
     theta = 0.0
     frequency = 25.0
 
@@ -79,7 +79,7 @@ def generate_launch_description():
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
             '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
             '/tf_static@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/livox/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
+            '/livox/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
             '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
             ],
         output='screen'
