@@ -129,10 +129,7 @@ def generate_launch_description():
             ('/livox', '/livox/points'),
         ],
     )
-    delayed_bt_node = TimerAction(
-        period=180.0, 
-        actions=[bt_node]
-    )
+   
 
 
 
@@ -219,6 +216,11 @@ def generate_launch_description():
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
         parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
+    )
+
+    delayed_bt_node = TimerAction(
+        period=180.0, 
+        actions=[bt_node]
     )
 
    
