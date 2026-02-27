@@ -217,7 +217,7 @@ def generate_launch_description():
     )
 
     delayed_bt_node = TimerAction(
-        period=180.0, 
+        period=5.0, 
         actions=[bt_node]
     )
 
