@@ -9,6 +9,7 @@ Panels:
         - /Marker1/Topic1
         - /Path1/Topic1
         - /Marker2/Topic1
+        - /Path2
         - /PointCloud24/Topic1
       Splitter Ratio: 0.5
     Tree Height: 322
@@ -341,7 +342,7 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
-      Color: 25; 255; 0
+      Color: 170; 0; 0
       Enabled: true
       Head Diameter: 0.30000001192092896
       Head Length: 0.20000000298023224
@@ -461,10 +462,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.6297964453697205
+      Pitch: 0.8297963738441467
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.673616886138916
+      Yaw: 4.728617191314697
     Saved: ~
 Window Geometry:
   Displays:
