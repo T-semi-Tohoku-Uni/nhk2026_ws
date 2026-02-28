@@ -490,7 +490,6 @@ namespace mcl {
 
                 pubPath_->publish(path_);
             }
-
             void printParticlesMakerOnRviz2() {
                 sensor_msgs::msg::PointCloud2 cloud_;
                 cloud_.header.stamp = this->get_clock()->now();
@@ -511,14 +510,33 @@ namespace mcl {
                 sensor_msgs::PointCloud2Iterator<uint8_t>  iter_g(cloud_, "g");
                 sensor_msgs::PointCloud2Iterator<uint8_t>  iter_b(cloud_, "b");
 
-                for (const Particle &p: particles_) {
+                // 色を強調するために、現在のパーティクル群の中での最大重みを探す
+                double max_w = 0.0;
+                for (const auto& p : particles_) {
+                    if (p.getW() > max_w) max_w = p.getW();
+                }
+                if (max_w < 1e-9) max_w = 1.0; // ゼロ除算防止
+
+                for (const Particle &p : particles_) {
                     *iter_x = p.getX();
                     *iter_y = p.getY();
                     *iter_z = p.getZ(); 
 
-                    *iter_r = 0;
-                    *iter_g = 0;
-                    *iter_b = int(p.getW()*255);
+                    // 尤度の相対的な強さを 0.0 ~ 1.0 で計算
+                    double intensity = p.getW() / max_w;
+
+                    // 簡易的なカラーマップ (青 -> 緑 -> 赤)
+                    if (intensity < 0.5) {
+                        // 低尤度: 青から緑へ
+                        *iter_r = 0;
+                        *iter_g = static_cast<uint8_t>(255 * (intensity * 2.0));
+                        *iter_b = static_cast<uint8_t>(255 * (1.0 - intensity * 2.0));
+                    } else {
+                        // 高尤度: 緑から赤へ
+                        *iter_r = static_cast<uint8_t>(255 * ((intensity - 0.5) * 2.0));
+                        *iter_g = static_cast<uint8_t>(255 * (1.0 - (intensity - 0.5) * 2.0));
+                        *iter_b = 0;
+                    }
 
                     ++iter_x, ++iter_y, ++iter_z;
                     ++iter_r; ++iter_g; ++iter_b;
@@ -526,6 +544,7 @@ namespace mcl {
 
                 particleMarker_->publish(cloud_);
             }
+          
             
             void publishVelocityMarker() {
                 if (!cmdVel_) return;
