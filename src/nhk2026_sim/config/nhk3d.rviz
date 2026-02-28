@@ -9,7 +9,6 @@ Panels:
         - /Marker1/Topic1
         - /Path1/Topic1
         - /Marker2/Topic1
-        - /PointCloud24
         - /PointCloud24/Topic1
       Splitter Ratio: 0.5
     Tree Height: 322
@@ -226,7 +225,7 @@ Visualization Manager:
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.029999999329447746
+      Line Width: 0.5
       Name: Path
       Offset:
         X: 0
@@ -348,7 +347,7 @@ Visualization Manager:
       Head Length: 0.20000000298023224
       Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.029999999329447746
+      Line Width: 0.5
       Name: Path
       Offset:
         X: 0
