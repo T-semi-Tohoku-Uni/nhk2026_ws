@@ -231,8 +231,8 @@ namespace mcl {
                 sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
 
-               
-                int step = 1; 
+            
+                int step = 10; 
                 int count = 0;
 
                 for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {

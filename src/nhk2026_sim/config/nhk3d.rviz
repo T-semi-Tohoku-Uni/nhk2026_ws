@@ -9,7 +9,7 @@ Panels:
         - /Marker1/Topic1
         - /Path1/Topic1
         - /Marker2/Topic1
-        - /Path2
+        - /PointCloud24
         - /PointCloud24/Topic1
       Splitter Ratio: 0.5
     Tree Height: 322
@@ -377,7 +377,7 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: AxisColor
+      Color Transformer: RGB8
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false
