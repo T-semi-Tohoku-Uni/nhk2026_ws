@@ -756,28 +756,29 @@ namespace mcl {
                     for (std::size_t k = 0; k < likelihood_table[i].size(); k++) {
                         log_weights[i] += std::log(likelihood_table[i][k]); 
                     }
-                    
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
                     }
+                } 
 
-                    std::double_t w_sum = 0.0;
-                    std::vector<double> linear_weights(particles_.size(), 0.0);
+                
+                std::double_t w_sum = 0.0;
+                std::vector<double> linear_weights(particles_.size(), 0.0);
 
-                    for (std::size_t i = 0; i < particles_.size(); i++) {
-                        linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
-                        w_sum += linear_weights[i];
-                    }
-
-                    std::double_t w_sq_sum = 0.0;
-                    for (std::size_t i = 0; i < particles_.size(); i++) {
-                        double normalized_w = linear_weights[i] / w_sum;
-                        particles_[i].setW(normalized_w);
-                        w_sq_sum += normalized_w * normalized_w;
-                    }
-
-                    effectiveSampleSize_ = 1.0 / w_sq_sum;
+                for (std::size_t j = 0; j < particles_.size(); j++) { // 変数名を j に変更
+                    linear_weights[j] = std::exp(log_weights[j] - max_log_weight);
+                    w_sum += linear_weights[j];
                 }
+
+                std::double_t w_sq_sum = 0.0;
+                for (std::size_t j = 0; j < particles_.size(); j++) {
+                    double normalized_w = linear_weights[j] / w_sum;
+                    particles_[j].setW(normalized_w);
+                    w_sq_sum += normalized_w * normalized_w;
+                }
+                effectiveSampleSize_ = 1.0 / w_sq_sum;
+                
+                
             }
 
             std::vector<double> caculateLikelihoodFieldModel(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
@@ -933,8 +934,9 @@ namespace mcl {
 
             inline void xyz2uvw(double x, double y, double z, int *u, int *v, int *w) const {
                 *u = static_cast<int>((x - mapOrigin_[0]) / mapResolution_);
-                int v_relative = static_cast<int>((y - mapOrigin_[1]) / mapResolution_);
-                *v = mapHeight_ - 1 - v_relative;
+                // int v_relative = static_cast<int>((y - mapOrigin_[1]) / mapResolution_);
+                // *v = mapHeight_ - 1 - v_relative;
+                *v = static_cast<int>((y - mapOrigin_[1]) / mapResolution_);
                 *w = static_cast<int>((z - mapOrigin_[2]) / mapResolution_);
             }
 
