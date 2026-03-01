@@ -1,0 +1,10 @@
+sensor_msgs/JointState joint_states
+float32 max_speed
+float32 max_acc
+---
+bool success
+string msg
+---
+geometry_msgs/PoseStamped current
+float32 pos_error
+string msg
