@@ -227,6 +227,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         launch_ros.actions.SetParameter(name='use_sim_time', value=True),
+        SetEnvironmentVariable('WITH_SIM', '1'),
         gazebo,
         node_robot_state_publisher,
         gz_spawn_entity,

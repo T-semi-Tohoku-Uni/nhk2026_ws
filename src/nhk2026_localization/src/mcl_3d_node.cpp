@@ -561,7 +561,7 @@ namespace mcl {
 
                 marker.pose.position.x = mclPose_.position.x;
                 marker.pose.position.y = mclPose_.position.y;
-                marker.pose.position.z = 0.1; 
+                marker.pose.position.z = mclPose_.position.z; 
 
                 double vel_angle = std::atan2(cmdVel_->linear.y, cmdVel_->linear.x);
                 double speed = std::sqrt(cmdVel_->linear.x * cmdVel_->linear.x + cmdVel_->linear.y * cmdVel_->linear.y);
