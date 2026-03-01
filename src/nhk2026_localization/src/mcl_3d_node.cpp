@@ -101,6 +101,7 @@ namespace mcl {
                 this->declare_parameter<int>("particleNum", 100);
                 this->declare_parameter<std::float_t>("initial_x", -1.0);
                 this->declare_parameter<std::float_t>("initial_y", 1.0);
+                this->declare_parameter<std::float_t>("initial_z", 0.0);
                 this->declare_parameter<std::float_t>("initial_theta", M_PI/2);
 
                 this->declare_parameter<std::double_t>("zHit", 0.9);
@@ -118,6 +119,7 @@ namespace mcl {
                 
                 double initial_x = this->get_parameter("initial_x").as_double();
                 double initial_y = this->get_parameter("initial_y").as_double();
+                double initial_z = this->get_parameter("initial_z").as_double();
                 double initial_theta = this->get_parameter("initial_theta").as_double();
 
                 this->zHit_ = this->get_parameter("zHit").as_double();
@@ -134,7 +136,7 @@ namespace mcl {
                 // mclPose_の初期化
                 mclPose_.position.x = initial_x;
                 mclPose_.position.y = initial_y;
-                mclPose_.position.z = 0.0;
+                mclPose_.position.z = initial_z;;
                 tf2::Quaternion init_q;
                 init_q.setRPY(0.0, 0.0, initial_theta);
                 mclPose_.orientation.x = init_q.x();

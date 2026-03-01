@@ -15,9 +15,9 @@ import math
 import random
 
 def generate_launch_description():
-    x = -1.47
-    y = 0.45
-    z = 0.1
+    x = -1.8
+    y = 3.4
+    z = 0.2
     theta = 0.0
     frequency = 25.0
 
@@ -236,9 +236,9 @@ def generate_launch_description():
         # joy2Vel_node,
         vel_feedback_node,
         map_publisher,
-        path_planner,
-        pursuit,
+        # path_planner,
+        # pursuit,
         #bt_node,
         mcl_3d_node,
-        delayed_bt_node,
+        #delayed_bt_node,
     ])
