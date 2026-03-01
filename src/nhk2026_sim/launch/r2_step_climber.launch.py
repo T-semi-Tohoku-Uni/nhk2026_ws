@@ -15,7 +15,7 @@ def generate_launch_description():
             " ",
             PathJoinSubstitution(
                 [
-                    FindPackageShare("r2_step_climber_description"),
+                    FindPackageShare("nhk2026_sim"),
                     "urdf",
                     "r2_step_climber.xacro",
                 ]
