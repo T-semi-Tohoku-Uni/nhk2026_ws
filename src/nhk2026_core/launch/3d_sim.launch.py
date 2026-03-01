@@ -113,6 +113,7 @@ def generate_launch_description():
                 # ロボットの初期位置(x, y, theta)とMCLの初期位置を一致させる
                 "initial_x": x,
                 "initial_y": y,
+                "initial_z": z,
                 "initial_theta": theta,
                 
                 
