@@ -17,7 +17,7 @@ import random
 def generate_launch_description():
     x = -1.8
     y = 3.4
-    z = 0.2
+    z = 0.4
     theta = 0.0
     frequency = 25.0
 
