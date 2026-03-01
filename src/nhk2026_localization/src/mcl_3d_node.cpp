@@ -315,7 +315,7 @@ namespace mcl {
 
                     double theta = yaw + randNormal(noise_theta);
                     
-                    particles_[i].setPose(x, y, 0.0, theta);
+                    particles_[i].setPose(x, y, mclPose_.position.z, theta);
                     particles_[i].setW(initial_w);
                 }
             }
