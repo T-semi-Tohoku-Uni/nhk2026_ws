@@ -3,6 +3,9 @@
 
 <xacro:include filename="$(find r2_step_climber_description)/urdf/materials.xacro" />
 <xacro:include filename="$(find r2_step_climber_description)/urdf/r2_step_climber.trans" />
+
+<link name="base_root_r2"/>
+
 <link name="base_link_r2">
   <inertial>
     <origin xyz="-0.01026966368511183 -0.08711294351843835 0.11765235493872747" rpy="0 0 0"/>
@@ -87,6 +90,11 @@
   </collision>
 </link>
 
+<joint name="base_root_r2" type="fixed">
+  <parent link="base_root_r2"/>
+  <child link="base_link_r2"/>
+</joint>
+
 <joint name="back_arm_joint" type="revolute">
   <origin xyz="0.019 -0.31 0.06" rpy="0 0 0"/>
   <parent link="base_link_r2"/>
@@ -96,7 +104,7 @@
 </joint>
 
 <joint name="left_arm_joint" type="continuous">
-  <origin xyz="-0.275 0.095 0.06" rpy="0 0 0"/>
+  <origin xyz="-0.275 0.095 0.06" rpy="3.141593 0 0"/>
   <parent link="base_link_r2"/>
   <child link="R2_step_climber_front_v2_1"/>
   <axis xyz="-1.0 0.0 0.0"/>
@@ -106,7 +114,7 @@
   <origin xyz="0.275 0.095 0.06" rpy="0 0 0"/>
   <parent link="base_link_r2"/>
   <child link="R2_step_climber_front_v2_2"/>
-  <axis xyz="1.0 0.0 0.0"/>
+  <axis xyz="-1.0 0.0 0.0"/>
 </joint>
 
 </robot>
