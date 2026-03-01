@@ -124,7 +124,7 @@ def generate_launch_description():
         ],
         remappings=[
             ('clock', '/world/nhk2026/clock'),
-            ('/livox', '/livox/points'),
+            ('/livox/lidar', '/livox/points'),
         ],
     )
    

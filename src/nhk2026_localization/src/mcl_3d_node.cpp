@@ -170,7 +170,7 @@ namespace mcl {
 
                 auto lidarQos = rclcpp::SensorDataQoS();
                 subCloud_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-                    "/livox", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
+                    "/livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
                 );
 
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
