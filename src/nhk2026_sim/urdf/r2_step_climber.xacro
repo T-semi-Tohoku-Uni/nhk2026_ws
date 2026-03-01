@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <robot name="r2_step_climber" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-<xacro:include filename="$(find r2_step_climber_description)/urdf/materials.xacro" />
-<xacro:include filename="$(find r2_step_climber_description)/urdf/r2_step_climber.trans" />
+<xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro" />
+<xacro:include filename="$(find nhk2026_sim)/urdf/r2_step_climber.trans" />
 
 <link name="base_root_r2"/>
 
@@ -15,14 +15,14 @@
   <visual>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -36,14 +36,14 @@
   <visual>
     <origin xyz="-0.019 0.31 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="-0.019 0.31 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -57,14 +57,14 @@
   <visual>
     <origin xyz="0.275 -0.095 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="0.275 -0.095 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -78,14 +78,14 @@
   <visual>
     <origin xyz="-0.275 -0.095 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="aluminum_satin"/>
   </visual>
   <collision>
     <origin xyz="-0.275 -0.095 -0.06" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
