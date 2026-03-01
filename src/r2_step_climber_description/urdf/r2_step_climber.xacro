@@ -3,7 +3,7 @@
 
 <xacro:include filename="$(find r2_step_climber_description)/urdf/materials.xacro" />
 <xacro:include filename="$(find r2_step_climber_description)/urdf/r2_step_climber.trans" />
-<link name="base_link">
+<link name="base_link_r2">
   <inertial>
     <origin xyz="-0.01026966368511183 -0.08711294351843835 0.11765235493872747" rpy="0 0 0"/>
     <mass value="10.778955519675563"/>
@@ -12,14 +12,14 @@
   <visual>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
     <material name="_"/>
   </visual>
   <collision>
     <origin xyz="0 0 0" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://r2_step_climber_description/meshes/base_link.stl" scale="0.001 0.001 0.001"/>
+      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
     </geometry>
   </collision>
 </link>
@@ -89,7 +89,7 @@
 
 <joint name="back_arm_joint" type="revolute">
   <origin xyz="0.019 -0.31 0.06" rpy="0 0 0"/>
-  <parent link="base_link"/>
+  <parent link="base_link_r2"/>
   <child link="R2_step_clibmer_arm_v2_1"/>
   <axis xyz="-1.0 0.0 0.0"/>
   <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
@@ -97,14 +97,14 @@
 
 <joint name="left_arm_joint" type="continuous">
   <origin xyz="-0.275 0.095 0.06" rpy="0 0 0"/>
-  <parent link="base_link"/>
+  <parent link="base_link_r2"/>
   <child link="R2_step_climber_front_v2_1"/>
   <axis xyz="-1.0 0.0 0.0"/>
 </joint>
 
 <joint name="right_arm_joint" type="continuous">
   <origin xyz="0.275 0.095 0.06" rpy="0 0 0"/>
-  <parent link="base_link"/>
+  <parent link="base_link_r2"/>
   <child link="R2_step_climber_front_v2_2"/>
   <axis xyz="1.0 0.0 0.0"/>
 </joint>
