@@ -1,0 +1,120 @@
+<?xml version="1.0" ?>
+<robot name="r2_step_climber" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find r2_step_climber_description)/urdf/materials.xacro" />
+<xacro:include filename="$(find r2_step_climber_description)/urdf/r2_step_climber.trans" />
+
+<link name="base_root_r2"/>
+
+<link name="base_link_r2">
+  <inertial>
+    <origin xyz="-0.01026966368511183 -0.08711294351843835 0.11765235493872747" rpy="0 0 0"/>
+    <mass value="10.778955519675563"/>
+    <inertia ixx="0.6963" iyy="0.661712" izz="0.910674" ixy="0.018189" iyz="0.033933" ixz="0.072384"/>
+  </inertial>
+  <visual>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="aluminum_satin"/>
+  </visual>
+  <collision>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="R2_step_clibmer_arm_v2_1">
+  <inertial>
+    <origin xyz="-0.009920789399333465 -0.20281005076730768 0.004691281183871077" rpy="0 0 0"/>
+    <mass value="2.376029715091139"/>
+    <inertia ixx="0.011384" iyy="0.022759" izz="0.031797" ixy="0.000359" iyz="-0.000365" ixz="2.2e-05"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.019 0.31 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="aluminum_satin"/>
+  </visual>
+  <collision>
+    <origin xyz="-0.019 0.31 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="R2_step_climber_front_v2_1">
+  <inertial>
+    <origin xyz="-0.017127121216781338 0.18644792175710626 2.1817372908294885e-10" rpy="0 0 0"/>
+    <mass value="1.2591666960686572"/>
+    <inertia ixx="0.007687" iyy="0.000408" izz="0.007414" ixy="8.7e-05" iyz="-0.0" ixz="0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="0.275 -0.095 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="aluminum_satin"/>
+  </visual>
+  <collision>
+    <origin xyz="0.275 -0.095 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<link name="R2_step_climber_front_v2_2">
+  <inertial>
+    <origin xyz="0.017127121216781338 -0.18644792175710667 2.1817370132737324e-10" rpy="0 0 0"/>
+    <mass value="1.2591666960686572"/>
+    <inertia ixx="0.007687" iyy="0.000408" izz="0.007414" ixy="8.7e-05" iyz="0.0" ixz="-0.0"/>
+  </inertial>
+  <visual>
+    <origin xyz="-0.275 -0.095 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+    <material name="aluminum_satin"/>
+  </visual>
+  <collision>
+    <origin xyz="-0.275 -0.095 -0.06" rpy="0 0 0"/>
+    <geometry>
+      <mesh filename="package://r2_step_climber_description/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+    </geometry>
+  </collision>
+</link>
+
+<joint name="base_root_r2" type="fixed">
+  <parent link="base_root_r2"/>
+  <child link="base_link_r2"/>
+</joint>
+
+<joint name="back_arm_joint" type="revolute">
+  <origin xyz="0.019 -0.31 0.06" rpy="0 0 0"/>
+  <parent link="base_link_r2"/>
+  <child link="R2_step_clibmer_arm_v2_1"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+  <limit upper="1.570796" lower="-1.570796" effort="100" velocity="100"/>
+</joint>
+
+<joint name="left_arm_joint" type="continuous">
+  <origin xyz="-0.275 0.095 0.06" rpy="3.141593 0 0"/>
+  <parent link="base_link_r2"/>
+  <child link="R2_step_climber_front_v2_1"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+</joint>
+
+<joint name="right_arm_joint" type="continuous">
+  <origin xyz="0.275 0.095 0.06" rpy="0 0 0"/>
+  <parent link="base_link_r2"/>
+  <child link="R2_step_climber_front_v2_2"/>
+  <axis xyz="-1.0 0.0 0.0"/>
+</joint>
+
+</robot>
