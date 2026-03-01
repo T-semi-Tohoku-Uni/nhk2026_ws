@@ -1,0 +1,37 @@
+<?xml version="1.0" ?>
+<robot name="r2_step_climber" xmlns:xacro="http://www.ros.org/wiki/xacro" >
+
+<transmission name="back_arm_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="back_arm_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="back_arm_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="left_arm_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="left_arm_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="left_arm_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+<transmission name="right_arm_joint_tran">
+  <type>transmission_interface/SimpleTransmission</type>
+  <joint name="right_arm_joint">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+  </joint>
+  <actuator name="right_arm_joint_actr">
+    <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+
+</robot>
