@@ -894,14 +894,15 @@ namespace mcl {
                     for (std::size_t i = 0; i < scan.ranges.size(); i += scanStep_) {
                         std::double_t r = scan.ranges[i];
                         
-                        // ※修正: 無効なデータの場合はここでcontinueして無駄な計算を省く
+                        
                         if (std::isnan(r)  || r < scan.range_min || scan.range_max < r) {
                             p_vector.push_back(zRand_*pRand); 
+                            continue;
                         }
 
                         std::double_t theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
                         
-                        // LD-Lidarの場合の角度補正
+                        // LD-Lidarの場合の角度補正 
                         if (current_lidar_pose == 0 && !is_sim_) {
                             theta_lidar -= 3.0*M_PI/2.0;
                         }
@@ -914,6 +915,12 @@ namespace mcl {
                         if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
                             std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
                             std::double_t d = 0.0;
+
+                            double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
+                            if (sdf_val > dynamic_obstacle_threshold) {
+                                p_vector.push_back(zRand_*pRand);
+                                continue; // 尤度計算の対象から外し、ペナルティを与えない
+                            }
                             if (sdf_val >= 0) {
                                 d = sdf_val;
                             } else {

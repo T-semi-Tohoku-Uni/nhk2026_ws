@@ -821,6 +821,12 @@ namespace mcl {
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
                         double d = 0.0;
+
+                        double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
+                        if (sdf_val > dynamic_obstacle_threshold) {
+                            p_vector.push_back(zRand_*pRand);
+                            continue; // 尤度計算の対象から外し、ペナルティを与えない
+                        }
                         if (sdf_val >= 0.0) {
                             d = sdf_val;
                         } else {
