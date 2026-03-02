@@ -106,10 +106,10 @@ namespace mcl {
 
                 this->declare_parameter<std::double_t>("zHit", 0.9);
                 this->declare_parameter<std::double_t>("zRand", 0.1);
-                this->declare_parameter<double>("odomNoise1", 1.0);
-                this->declare_parameter<double>("odomNoise2", 1.0);
-                this->declare_parameter<double>("odomNoise3", 1.0);
-                this->declare_parameter<double>("odomNoise4", 1.0);
+                this->declare_parameter<double>("odomNoise1", 1.5);
+                this->declare_parameter<double>("odomNoise2", 0.05);
+                this->declare_parameter<double>("odomNoise3", 0.8);
+                this->declare_parameter<double>("odomNoise4", 0.01);
                 this->declare_parameter<double>("resampleThreshold", 0.9);
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
@@ -249,16 +249,16 @@ namespace mcl {
                     if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
                     
                     double dist_sq = x*x + y*y + z*z;
-                    if (dist_sq < 0.5*0.5 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
+                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
 
                     if ( z > 1.5) continue;
 
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    if (std::abs(z_map - 0.00) <= 0.05 ||
-                        std::abs(z_map - 0.20) <= 0.05 ||
-                        std::abs(z_map - 0.40) <= 0.05) {
+                    if (std::abs(z_map - 0.00) <= 0.03 ||
+                        std::abs(z_map - 0.20) <= 0.03 ||
+                        std::abs(z_map - 0.40) <= 0.03) {
                         continue;
                     }
 
