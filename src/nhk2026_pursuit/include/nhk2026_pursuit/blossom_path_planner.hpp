@@ -8,13 +8,15 @@
 
 
 namespace nhk2026_pursuit::blossom_path{
-    class BlossomPathPlanner : public rclcpp::Node{
-        public:
-            BlossomPathPlanner(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
-            struct GridIndex {
+    struct GridIndex {
                 int u;
                 int v;
             };
+    
+    class BlossomPathPlanner : public rclcpp::Node{
+        public:
+            BlossomPathPlanner(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+            
 
         private:
             rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr subPose_;
