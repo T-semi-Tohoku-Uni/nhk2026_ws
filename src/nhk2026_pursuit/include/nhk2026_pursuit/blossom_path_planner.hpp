@@ -19,7 +19,8 @@ namespace nhk2026_pursuit::blossom_path{
             void poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg);
             geometry_msgs::msg::Pose2D::SharedPtr pose_;
             void StraightPath(
-                
+                nav_msgs::msg::Path& path_msg,
+                double sx, double sy, double gx, double gy
             );
             void planBlossomPath(
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,

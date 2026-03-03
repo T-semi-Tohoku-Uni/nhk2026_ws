@@ -36,8 +36,33 @@ namespace nhk2026_pursuit::blossom_path{
         pose_ = msg;
     };
 
-    void BlossomPathPlanner::StraightPath(){
+    void BlossomPathPlanner::StraightPath(
+        nav_msgs::msg::Path& path_msg,
+        double sx, double sy, double gx, double gy
+    ){        
+        
+        double dx = gx - sx;
+        double dy = gy - sy;
+        double distance = sqrt(dx*dx + dy*dy);
+        double ux = dx / distance;
+        double uy = dy / distance;
+       
+        //shorten path
+        if (distance > shorten_){
+            gx -= shorten_ * ux;
+            gy -= shorten_ * uy;
+        }
 
+        //create path
+        for (int i=0; i<=num_points_; ++i){
+            double t = static_cast<double>(i) / num_points_;
+            geometry_msgs::msg::PoseStamped p;
+            p.header = path_msg.header;
+            p.pose.position.x = sx + t * (gx - sx);
+            p.pose.position.y = sy + t * (gy - sy);
+
+            path_msg.poses.push_back(p);
+        }
     };
 
 
@@ -50,77 +75,16 @@ namespace nhk2026_pursuit::blossom_path{
             return;
         }
 
-        RCLCPP_INFO(this->get_logger(), "Generating ball path to (%.2f, %.2f)", request->x, request->y);
-
         //generate path
         nav_msgs::msg::Path path_msg;
         path_msg.header.frame_id = "map";
         path_msg.header.stamp = this->now();
 
         
-        geometry_msgs::msg::PoseStamped start_pose;
-        geometry_msgs::msg::PoseStamped goal_pose;
-        start_pose.header = path_msg.header;
-        goal_pose.header = path_msg.header;
+        
+        
 
-        //get position
-        start_pose.pose.position.x = pose_->x;
-        start_pose.pose.position.y = pose_->y;
-        goal_pose.pose.position.x = request->x;
-        goal_pose.pose.position.y = request->y;
-
-        double theta = 0.0;
-
-        double dx = goal_pose.pose.position.x - start_pose.pose.position.x;
-        double dy = goal_pose.pose.position.y - start_pose.pose.position.y;
-        double distance = sqrt(dx*dx + dy*dy);
-        double ux = dx / distance;
-        double uy = dy / distance;
-
-        //goalの方向を向くようにthetaを決定
-        // if (distance < 1e-6){
-        //     RCLCPP_INFO(this->get_logger(), "start and goal are the same");
-        //     return;
-        // }
-        // else if (dx < 1e-6 && dx > -1e-6){
-        //     if (dy > 0.0){
-        //         theta = M_PI / 2.0;
-        //     }else{
-        //         theta = -M_PI / 2.0;
-        //     }
-        //     return;
-        // }
-        // else{
-        //     theta = atan2(dy, dx);
-        // }
-
-        // theta = theta - 2.0*M_PI/3.0 + theta_offset_;
-
-        if (request->is_return) {
-            theta = pose_->theta;
-        }
-
-       
-        //shorten path
-        if (distance > shorten_){
-            goal_pose.pose.position.x -= shorten_ * ux;
-            goal_pose.pose.position.y -= shorten_ * uy;
-        }
-
-        //create path
-        for (int i=0; i<=num_points_; ++i){
-            double t = static_cast<double>(i) / num_points_;
-            geometry_msgs::msg::PoseStamped p;
-            p.header = path_msg.header;
-            p.pose.position.x = start_pose.pose.position.x + t * (goal_pose.pose.position.x - start_pose.pose.position.x);
-            p.pose.position.y = start_pose.pose.position.y + t * (goal_pose.pose.position.y - start_pose.pose.position.y);
-
-            // tf2::Quaternion q;
-            // q.setRPY(0, 0, theta);
-            // p.pose.orientation = tf2::toMsg(q);
-
-            path_msg.poses.push_back(p);
-        }
+        
 
 
         visualization_msgs::msg::Marker arrow;
