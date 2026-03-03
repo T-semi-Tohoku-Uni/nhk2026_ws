@@ -79,6 +79,7 @@ def generate_launch_description():
         package='nhk2026_bridge',
         executable='nhk2026_canbridge',
         name='nhk2026_canbridge_dansa',
+        namespace='',
         parameters=[canid_file],
         output='screen',
         emulate_tty=True, 
