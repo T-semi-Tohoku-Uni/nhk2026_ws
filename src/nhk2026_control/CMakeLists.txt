@@ -13,24 +13,41 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
 
-include_directories(
-  include
-  include/${PROJECT_NAME}
-)
+# 依存関係をまとめる関数
+function(setup_node_dependencies target)
+  # このパッケージ内で使う依存関係をリンクします
+  ament_target_dependencies(${target}
+    rclcpp
+    std_msgs
+    sensor_msgs
+  )
 
-add_executable(joint_state_publisher_ide
-  src/joint_state_publisher_ide.cpp
-)
+  # インクルードディレクトリの設定
+  target_include_directories(${target}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include>"
+  )
+endfunction()
 
-ament_target_dependencies(joint_state_publisher_ide
-  rclcpp
-  std_msgs
-  sensor_msgs
-)
+# ノード登録用の関数
+function(ros_node_executable target_name source_file)
+  add_executable(${target_name} ${source_file})
+  setup_node_dependencies(${target_name})
+  install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
+endfunction()
+
+
+# 実行ファイルの追加（1行ずつ書くだけ！）
+ros_node_executable(joint_state_publisher_ide src/joint_state_publisher_ide.cpp)
+ros_node_executable(joint_state_publisher_dansa src/joint_state_publisher_dansa.cpp)
+
+
 
 install(
-  TARGETS joint_state_publisher_ide
-  DESTINATION lib/${PROJECT_NAME}
+  DIRECTORY include launch config
+  DESTINATION share/${PROJECT_NAME}
+  OPTIONAL
 )
 
 add_executable(ide_arm_sim_bridge

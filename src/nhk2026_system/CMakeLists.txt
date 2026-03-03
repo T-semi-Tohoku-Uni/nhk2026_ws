@@ -20,64 +20,51 @@ find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(trac_ik_lib QUIET)
 
-include_directories(
-  include
-  include/${PROJECT_NAME}
-)
+# 依存関係をまとめる関数
+function(setup_node_dependencies target)
+  # このパッケージ内で使う可能性のある依存関係をすべてまとめてリンクします
+  ament_target_dependencies(${target}
+    rclcpp
+    rclcpp_lifecycle
+    rclcpp_action
+    std_msgs
+    geometry_msgs
+    sensor_msgs
+    lifecycle_msgs
+    nhk2026_msgs
+  )
 
-add_executable(system_1st_video
-  src/system_1st_video.cpp
-)
+  target_include_directories(${target}
+    PUBLIC
+      "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+      "$<INSTALL_INTERFACE:include>"
+  )
+endfunction()
 
-ament_target_dependencies(system_1st_video
-  rclcpp
-  rclcpp_lifecycle
-  std_msgs
-  geometry_msgs
-  lifecycle_msgs
-  nhk2026_msgs
-)
+# ノード登録用の関数
+function(ros_node_executable target_name source_file)
+  add_executable(${target_name} ${source_file})
+  setup_node_dependencies(${target_name})
+  install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
+endfunction()
 
+
+# 実行ファイルの追加
+ros_node_executable(system_1st_video src/system_1st_video.cpp)
+ros_node_executable(ide_arm_action_server src/ide_arm_action_server.cpp)
+ros_node_executable(dansa_arm_action_server src/dansa_arm_action_server.cpp)
+
+
+# ディレクトリのインストール
 install(
-  TARGETS system_1st_video
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-add_executable(ide_arm_action_server
-  src/ide_arm_action_server.cpp
-)
-
-ament_target_dependencies(ide_arm_action_server
-  rclcpp
-  rclcpp_action
-  std_msgs
-  geometry_msgs
-  sensor_msgs
-  nhk2026_msgs
-  orocos_kdl
-  kdl_parser
-  ament_index_cpp
-)
-
-install(
-  TARGETS ide_arm_action_server
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-# add install
-install(
-  DIRECTORY config launch
+  DIRECTORY config launch include
   DESTINATION share/${PROJECT_NAME}
+  OPTIONAL 
 )
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # comment the line when a copyright and license is added to all source files
   set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # comment the line when this package is in a git repo and when
-  # a copyright and license is added to all source files
   set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
