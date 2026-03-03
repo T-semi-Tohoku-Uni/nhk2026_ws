@@ -22,6 +22,7 @@ set(msg_files
 set(action_files
   "action/Follow.action"
   "action/ArmMove.action"
+  "action/LegMove.action"
 )
 
 set(srv_files

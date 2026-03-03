@@ -57,7 +57,7 @@ def _ensure_can0_up(context, *args, **kwargs):
 def generate_launch_description():
     # パス設定
     pkg_share_bridge = get_package_share_directory('nhk2026_bridge')
-    canid_file = os.path.join(pkg_share_bridge, 'config', 'dansa_arm_canbridge.yml')
+    canid_file = os.path.join(pkg_share_bridge, 'config', 'step_leg_canbridge.yml')
 
     ld = LaunchDescription()
     
@@ -69,7 +69,7 @@ def generate_launch_description():
     canbridgenode = LifecycleNode(
         package='nhk2026_bridge',
         executable='nhk2026_canbridge',
-        name='nhk2026_canbridge_dansa',
+        name='nhk2026_canbridge_step',
         namespace='',
         parameters=[canid_file],
         output='screen',
@@ -77,24 +77,24 @@ def generate_launch_description():
     )
 
     # 3. Joint State Publisher (Dansa)
-    joint_state_publisher_dansa_node = Node(
+    joint_state_publisher_step_node = Node(
         package='nhk2026_control',
-        executable='joint_state_publisher_dansa',
-        name='joint_state_publisher_dansa',
+        executable='joint_state_publisher_step',
+        name='joint_state_publisher_step',
         output='screen'
     )
 
     # 4. Dansa Arm Action Server (今回テストしたい本体)
-    dansa_arm_action_server_node = Node(
+    step_leg_action_server_node = Node(
         package='nhk2026_system',
-        executable='dansa_arm_action_server',
-        name='dansa_arm_action_server',
+        executable='step_leg_action_server',
+        name='step_leg_action_server',
         output='screen'
     )
 
     ld.add_action(canbridgenode)
-    ld.add_action(joint_state_publisher_dansa_node)
-    ld.add_action(dansa_arm_action_server_node)
+    ld.add_action(joint_state_publisher_step_node)
+    ld.add_action(step_leg_action_server_node)
 
     # --- LifecycleNode 自動遷移イベントハンドラ ---
     canbridge_configure_event_handler = RegisterEventHandler(
