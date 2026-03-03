@@ -18,9 +18,16 @@ namespace nhk2026_pursuit::blossom_path{
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
             void poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg);
             geometry_msgs::msg::Pose2D::SharedPtr pose_;
+            void StraightPath(
+                
+            );
             void planBlossomPath(
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Response> response
             );
+            // rclcpp::Service<inrof2025_ros_type::srv::BallPath>::SharedPtr srv_gen_route_;
+            int num_points_;
+            double shorten_;
+            double theta_offset_;
     };
 }
