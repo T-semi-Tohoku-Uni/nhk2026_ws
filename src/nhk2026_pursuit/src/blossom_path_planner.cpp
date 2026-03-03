@@ -77,7 +77,8 @@ namespace nhk2026_pursuit::blossom_path{
             return waypoints;
         }
 
-        //origin resolutionをjsonから読み込む
+        //後でorigin resolutionをjsonから読み込む
+        //
         double origin_x;
         double origin_y;
         double resolution;
@@ -96,7 +97,7 @@ namespace nhk2026_pursuit::blossom_path{
 
     };
 
-    
+
 
     void BlossomPathPlanner::planBlossomPath(
         const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
@@ -113,12 +114,23 @@ namespace nhk2026_pursuit::blossom_path{
         path_msg.header.stamp = this->now();
 
         
+        //後で強化学習の関数からグリッドの配列をもらう
+        //
+        std::vector<GridIndex> grids;
+        std::vector<std::pair<double,double>> waypoints = grid2World(grids);
         
+        for(size_t i=0; i<waypoints.size()-1; ++i){
+            StraightPath(path_msg, 
+                        waypoints[i].first, waypoints[i].second, 
+                        waypoints[i+1].first, waypoints[i+1].second);
+        }
         
+        path_pub_->publish(path_msg);
 
-        
 
 
+
+        //visualization
         visualization_msgs::msg::Marker arrow;
         geometry_msgs::msg::Pose goal_robot_pose;
 
@@ -137,8 +149,6 @@ namespace nhk2026_pursuit::blossom_path{
         arrow.color.b = 1.0f;
         arrow.color.a = 1.0f;
         pose_arrow_pub_ -> publish(arrow);
-
-        path_pub_->publish(path_msg);
     };
 }
 
