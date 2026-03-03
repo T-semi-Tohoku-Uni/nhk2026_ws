@@ -52,7 +52,7 @@ namespace nhk2026_pursuit::blossom_path{
         if(distance < 1e-6){
             return;
         }
-        
+
         double ux = dx / distance;
         double uy = dy / distance;
        
@@ -87,8 +87,8 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         //後でorigin resolutionをjsonから読み込む
-        //仮に値を入れる
-        double origin_x   = -4.225;
+        //仮にblueフィールドの値を入れる
+        double origin_x   = -1.825;
         double origin_y   = 2.4;
         double resolution = 1.2;
 
