@@ -31,7 +31,7 @@ namespace nhk2026_pursuit::blossom_path{
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Response> response
             );
-            // rclcpp::Service<inrof2025_ros_type::srv::BallPath>::SharedPtr srv_gen_route_;
+            rclcpp::Service<inrof2025_ros_type::srv::BallPath>::SharedPtr srv_blossom_route_;
             int num_points_;
             double shorten_;
             double theta_offset_;

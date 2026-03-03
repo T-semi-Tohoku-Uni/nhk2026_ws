@@ -14,10 +14,14 @@ namespace nhk2026_pursuit::blossom_path{
 
         path_pub_ = create_publisher<nav_msgs::msg::Path>("route", pathQoS);
 
-        //ここをどうすればいいかわからない
-        // srv_blossom_route_ = this->create_service<inrof2025_ros_type::srv::>
-
-        
+        srv_blossom_route_ = this->create_service<inrof2025_ros_type::srv::BallPath>(
+            "plan_blossom_path",
+            std::bind(&BlossomPathPlanner::planBlossomPath,
+                    this,
+                    std::placeholders::_1,
+                    std::placeholders::_2)
+        );
+                
         //デバック用
         rclcpp::QoS poseArrowQoS(rclcpp::KeepLast(10));
         pose_arrow_pub_= this->create_publisher<visualization_msgs::msg::Marker>("pose_arrow_marker", poseArrowQoS);
@@ -44,6 +48,11 @@ namespace nhk2026_pursuit::blossom_path{
         double dx = gx - sx;
         double dy = gy - sy;
         double distance = sqrt(dx*dx + dy*dy);
+
+        if(distance < 1e-6){
+            return;
+        }
+        
         double ux = dx / distance;
         double uy = dy / distance;
        
@@ -78,10 +87,10 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         //後でorigin resolutionをjsonから読み込む
-        //
-        double origin_x;
-        double origin_y;
-        double resolution;
+        //仮に値を入れる
+        double origin_x   = -4.225;
+        double origin_y   = 2.4;
+        double resolution = 1.2;
 
         waypoints.push_back({pose_->x, pose_->y});
 
@@ -115,8 +124,16 @@ namespace nhk2026_pursuit::blossom_path{
 
         
         //後で強化学習の関数からグリッドの配列をもらう
-        //
-        std::vector<GridIndex> grids;
+        //仮にグリッドの配列を入れる
+        std::vector<GridIndex> grids = {
+            {0,0},
+            {1,0},
+            {2,0},
+            {3,0},
+            {4,0},
+            {5,0},   
+        };
+        
         std::vector<std::pair<double,double>> waypoints = grid2World(grids);
         
         for(size_t i=0; i<waypoints.size()-1; ++i){
@@ -140,7 +157,9 @@ namespace nhk2026_pursuit::blossom_path{
         arrow.id = 0;
         arrow.type = visualization_msgs::msg::Marker::ARROW;
         arrow.action = visualization_msgs::msg::Marker::ADD;
-        arrow.pose = path_msg.poses[path_msg.poses.size()-1].pose;
+        if (!path_msg.poses.empty()) {
+            arrow.pose = path_msg.poses.back().pose;
+        }
         arrow.scale.x = 0.08;
         arrow.scale.y = 0.04;
         arrow.scale.z = 0.04;
