@@ -6,11 +6,11 @@
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 
-class JointStatePublisherDansa
+class JointStatePublisherStep
 : public rclcpp::Node
 {
 public:
-    JointStatePublisherDansa();
+    JointStatePublisherStep();
 private:
     rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_state_publisher_;
 

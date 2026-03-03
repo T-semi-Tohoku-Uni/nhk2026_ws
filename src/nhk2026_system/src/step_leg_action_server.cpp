@@ -1,35 +1,35 @@
-#include "nhk2026_system/dansa_arm_action_server.hpp"
+#include "nhk2026_system/step_leg_action_server.hpp"
 
 using namespace std::chrono_literals;
 
-DansaArmActionServer::DansaArmActionServer(): rclcpp::Node("dansa_arm_action_server"){
+StepLegActionServer::StepLegActionServer(): rclcpp::Node("step_leg_action_server"){
     rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    this->action_server_ = rclcpp_action::create_server<ArmMove>(
+    this->action_server_ = rclcpp_action::create_server<LegMove>(
         this,
-        "dansa_arm",
-        std::bind(&DansaArmActionServer::handle_goal, this, _1, _2),
-        std::bind(&DansaArmActionServer::handle_cancel,this, _1),
-        std::bind(&DansaArmActionServer::handle_accepted, this, _1)
+        "step_leg",
+        std::bind(&StepLegActionServer::handle_goal, this, _1, _2),
+        std::bind(&StepLegActionServer::handle_cancel,this, _1),
+        std::bind(&StepLegActionServer::handle_accepted, this, _1)
     );
 
     this->joint_states_subscriber = this->create_subscription<sensor_msgs::msg::JointState>(
-        std::string("/joint_states_dansa"),
+        std::string("/joint_states_step"),
         device,
-        std::bind(&DansaArmActionServer::joint_state_callback, this, _1)
+        std::bind(&StepLegActionServer::joint_state_callback, this, _1)
     );
 
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
 
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
-        std::bind(&DansaArmActionServer::parameters_callback, this, _1)
+        std::bind(&StepLegActionServer::parameters_callback, this, _1)
     );
 }
 
-rcl_interfaces::msg::SetParametersResult DansaArmActionServer::parameters_callback(const std::vector<rclcpp::Parameter> &parameters){
+rcl_interfaces::msg::SetParametersResult StepLegActionServer::parameters_callback(const std::vector<rclcpp::Parameter> &parameters){
     rcl_interfaces::msg::SetParametersResult result;
 
     if (this->goal_active_)
@@ -52,7 +52,7 @@ rcl_interfaces::msg::SetParametersResult DansaArmActionServer::parameters_callba
     return result;
 }
 
-rclcpp_action::GoalResponse DansaArmActionServer::handle_goal(const rclcpp_action::GoalUUID &,std::shared_ptr<const ArmMove::Goal> goal){
+rclcpp_action::GoalResponse StepLegActionServer::handle_goal(const rclcpp_action::GoalUUID &,std::shared_ptr<const LegMove::Goal> goal){
     // todo アームの到達範囲をチェック
 
     if (!this->joint_subscribe_flag_)
@@ -74,50 +74,50 @@ rclcpp_action::GoalResponse DansaArmActionServer::handle_goal(const rclcpp_actio
         return rclcpp_action::GoalResponse::REJECT;
     }
 
-    RCLCPP_INFO(this->get_logger(), "arm start to move!");
+    RCLCPP_INFO(this->get_logger(), "leg start to move!");
     
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
-rclcpp_action::CancelResponse DansaArmActionServer::handle_cancel(
-    const std::shared_ptr<GoalHandleArmMove> goal_handle
+rclcpp_action::CancelResponse StepLegActionServer::handle_cancel(
+    const std::shared_ptr<GoalHandleLegMove> goal_handle
 )
 {
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     return rclcpp_action::CancelResponse::ACCEPT;
 }
 
-void DansaArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle)
+void StepLegActionServer::handle_accepted(const std::shared_ptr<GoalHandleLegMove> goal_handle)
 {
     rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    this->right_arm_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("right_arm"),
+    this->right_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("right_leg"),
         device
     );
-    this->left_arm_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("left_arm"),
+    this->left_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("left_leg"),
         device
     );
-    this->back_arm_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("back_arm"),
+    this->back_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("back_leg"),
         device
     );
     this->feedback_timer_ = this->create_wall_timer(
         0.05s,
-        std::bind(&DansaArmActionServer::feedback_timer_callback, this)
+        std::bind(&StepLegActionServer::feedback_timer_callback, this)
     );
 
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
-    std::thread{std::bind(&DansaArmActionServer::execute, this, _1), goal_handle}.detach();
+    std::thread{std::bind(&StepLegActionServer::execute, this, _1), goal_handle}.detach();
 }
 
-void DansaArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_handle)
+void StepLegActionServer::execute(const std::shared_ptr<GoalHandleLegMove> goal_handle)
 {
-    const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
-    ArmMove::Result::SharedPtr result = std::make_shared<ArmMove::Result>();
+    const std::shared_ptr<const nhk2026_msgs::action::LegMove_Goal> goal = goal_handle->get_goal();
+    LegMove::Result::SharedPtr result = std::make_shared<LegMove::Result>();
 
     rclcpp::Rate loop_rate(100.0);
     while (rclcpp::ok())
@@ -141,19 +141,19 @@ void DansaArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal
         {
             std_msgs::msg::Float32MultiArray cmd;
             cmd.data = {static_cast<float>(goal->joint_states.position[0]), goal->max_speed, goal->max_acc};
-            right_arm_motor_publisher_->publish(cmd);
+            right_leg_motor_publisher_->publish(cmd);
         }
         if (!left_reached)
         {
             std_msgs::msg::Float32MultiArray cmd;
             cmd.data = {static_cast<float>(goal->joint_states.position[1]), goal->max_speed, goal->max_acc};
-            left_arm_motor_publisher_->publish(cmd);
+            left_leg_motor_publisher_->publish(cmd);
         }
         if (!back_reached)
         {
             std_msgs::msg::Float32MultiArray cmd;
             cmd.data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
-            back_arm_motor_publisher_->publish(cmd);
+            back_leg_motor_publisher_->publish(cmd);
         }
         
         // 3. 3つすべてのアームが目標に到達したかチェックする
@@ -174,13 +174,13 @@ void DansaArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal
     goal_handle->abort(result);
     this->goal_active_ = false;
 }
-void DansaArmActionServer::feedback_timer_callback()
+void StepLegActionServer::feedback_timer_callback()
 {
-    ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
+    LegMove::Feedback::SharedPtr feedback = std::make_shared<LegMove::Feedback>();
     // todo フィードバックを送る
 }
 
-void DansaArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
+void StepLegActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
 {
     if (rxdata->position.size() != 3)
     {
@@ -195,7 +195,7 @@ void DansaArmActionServer::joint_state_callback(const sensor_msgs::msg::JointSta
 int main(int argc, char *argv[])
 {
     rclcpp::init(argc, argv);
-    std::shared_ptr<DansaArmActionServer> node = std::make_shared<DansaArmActionServer>();
+    std::shared_ptr<StepLegActionServer> node = std::make_shared<StepLegActionServer>();
     rclcpp::spin(node->get_node_base_interface());
     rclcpp::shutdown();
     return 0;

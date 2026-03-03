@@ -3,7 +3,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 
-#include "nhk2026_msgs/action/arm_move.hpp"
+#include "nhk2026_msgs/action/leg_move.hpp"
 #include <std_msgs/msg/float32_multi_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -12,35 +12,35 @@
 
 using namespace std::placeholders;
 
-class DansaArmActionServer
+class StepLegActionServer
 : public rclcpp::Node
 {
 public:
-    DansaArmActionServer();
+    StepLegActionServer();
 
 private:
-    using ArmMove = nhk2026_msgs::action::ArmMove;
-    using GoalHandleArmMove = rclcpp_action::ServerGoalHandle<ArmMove>;
+    using LegMove = nhk2026_msgs::action::LegMove;
+    using GoalHandleLegMove = rclcpp_action::ServerGoalHandle<LegMove>;
     
     OnSetParametersCallbackHandle::SharedPtr parameter_callback_handle_;
     rcl_interfaces::msg::SetParametersResult parameters_callback(
         const std::vector<rclcpp::Parameter> &parameters
     );
 
-    rclcpp_action::Server<ArmMove>::SharedPtr action_server_;
+    rclcpp_action::Server<LegMove>::SharedPtr action_server_;
     rclcpp_action::GoalResponse handle_goal(
         const rclcpp_action::GoalUUID &,
-        std::shared_ptr<const ArmMove::Goal> goal
+        std::shared_ptr<const LegMove::Goal> goal
     );
     rclcpp_action::CancelResponse handle_cancel(
-        const std::shared_ptr<GoalHandleArmMove> goal_handle
+        const std::shared_ptr<GoalHandleLegMove> goal_handle
     );
-    void handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle);
-    void execute(const std::shared_ptr<GoalHandleArmMove> goal_handle);
+    void handle_accepted(const std::shared_ptr<GoalHandleLegMove> goal_handle);
+    void execute(const std::shared_ptr<GoalHandleLegMove> goal_handle);
 
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr right_arm_motor_publisher_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr left_arm_motor_publisher_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr back_arm_motor_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr right_leg_motor_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr left_leg_motor_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr back_leg_motor_publisher_;
 
     rclcpp::TimerBase::SharedPtr feedback_timer_;
     void feedback_timer_callback();

@@ -52,7 +52,7 @@ endfunction()
 # 実行ファイルの追加
 ros_node_executable(system_1st_video src/system_1st_video.cpp)
 ros_node_executable(ide_arm_action_server src/ide_arm_action_server.cpp)
-ros_node_executable(dansa_arm_action_server src/dansa_arm_action_server.cpp)
+ros_node_executable(step_leg_action_server src/step_leg_action_server.cpp)
 
 
 # ディレクトリのインストール

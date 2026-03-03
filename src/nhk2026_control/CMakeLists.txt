@@ -40,7 +40,7 @@ endfunction()
 
 # 実行ファイルの追加（1行ずつ書くだけ！）
 ros_node_executable(joint_state_publisher_ide src/joint_state_publisher_ide.cpp)
-ros_node_executable(joint_state_publisher_dansa src/joint_state_publisher_dansa.cpp)
+ros_node_executable(joint_state_publisher_step src/joint_state_publisher_step.cpp)
 
 
 
