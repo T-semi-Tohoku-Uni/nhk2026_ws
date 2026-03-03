@@ -22,7 +22,7 @@
 
     add_cmd_vel: true
     cmd_vel_canid: 0x100        # add_cmd_velがfalseの場合無視
-    cmd_vel_topic_name: "cmd_vel_ui_sequence" # add_cmd_velがfalseの場合無視
+    cmd_vel_topic_name: "cmd_vel" # add_cmd_velがfalseの場合無視
 
     add_cmd_vel_feedback: false
     cmd_vel_feedback_canid: 0x101                   # add_cmd_vel_feedbackがfalseの場合無視
