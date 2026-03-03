@@ -35,8 +35,8 @@ public:
             this, "step_leg", callback_group_
         );
 
-        robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_robomas", 10);
-        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+        robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/leg_robomas", 10);
+        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
     }
 
 private:
