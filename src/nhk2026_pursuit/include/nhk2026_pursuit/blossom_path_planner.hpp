@@ -11,6 +11,10 @@ namespace nhk2026_pursuit::blossom_path{
     class BlossomPathPlanner : public rclcpp::Node{
         public:
             BlossomPathPlanner(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+            struct GridIndex {
+                int u;
+                int v;
+            };
 
         private:
             rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr subPose_;
@@ -22,6 +26,7 @@ namespace nhk2026_pursuit::blossom_path{
                 nav_msgs::msg::Path& path_msg,
                 double sx, double sy, double gx, double gy
             );
+            std::vector<std::pair<double,double>> grid2World(const std::vector<GridIndex>& grids);
             void planBlossomPath(
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Response> response

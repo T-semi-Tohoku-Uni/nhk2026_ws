@@ -66,6 +66,38 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
+    //グリッドの配列を入力したら、座標の配列が出力される関数
+    std::vector<std::pair<double,double>> BlossomPathPlanner::grid2World(
+        const std::vector<GridIndex>& grids)
+    {
+        std::vector<std::pair<double, double>> waypoints;
+
+        if(!pose_){
+            RCLCPP_INFO(this->get_logger(), "no pose");
+            return waypoints;
+        }
+
+        //origin resolutionをjsonから読み込む
+        double origin_x;
+        double origin_y;
+        double resolution;
+
+        waypoints.push_back({pose_->x, pose_->y});
+
+        for (size_t i = 0; i < grids.size(); ++i){
+            const GridIndex& grid = grids[i];
+            double world_x = origin_x + grid.u * resolution;
+            double world_y = origin_y - grid.v * resolution;
+            
+            waypoints.push_back({world_x, world_y});
+        }
+
+        return waypoints;
+
+    };
+
+    
+
     void BlossomPathPlanner::planBlossomPath(
         const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
         const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Response> response
