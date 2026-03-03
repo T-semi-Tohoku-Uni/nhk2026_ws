@@ -53,6 +53,7 @@ endfunction()
 ros_node_executable(system_1st_video src/system_1st_video.cpp)
 ros_node_executable(ide_arm_action_server src/ide_arm_action_server.cpp)
 ros_node_executable(step_leg_action_server src/step_leg_action_server.cpp)
+ros_node_executable(step_action_server src/step_action_server.cpp)
 
 
 # ディレクトリのインストール
