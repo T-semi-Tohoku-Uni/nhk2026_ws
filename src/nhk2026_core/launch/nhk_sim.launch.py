@@ -158,6 +158,18 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
+    blossom_path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="blossom_path_planner",
+        output="screen",
+        parameters=[{
+            "num_points": 10,
+            "shorten": 0.15,
+            "theta_offset": 0.0,
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
     path_planner = Node(
         package="nhk2026_pursuit",
         executable="path_planner",
@@ -180,7 +192,7 @@ def generate_launch_description():
         parameters=[{
             "max_linear_speed": 1.75,
             "max_angular_speed": 0.7,
-            "max_linear_tolerance": 0.15,
+            "max_linear_tolerance": 0.75,
             "max_theta_tolerance": 0.10,
             "max_reaching_distance": 0.05,
             "max_reaching_theta": 0.10,
@@ -223,6 +235,7 @@ def generate_launch_description():
         # joy_node,
         # joy2Vel_node,
         vel_feedback_node,
+        blossom_path_planner,
         path_planner,
         pursuit,
         bt_node,

@@ -1,4 +1,4 @@
-#include <blossom_path_planner.hpp>
+#include "nhk2026_pursuit/blossom_path_planner.hpp"
 
 
 
@@ -14,8 +14,8 @@ namespace nhk2026_pursuit::blossom_path{
 
         path_pub_ = create_publisher<nav_msgs::msg::Path>("route", pathQoS);
 
-        srv_blossom_route_ = this->create_service<inrof2025_ros_type::srv::BallPath>(
-            "plan_blossom_path",
+        srv_gen_route_ = this->create_service<inrof2025_ros_type::srv::BallPath>(
+            "generate_ball_path",
             std::bind(&BlossomPathPlanner::planBlossomPath,
                     this,
                     std::placeholders::_1,
@@ -96,8 +96,8 @@ namespace nhk2026_pursuit::blossom_path{
 
         for (size_t i = 0; i < grids.size(); ++i){
             const GridIndex& grid = grids[i];
-            double world_x = origin_x + grid.u * resolution;
-            double world_y = origin_y - grid.v * resolution;
+            double world_x = origin_x - grid.v * resolution;
+            double world_y = origin_y + grid.u * resolution;
             
             waypoints.push_back({world_x, world_y});
         }
@@ -129,9 +129,12 @@ namespace nhk2026_pursuit::blossom_path{
             {0,0},
             {1,0},
             {2,0},
-            {3,0},
+            {2,1},
+            {3,1},
+            {4,1},
             {4,0},
-            {5,0},   
+            {5,0},
+
         };
         
         std::vector<std::pair<double,double>> waypoints = grid2World(grids);

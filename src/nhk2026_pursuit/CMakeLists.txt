@@ -24,6 +24,7 @@ find_package(HDF5 COMPONENTS C CXX REQUIRED)
 
 add_executable(pursuit src/pursuit.cpp)
 add_executable(path_planner src/path_planner.cpp)
+add_executable(blossom_path_planner src/blossom_path_planner.cpp)
 
 target_link_libraries(path_planner
   Eigen3::Eigen
@@ -55,6 +56,18 @@ ament_target_dependencies(path_planner
   inrof2025_ros_type
   )
 
+  ament_target_dependencies(blossom_path_planner
+  rclcpp
+  OpenCV
+  nav_msgs
+  geometry_msgs
+  std_msgs
+  # nhk2026_msgs
+  tf2
+  tf2_geometry_msgs
+  visualization_msgs
+  inrof2025_ros_type
+  )
   
 
 target_include_directories(pursuit 
@@ -71,6 +84,13 @@ target_include_directories(path_planner
 
 )
 
+target_include_directories(blossom_path_planner
+  PUBLIC 
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    ${HDF5_INCLUDE_DIRS}
+
+)
 
 
 target_link_libraries(path_planner
@@ -78,10 +98,15 @@ target_link_libraries(path_planner
   ${HDF5_CXX_LIBRARIES}
 )
 
+target_link_libraries(blossom_path_planner
+  ${HDF5_LIBRARIES}
+  ${HDF5_CXX_LIBRARIES}
+)
 
 
 install(TARGETS pursuit DESTINATION lib/${PROJECT_NAME})
 install(TARGETS path_planner DESTINATION lib/${PROJECT_NAME})
+install(TARGETS blossom_path_planner DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY include/ DESTINATION include/${PROJECT_NAME})
 # install(DIRECTORY launch
 #   DESTINATION share/${PROJECT_NAME}
