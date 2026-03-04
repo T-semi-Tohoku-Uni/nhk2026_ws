@@ -15,6 +15,7 @@ find_package(sensor_msgs REQUIRED)
 set(msg_files
   "msg/ArucoPose.msg"
   "msg/MicomStatus.msg"
+  "msg/MultiLaserScan.msg"
 )
 
 set(action_files

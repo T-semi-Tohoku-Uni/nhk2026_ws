@@ -16,7 +16,7 @@
 
 using namespace H5;
 
-namespace path {
+namespace nhk2026_pursuit::path {
     class PathGenerator: public rclcpp::Node {
         public:
             explicit PathGenerator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
@@ -247,6 +247,90 @@ namespace path {
             return smoothed_path;
         }
 
+        // std::vector<std::pair<double, double>> generator(std::pair<double, double> start_point, std::pair<double, double> goal_point) {
+        //     double sx = start_point.first;
+        //     double sy = start_point.second;
+        //     double gx = goal_point.first;
+        //     double gy = goal_point.second;
+
+        //     std::priority_queue<Cell, std::vector<Cell>, std::greater<Cell>> q;
+        //     std::map<std::pair<int, int> ,double> distances;
+        //     for (int v = 0; v < this->mapHeight_; v++) {
+        //         for (int u = -mapWidth_; u < this->mapWidth_; u++) {
+        //             distances[{v, u}] = std::numeric_limits<double>::infinity();
+        //         }
+        //     }
+
+        //     // std::vector<std::vector<std::pair<int, int>>> previous(
+        //     //     this->mapHeight_, std::vector<std::pair<int, int>>(this->mapWidth_, {-1, -1})
+        //     // );
+        //     std::map<std::pair<int, int>, std::pair<int, int>> previous;
+        //     for (int v = 0; v < this->mapHeight_; v++) {
+        //         for (int u = -mapWidth_; u < this->mapWidth_; u++) {
+        //             previous[{v, u}] = std::make_pair(std::numeric_limits<int>::infinity(), std::numeric_limits<int>::infinity());
+        //         }
+        //     }
+
+        //     int su, sv, gu, gv;
+        //     std::pair<int, int> uv_start = xy2uv(sx, sy);
+        //     std::pair<int, int> uv_goal  = xy2uv(gx, gy);
+        //     su = uv_start.first;
+        //     sv = uv_start.second;
+        //     gu = uv_goal.first;
+        //     gv = uv_goal.second;
+
+
+        //     // RCLCPP_INFO(this->get_logger(), "start %d %d", su, sv);
+
+        //     distances[{sv,su}] = 0;
+        //     q.push({su, sv, 0});
+
+        //     const int du[4] = {-1, 1, 0, 0};
+        //     const int dv[4] = {0, 0, -1, 1};
+
+        //     while(!q.empty()) { 
+        //         Cell cur = q.top(); q.pop();
+        //         if (cur.u == gu && cur.v == gv) break;
+
+        //         for (int dir = 0; dir < 4; dir++ ) {
+        //             int nu = cur.u + du[dir];
+        //             int nv = cur.v + dv[dir];
+
+        //             if (nu >= -mapWidth_ && nu < this->mapWidth_ && nv >= 0 && nv < this->mapHeight_) {
+        //                 double cost = cur.cost + distField_.at<double>(nv, std::abs(nu));
+        //                 if (cost < distances[{nv,nu}]) {
+        //                     distances[{nv,nu}] = cost;
+        //                     previous[{nv,nu}] = std::make_pair(cur.u, cur.v);
+        //                     q.push({nu, nv, cost});
+        //                 }
+        //             }
+        //         }
+        //     }
+
+        //     // 経路再構築
+        //     std::vector<std::pair<int, int>> path_g;
+        //     int idx=0;
+        //     for (int u = gu, v = gv; u != std::numeric_limits<int>::infinity() && v != std::numeric_limits<int>::infinity();) {
+        //         path_g.push_back({u, v});
+        //         std::tie(u, v) = previous[{v,u}];
+        //     }
+
+        //     std::reverse(path_g.begin(), path_g.end());
+
+        //     // convert grid -> field
+        //     std::vector<std::pair<double, double>> path_f;
+        //     for (std::pair<int, int> &p: path_g) {
+        //         path_f.push_back(
+        //             std::make_pair(
+        //                 (p.first + 0.5) * mapResolution_,
+        //                 (static_cast<double>(mapHeight_ - p.second - 1) + 0.5) * mapResolution_
+        //             )
+        //         );
+        //     }
+
+        //     return path_f;
+        // }
+
         std::vector<std::pair<double, double>> generator(std::pair<double, double> start_point, std::pair<double, double> goal_point) {
             double sx = start_point.first;
             double sy = start_point.second;
@@ -254,22 +338,16 @@ namespace path {
             double gy = goal_point.second;
 
             std::priority_queue<Cell, std::vector<Cell>, std::greater<Cell>> q;
-            std::map<std::pair<int, int> ,double> distances;
-            for (int v = 0; v < this->mapHeight_; v++) {
-                for (int u = -mapWidth_; u < this->mapWidth_; u++) {
-                    distances[{v, u}] = std::numeric_limits<double>::infinity();
-                }
-            }
+            
+            int w = 2 * this->mapWidth_;
+            
+            std::vector<std::vector<double>> distances(
+                this->mapHeight_, std::vector<double>(w, std::numeric_limits<double>::infinity())
+            );
 
-            // std::vector<std::vector<std::pair<int, int>>> previous(
-            //     this->mapHeight_, std::vector<std::pair<int, int>>(this->mapWidth_, {-1, -1})
-            // );
-            std::map<std::pair<int, int>, std::pair<int, int>> previous;
-            for (int v = 0; v < this->mapHeight_; v++) {
-                for (int u = -mapWidth_; u < this->mapWidth_; u++) {
-                    previous[{v, u}] = std::make_pair(std::numeric_limits<int>::infinity(), std::numeric_limits<int>::infinity());
-                }
-            }
+            std::vector<std::vector<std::pair<int, int>>> previous(
+                this->mapHeight_, std::vector<std::pair<int, int>>(w, {std::numeric_limits<int>::infinity(), std::numeric_limits<int>::infinity()})
+            );
 
             int su, sv, gu, gv;
             std::pair<int, int> uv_start = xy2uv(sx, sy);
@@ -279,10 +357,7 @@ namespace path {
             gu = uv_goal.first;
             gv = uv_goal.second;
 
-
-            // RCLCPP_INFO(this->get_logger(), "start %d %d", su, sv);
-
-            distances[{sv,su}] = 0;
+            distances[sv][su + this->mapWidth_] = 0;
             q.push({su, sv, 0});
 
             const int du[4] = {-1, 1, 0, 0};
@@ -298,9 +373,9 @@ namespace path {
 
                     if (nu >= -mapWidth_ && nu < this->mapWidth_ && nv >= 0 && nv < this->mapHeight_) {
                         double cost = cur.cost + distField_.at<double>(nv, std::abs(nu));
-                        if (cost < distances[{nv,nu}]) {
-                            distances[{nv,nu}] = cost;
-                            previous[{nv,nu}] = std::make_pair(cur.u, cur.v);
+                        if (cost < distances[nv][nu + this->mapWidth_]) {
+                            distances[nv][nu + this->mapWidth_] = cost;
+                            previous[nv][nu + this->mapWidth_] = std::make_pair(cur.u, cur.v);
                             q.push({nu, nv, cost});
                         }
                     }
@@ -309,10 +384,9 @@ namespace path {
 
             // 経路再構築
             std::vector<std::pair<int, int>> path_g;
-            int idx=0;
             for (int u = gu, v = gv; u != std::numeric_limits<int>::infinity() && v != std::numeric_limits<int>::infinity();) {
                 path_g.push_back({u, v});
-                std::tie(u, v) = previous[{v,u}];
+                std::tie(u, v) = previous[v][u + this->mapWidth_];
             }
 
             std::reverse(path_g.begin(), path_g.end());
@@ -551,7 +625,7 @@ namespace path {
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<path::PathGenerator>());
+    rclcpp::spin(std::make_shared<nhk2026_pursuit::path::PathGenerator>());
     rclcpp::shutdown();
     return 0;
 }

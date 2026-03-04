@@ -14,7 +14,7 @@ import math
 import random
 
 def generate_launch_description():
-    x = 1.47
+    x = -1.47
     y = 0.45
     z = 0.1
     theta = 0.0
@@ -102,6 +102,17 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')]
     )
 
+
+    lidar_filter_node = Node(
+        package="nhk2026_localization",
+        executable="lidar_filter",
+        name="lidar_filter",
+        output="screen",
+        parameters=[{
+            "filter_threshold": 0.98, 
+        }],
+    )
+
     mcl_node = Node(
         package="nhk2026_localization",
         executable="mcl_node",
@@ -131,21 +142,33 @@ def generate_launch_description():
     )
 
     # joy
-    # joy_node = Node(
-    #     package="joy",
-    #     executable="joy_node",
-    #     name="joy_node",
-    #     output="screen",
-    #     remappings=[('clock', '/world/nhk2026/clock')],
-    # )
+    joy_node = Node(
+        package="joy",
+        executable="joy_node",
+        name="joy_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
 
-    # joy2Vel_node = Node(
-    #     package="nhk2026_localization",
-    #     executable="joy2vel",
-    #     name="joy2vel",
-    #     output="screen",
-    #     remappings=[('clock', '/world/nhk2026/clock')],
-    # )
+    joy2Vel_node = Node(
+        package="nhk2026_localization",
+        executable="joy2vel",
+        name="joy2vel",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    blossom_path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="blossom_path_planner",
+        output="screen",
+        parameters=[{
+            "num_points": 10,
+            "shorten": 0.15,
+            "theta_offset": 0.0,
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
 
     path_planner = Node(
         package="nhk2026_pursuit",
@@ -169,7 +192,7 @@ def generate_launch_description():
         parameters=[{
             "max_linear_speed": 1.75,
             "max_angular_speed": 0.7,
-            "max_linear_tolerance": 0.15,
+            "max_linear_tolerance": 0.75,
             "max_theta_tolerance": 0.10,
             "max_reaching_distance": 0.05,
             "max_reaching_theta": 0.10,
@@ -195,6 +218,7 @@ def generate_launch_description():
         executable="bt_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
+        parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
     )
 
 
@@ -211,7 +235,9 @@ def generate_launch_description():
         # joy_node,
         # joy2Vel_node,
         vel_feedback_node,
+        blossom_path_planner,
         path_planner,
         pursuit,
         bt_node,
+        lidar_filter_node,
     ])
