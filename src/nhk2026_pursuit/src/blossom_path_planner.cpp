@@ -89,7 +89,7 @@ namespace nhk2026_pursuit::blossom_path{
         //後でorigin resolutionをjsonから読み込む
         //仮にblueフィールドの値を入れる
         double origin_x   = -1.825;
-        double origin_y   = 2.4;
+        double origin_y   = 2.6;
         double resolution = 1.2;
 
         waypoints.push_back({pose_->x, pose_->y});
