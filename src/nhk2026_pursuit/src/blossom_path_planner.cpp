@@ -76,10 +76,10 @@ namespace nhk2026_pursuit::blossom_path{
 
 
     //グリッドの配列を入力したら、座標の配列が出力される関数
-    std::vector<std::pair<double,double>> BlossomPathPlanner::grid2World(
+    std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
         const std::vector<GridIndex>& grids)
     {
-        std::vector<std::pair<double, double>> waypoints;
+        std::vector<geometry_msgs::msg::Pose> waypoints;
 
         if(!pose_){
             RCLCPP_INFO(this->get_logger(), "no pose");
@@ -92,14 +92,27 @@ namespace nhk2026_pursuit::blossom_path{
         double origin_y   = 2.6;
         double resolution = 1.2;
 
-        waypoints.push_back({pose_->x, pose_->y});
+        geometry_msgs::msg::Pose init_pose;
+        init_pose.position.x = pose_->x;
+        init_pose.position.y = pose_->y;
+
+
+        waypoints.push_back(init_pose);
 
         for (size_t i = 0; i < grids.size(); ++i){
             const GridIndex& grid = grids[i];
-            double world_x = origin_x - grid.v * resolution;
-            double world_y = origin_y + grid.u * resolution;
+            geometry_msgs::msg::Pose world_pose;
+            geometry_msgs::msg::Pose middle_pose;
+            world_pose.position.x  = origin_x - grid.v * resolution;
+            world_pose.position.y  = origin_y + grid.u * resolution;
+            middle_pose.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_pose.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+
+            if(i > 0){
+                waypoints.push_back(middle_pose);
+            }
             
-            waypoints.push_back({world_x, world_y});
+            waypoints.push_back(world_pose);
         }
 
         return waypoints;
@@ -137,12 +150,12 @@ namespace nhk2026_pursuit::blossom_path{
 
         };
         
-        std::vector<std::pair<double,double>> waypoints = grid2World(grids);
+        std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);
         
         for(size_t i=0; i<waypoints.size()-1; ++i){
             StraightPath(path_msg, 
-                        waypoints[i].first, waypoints[i].second, 
-                        waypoints[i+1].first, waypoints[i+1].second);
+                        waypoints[i].position.x, waypoints[i].position.y, 
+                        waypoints[i+1].position.x, waypoints[i+1].position.y);
         }
         
         path_pub_->publish(path_msg);
