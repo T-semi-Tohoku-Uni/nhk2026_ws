@@ -17,7 +17,6 @@ using std::placeholders::_2;
 
 class StepActionServer : public rclcpp::Node {
 public:
-    // アクション型の定義をそれぞれのファイルに合わせる
     using StepMove = nhk2026_msgs::action::StepMove;
     using LegMove = nhk2026_msgs::action::LegMove;
     using GoalHandleStepMove = rclcpp_action::ServerGoalHandle<StepMove>;
@@ -25,7 +24,6 @@ public:
     StepActionServer() : Node("step_leg_sequencer") { 
         callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-        // StepMove サーバーの設定
         this->action_server_ = rclcpp_action::create_server<StepMove>(
             this, "step_leg_sequence", 
             std::bind(&StepActionServer::handle_goal, this, _1, _2),
@@ -35,7 +33,6 @@ public:
             callback_group_
         );
 
-        // LegMove クライアントの設定
         this->leg_client_ = rclcpp_action::create_client<LegMove>(
             this, "step_leg", callback_group_
         );
@@ -52,7 +49,7 @@ private:
     }
 
     rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleStepMove>) {
-        RCLCPP_INFO(this->get_logger(), "Cancel requested");
+        RCLCPP_INFO(this->get_logger(), "=== キャンセルリクエストを受信 ===");
         return rclcpp_action::CancelResponse::ACCEPT;
     }
 
@@ -62,92 +59,130 @@ private:
 
     void execute(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         const auto goal = goal_handle->get_goal();
+        auto result = std::make_shared<StepMove::Result>();
 
-        if(goal->msg == "step up" && count <2){
-            RCLCPP_INFO(this->get_logger(), "=== 段超えシーケンス開始 ===");
-            auto result = std::make_shared<StepMove::Result>();
+        if(goal->msg == "step up" && count < 2) {
+            RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
+            
+            // 各関数が false を返した場合は、内部ですでに中断処理(canceled/abort)が呼ばれているのでそのまま抜ける
+            if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
+            if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
+            
+            if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
+            if (!publish_robomas_for_duration(0.0f, 0.5, goal_handle)) return;
+            
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57}, goal_handle)) return;
+            
+            if (!publish_cmd_vel_for_duration(0.5, 0.0, 5.0, goal_handle)) return;
+            if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.5, goal_handle)) return;
+            
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0}, goal_handle)) return;
 
-            // 各手順で LegMove クライアントへ座標を送信
-            if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
-            if (!send_leg_goal_sync({4.57+ count * 6.28, 4.57 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
-
-            publish_robomas_for_duration(10.0, 2.0);
-            publish_robomas_for_duration(0.0, 0.5);
-
-            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
-
-            publish_cmd_vel_for_duration(0.5, 0.0, 5.0);
-            publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
-
-            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
-
-            // StepMove::Result の定義に合わせて値をセット
-            result->success = true;
-            result->msg = "StepLeg Completed!";
-            goal_handle->succeed(result);
-            RCLCPP_INFO(this->get_logger(), "=== 段超えシーケンス正常終了 ===");
             count++; 
-        }else if(goal->msg == "step down" && count >0){
-            auto result = std::make_shared<StepMove::Result>();
-            count--;
-            RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
-            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
-            publish_cmd_vel_for_duration(-0.5, 0.0, 5.0);
-            publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
-            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
-            publish_cmd_vel_for_duration(-0.5, 0.0, 5.0);
-            publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
-            if (!send_leg_goal_sync({4.57+ count * 6.28, 4.57 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
-            publish_robomas_for_duration(10.0, 2.0);
-            publish_robomas_for_duration(0.0, 0.5);
-            if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
+            result->success = true;
+            result->msg = "Step up Completed!";
+            goal_handle->succeed(result);
+            RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス正常終了 ===");
 
-             // 成功したらカウントダウン
+        } else if(goal->msg == "step down" && count > 0) {
+            RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
+            
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0}, goal_handle)) return;
+            if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57}, goal_handle)) return;
+            if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
+            if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
+            if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
+            if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
+
+            count--;
             result->success = true;
             result->msg = "Step down Completed!";
             goal_handle->succeed(result);
-
+            RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス正常終了 ===");
+            
+        } else {
+            result->success = false;
+            result->msg = "Invalid request or count limit";
+            goal_handle->abort(result);
         }
     }
 
-    bool send_leg_goal_sync(std::vector<double> positions) {
+    // --- ヘルパー関数 ---
+
+    bool send_leg_goal_sync(std::vector<double> positions, const std::shared_ptr<GoalHandleStepMove>& goal_handle) {
         if (!leg_client_->wait_for_action_server(5s)) {
-            RCLCPP_ERROR(this->get_logger(), "LegMove Action Server not available");
+            abort_action(goal_handle, "LegMove Action Server not available");
             return false;
         }
 
-        // LegMove::Goal の定義に合わせて値をセット
         auto goal_msg = LegMove::Goal();
         goal_msg.joint_states.position = positions;
         goal_msg.max_speed = 1.0f;
         goal_msg.max_acc = 1.0f;
 
         auto goal_handle_future = leg_client_->async_send_goal(goal_msg);
-        auto goal_handle = goal_handle_future.get(); 
-        if (!goal_handle) return false;
+        
+        // ゴール受付完了を待つ
+        if (goal_handle_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready) {
+            abort_action(goal_handle, "LegMove goal rejected or timed out");
+            return false;
+        }
+        auto child_goal_handle = goal_handle_future.get(); 
+        if (!child_goal_handle) {
+            abort_action(goal_handle, "LegMove goal was rejected by server");
+            return false;
+        }
 
-        auto result_future = leg_client_->async_get_result(goal_handle);
+        auto result_future = leg_client_->async_get_result(child_goal_handle);
+        
+        // ★ キャンセル監視付きの待機ループ ★
+        while (rclcpp::ok()) {
+            if (goal_handle->is_canceling()) {
+                RCLCPP_INFO(this->get_logger(), "中断: 下位のLegMoveアクションもキャンセルします");
+                leg_client_->async_cancel_goal(child_goal_handle); // 下請けのアクションもキャンセル！
+                cancel_action(goal_handle, "Canceled during LegMove");
+                return false;
+            }
+            // 50msごとに完了したかチェック
+            if (result_future.wait_for(std::chrono::milliseconds(50)) == std::future_status::ready) {
+                break;
+            }
+        }
+
         auto wrapped_result = result_future.get();
-
-        // LegMove::Result の成功判定
-        return wrapped_result.code == rclcpp_action::ResultCode::SUCCEEDED;
+        if (wrapped_result.code != rclcpp_action::ResultCode::SUCCEEDED) {
+            abort_action(goal_handle, "LegMove failed");
+            return false;
+        }
+        return true;
     }
 
-    void publish_robomas_for_duration(float value, double duration_sec) {
+    bool publish_robomas_for_duration(float value, double duration_sec, const std::shared_ptr<GoalHandleStepMove>& goal_handle) {
         auto start_time = this->now();
         rclcpp::Rate loop_rate(20);
         while (rclcpp::ok() && (this->now() - start_time).seconds() < duration_sec) {
+            if (goal_handle->is_canceling()) {
+                cancel_action(goal_handle, "Canceled during robomas publish");
+                return false;
+            }
             std_msgs::msg::Float32MultiArray msg;
             msg.data = {value}; 
             robomas_pub_->publish(msg);
             loop_rate.sleep();
         }
+        return true;
     }
 
-    void publish_cmd_vel_for_duration(double linear_y, double angular_z, double duration_sec) {
+    bool publish_cmd_vel_for_duration(double linear_y, double angular_z, double duration_sec, const std::shared_ptr<GoalHandleStepMove>& goal_handle) {
         auto start_time = this->now();
         rclcpp::Rate loop_rate(20);
         while (rclcpp::ok() && (this->now() - start_time).seconds() < duration_sec) {
+            if (goal_handle->is_canceling()) {
+                cmd_vel_pub_->publish(geometry_msgs::msg::Twist()); // ★中断時は安全のためにすぐ停止！
+                cancel_action(goal_handle, "Canceled during cmd_vel publish");
+                return false;
+            }
             geometry_msgs::msg::Twist msg;
             msg.linear.y = linear_y; 
             msg.angular.z = angular_z;
@@ -155,18 +190,28 @@ private:
             loop_rate.sleep();
         }
         cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
+        return true;
     }
 
-    void abort_action(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
+    // エラー終了用
+    void abort_action(const std::shared_ptr<GoalHandleStepMove>& goal_handle, const std::string& msg = "Action Failed") {
         auto result = std::make_shared<StepMove::Result>();
         result->success = false;
-        result->msg = "Action Failed during nested step";
+        result->msg = msg;
         goal_handle->abort(result);
+    }
+
+    // キャンセル終了用
+    void cancel_action(const std::shared_ptr<GoalHandleStepMove>& goal_handle, const std::string& msg = "Action Canceled") {
+        auto result = std::make_shared<StepMove::Result>();
+        result->success = false;
+        result->msg = msg;
+        goal_handle->canceled(result);
     }
        
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp_action::Server<StepMove>::SharedPtr action_server_;
-    rclcpp_action::Client<LegMove>::SharedPtr leg_client_; // LegMove 型に変更
+    rclcpp_action::Client<LegMove>::SharedPtr leg_client_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     int count; 
