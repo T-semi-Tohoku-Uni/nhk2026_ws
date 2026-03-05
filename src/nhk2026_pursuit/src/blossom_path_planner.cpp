@@ -114,53 +114,6 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-    //json fileから
-
-    // //グリッドの配列を入力したら、座標の配列が出力される関数
-    // std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
-    //     const std::vector<GridIndex>& grids)
-    // {
-    //     std::vector<geometry_msgs::msg::Pose> waypoints;
-
-    //     if(!pose_){
-    //         RCLCPP_INFO(this->get_logger(), "no pose");
-    //         return waypoints;
-    //     }
-
-    //     //後でorigin resolutionをjsonから読み込む
-    //     //仮にblueフィールドの値を入れる
-    //     double origin_x   = -1.825;
-    //     double origin_y   = 2.6;
-    //     double resolution = 1.2;
-
-    //     geometry_msgs::msg::Pose init_pose;
-    //     init_pose.position.x = pose_->x;
-    //     init_pose.position.y = pose_->y;
-
-
-    //     for (size_t i = 0; i < grids.size(); ++i){
-    //         const GridIndex& grid = grids[i];
-    //         geometry_msgs::msg::Pose world_pose;
-    //         geometry_msgs::msg::Pose middle_pose;
-    //         world_pose.position.x  = origin_x - grid.v * resolution;
-    //         world_pose.position.y  = origin_y + grid.u * resolution;
-            
-
-    //         if(waypoints.empty()){
-    //             waypoints.push_back(init_pose);
-    //         }
-
-    //         middle_pose.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-    //         middle_pose.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-    //         waypoints.push_back(middle_pose);
-            
-    //         waypoints.push_back(world_pose);
-    //     }
-
-    //     return waypoints;
-
-    // };
-
     std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
         const std::vector<GridIndex>& grids)
     {
@@ -178,33 +131,24 @@ namespace nhk2026_pursuit::blossom_path{
 
         waypoints.push_back(init_pose);
 
-        //test
-        geometry_msgs::msg::Pose second_pose, third_pose, fourth_pose, fifth_pose;
-        second_pose.position.x = -3.025;
-        second_pose.position.y = 2.6;
-        second_pose.position.z = 0.0;
+        for (const GridIndex& grid : grids){
+            geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
+            geometry_msgs::msg::Pose middle_pose1, middle_pose2;
 
-        third_pose.position.x = -3.025;
-        third_pose.position.y = 3.8;
-        third_pose.position.z = 0.0;
+            middle_pose1.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_pose1.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_pose1.position.z = waypoints.back().position.z;
 
-        fourth_pose.position.x = -1.825;
-        fourth_pose.position.y = 3.8;
-        fourth_pose.position.z = 0.0;
-        // fourth_pose.position.z = 0.312;
+            middle_pose2.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_pose2.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_pose2.position.z = world_pose.position.z;
 
-        fifth_pose.position.x = -1.825;
-        fifth_pose.position.y = 5.0;
-        fifth_pose.position.z = 0.0;
-        // fifth_pose.position.z = 0.512;
+            waypoints.push_back(middle_pose1);
+            waypoints.push_back(middle_pose2);
+            waypoints.push_back(world_pose);
+        }
 
-        waypoints.push_back(grid_map_[0][1]);
-        waypoints.push_back(grid_map_[1][1]);
-        waypoints.push_back(grid_map_[1][0]);
-        waypoints.push_back(grid_map_[2][0]);
-        
-        
-
+        return waypoints;
     };
 
 
@@ -248,14 +192,6 @@ namespace nhk2026_pursuit::blossom_path{
         }
         
         path_pub_->publish(path_msg);
-
-        //test
-        RCLCPP_ERROR(this->get_logger(), "(0,1)->(1,1)->(1,0): (%f, %f, %f)->(%f, %f, %f)->(%f, %f, %f)",
-            grid_map_[0][1].position.x, grid_map_[0][1].position.y, grid_map_[0][1].position.z,
-            grid_map_[1][1].position.x, grid_map_[1][1].position.y, grid_map_[1][1].position.z,
-            grid_map_[1][0].position.x, grid_map_[1][0].position.y, grid_map_[1][0].position.z
-        );
-
 
         //visualization
         visualization_msgs::msg::Marker arrow;
