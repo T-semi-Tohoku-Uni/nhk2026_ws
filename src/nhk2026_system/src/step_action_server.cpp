@@ -74,12 +74,12 @@ private:
             publish_robomas_for_duration(10.0, 2.0);
             publish_robomas_for_duration(0.0, 0.5);
 
-            if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
 
             publish_cmd_vel_for_duration(0.5, 0.0, 5.0);
             publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
 
-            if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
 
             // StepMove::Result の定義に合わせて値をセット
             result->success = true;
@@ -87,6 +87,18 @@ private:
             goal_handle->succeed(result);
             RCLCPP_INFO(this->get_logger(), "=== 段超えシーケンス正常終了 ===");
             count++; 
+        }else if(goal->msg == "step down" && count >0){
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
+            publish_cmd_vel_for_duration(-0.5, 0.0, 5.0);
+            publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
+            if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
+            publish_cmd_vel_for_duration(-0.5, 0.0, 5.0);
+            publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
+            if (!send_leg_goal_sync({4.57+ count * 6.28, 4.57 + count * 6.28, -1.57})) { abort_action(goal_handle); return; }
+            publish_robomas_for_duration(10.0, 2.0);
+            publish_robomas_for_duration(0.0, 0.5);
+            if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
+
         }
     }
 
