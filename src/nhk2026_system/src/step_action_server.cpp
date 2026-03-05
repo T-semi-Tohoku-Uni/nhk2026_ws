@@ -6,6 +6,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
+#include "nhk2026_msgs/action/step_move.hpp" 
 #include "nhk2026_msgs/action/leg_move.hpp" 
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "geometry_msgs/msg/twist.hpp"
@@ -16,13 +17,16 @@ using std::placeholders::_2;
 
 class StepActionServer : public rclcpp::Node {
 public:
+    // アクション型の定義をそれぞれのファイルに合わせる
+    using StepMove = nhk2026_msgs::action::StepMove;
     using LegMove = nhk2026_msgs::action::LegMove;
-    using GoalHandleLegMove = rclcpp_action::ServerGoalHandle<LegMove>;
+    using GoalHandleStepMove = rclcpp_action::ServerGoalHandle<StepMove>;
 
     StepActionServer() : Node("step_leg_sequencer") { 
         callback_group_ = this->create_callback_group(rclcpp::CallbackGroupType::Reentrant);
 
-        this->action_server_ = rclcpp_action::create_server<LegMove>(
+        // StepMove サーバーの設定
+        this->action_server_ = rclcpp_action::create_server<StepMove>(
             this, "step_leg_sequence", 
             std::bind(&StepActionServer::handle_goal, this, _1, _2),
             std::bind(&StepActionServer::handle_cancel, this, _1),
@@ -31,6 +35,7 @@ public:
             callback_group_
         );
 
+        // LegMove クライアントの設定
         this->leg_client_ = rclcpp_action::create_client<LegMove>(
             this, "step_leg", callback_group_
         );
@@ -40,24 +45,26 @@ public:
     }
 
 private:
-    rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID &, std::shared_ptr<const LegMove::Goal>) {
+    rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID &, std::shared_ptr<const StepMove::Goal> goal) {
+        // StepMove::Goal は "string mag" のみ
+        (void)goal; 
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
     }
 
-    rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleLegMove>) {
+    rclcpp_action::CancelResponse handle_cancel(const std::shared_ptr<GoalHandleStepMove>) {
         RCLCPP_INFO(this->get_logger(), "Cancel requested");
         return rclcpp_action::CancelResponse::ACCEPT;
     }
 
-    void handle_accepted(const std::shared_ptr<GoalHandleLegMove> goal_handle) {
+    void handle_accepted(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         std::thread{std::bind(&StepActionServer::execute, this, _1), goal_handle}.detach();
     }
 
-    void execute(const std::shared_ptr<GoalHandleLegMove> goal_handle) {
+    void execute(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         RCLCPP_INFO(this->get_logger(), "=== 段超えシーケンス開始 ===");
-        auto result = std::make_shared<LegMove::Result>();
+        auto result = std::make_shared<StepMove::Result>();
 
-        // 各手順
+        // 各手順で LegMove クライアントへ座標を送信
         if (!send_leg_goal_sync({3.14, 3.14, 0.0})) { abort_action(goal_handle); return; }
         if (!send_leg_goal_sync({4.57, 4.57, -1.57})) { abort_action(goal_handle); return; }
 
@@ -71,6 +78,7 @@ private:
 
         if (!send_leg_goal_sync({6.28, 6.28, 0.0})) { abort_action(goal_handle); return; }
 
+        // StepMove::Result の定義に合わせて値をセット
         result->success = true;
         result->msg = "StepLeg Completed!";
         goal_handle->succeed(result);
@@ -83,20 +91,20 @@ private:
             return false;
         }
 
+        // LegMove::Goal の定義に合わせて値をセット
         auto goal_msg = LegMove::Goal();
         goal_msg.joint_states.position = positions;
-        goal_msg.max_speed = 1.0;
-        goal_msg.max_acc = 1.0;
+        goal_msg.max_speed = 1.0f;
+        goal_msg.max_acc = 1.0f;
 
         auto goal_handle_future = leg_client_->async_send_goal(goal_msg);
-        
-        // 2. spin_until_future_complete を削除し、直感的な待機に変更
         auto goal_handle = goal_handle_future.get(); 
         if (!goal_handle) return false;
 
         auto result_future = leg_client_->async_get_result(goal_handle);
         auto wrapped_result = result_future.get();
 
+        // LegMove::Result の成功判定
         return wrapped_result.code == rclcpp_action::ResultCode::SUCCEEDED;
     }
 
@@ -124,16 +132,16 @@ private:
         cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
     }
 
-    void abort_action(const std::shared_ptr<GoalHandleLegMove> goal_handle) {
-        auto result = std::make_shared<LegMove::Result>();
+    void abort_action(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
+        auto result = std::make_shared<StepMove::Result>();
         result->success = false;
         result->msg = "Action Failed during nested step";
         goal_handle->abort(result);
     }
        
     rclcpp::CallbackGroup::SharedPtr callback_group_;
-    rclcpp_action::Server<LegMove>::SharedPtr action_server_;
-    rclcpp_action::Client<LegMove>::SharedPtr leg_client_;
+    rclcpp_action::Server<StepMove>::SharedPtr action_server_;
+    rclcpp_action::Client<LegMove>::SharedPtr leg_client_; // LegMove 型に変更
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
 };
