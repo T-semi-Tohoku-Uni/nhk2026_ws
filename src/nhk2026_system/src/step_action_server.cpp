@@ -88,6 +88,9 @@ private:
             RCLCPP_INFO(this->get_logger(), "=== 段超えシーケンス正常終了 ===");
             count++; 
         }else if(goal->msg == "step down" && count >0){
+            auto result = std::make_shared<StepMove::Result>();
+            count--;
+            RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             if (!send_leg_goal_sync({6.2 + count * 6.28, 6.2 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
             publish_cmd_vel_for_duration(-0.5, 0.0, 5.0);
             publish_cmd_vel_for_duration(0.0, 0.0, 0.5);
@@ -98,6 +101,11 @@ private:
             publish_robomas_for_duration(10.0, 2.0);
             publish_robomas_for_duration(0.0, 0.5);
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0})) { abort_action(goal_handle); return; }
+
+             // 成功したらカウントダウン
+            result->success = true;
+            result->msg = "Step down Completed!";
+            goal_handle->succeed(result);
 
         }
     }
