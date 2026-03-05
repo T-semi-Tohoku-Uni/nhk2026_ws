@@ -21,6 +21,9 @@ find_package(Eigen3 REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(inrof2025_ros_type REQUIRED)
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+
 
 add_executable(pursuit src/pursuit.cpp)
 add_executable(path_planner src/path_planner.cpp)
@@ -67,6 +70,7 @@ ament_target_dependencies(path_planner
   tf2_geometry_msgs
   visualization_msgs
   inrof2025_ros_type
+  ament_index_cpp
   )
   
 
@@ -101,6 +105,7 @@ target_link_libraries(path_planner
 target_link_libraries(blossom_path_planner
   ${HDF5_LIBRARIES}
   ${HDF5_CXX_LIBRARIES}
+  nlohmann_json::nlohmann_json
 )
 
 

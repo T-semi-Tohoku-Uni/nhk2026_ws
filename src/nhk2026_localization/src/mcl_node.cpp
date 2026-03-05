@@ -1316,13 +1316,13 @@ namespace mcl {
                 };
 
                 // LiDAR 0 (LD-LiDAR) - 例: ldlidar_link
-                get_tf("base_footprint", "ldlidar_link", 0); 
+                // get_tf("base_footprint", "ldlidar_link", 0); 
 
                 // LiDAR 1 (Front)
-                get_tf("base_footprint", "lidar_front", 1);
+                // get_tf("base_footprint", "lidar_front", 1);
 
                 // LiDAR 2 (Back)
-                get_tf("base_footprint", "lidar_back", 2);
+                // get_tf("base_footprint", "lidar_back", 2);
             }
 
             void publishScanClouds(const sensor_msgs::msg::LaserScan::SharedPtr scan1, const sensor_msgs::msg::LaserScan::SharedPtr scan2) {

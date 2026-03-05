@@ -26,6 +26,13 @@ namespace nhk2026_pursuit::blossom_path{
         rclcpp::QoS poseArrowQoS(rclcpp::KeepLast(10));
         pose_arrow_pub_= this->create_publisher<visualization_msgs::msg::Marker>("pose_arrow_marker", poseArrowQoS);
 
+        std::string pkg_path =
+            ament_index_cpp::get_package_share_directory("nhk2026_core");
+
+        std::string json_path =
+        pkg_path + "/config/grid_map_blue.json";
+
+        loadJsonFile(json_path);
 
         this->declare_parameter<int>("num_points_", 10);
         this->declare_parameter<double>("shorten", 0.04);
@@ -36,18 +43,46 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-    void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg){
+     void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg){
         pose_ = msg;
     };
 
+
+    void BlossomPathPlanner::loadJsonFile(const std::string& json_file_path){
+        std::ifstream file(json_file_path);
+        nlohmann::json json_data;
+        file >> json_data;
+
+        grid_map_.resize(HEIGHT_);
+        for (size_t i = 0; i < HEIGHT_; ++i){
+            grid_map_[i].resize(WIDTH_);
+        }
+
+        for (const nlohmann::json& grid : json_data["grids"]){
+            int u = grid["u"];
+            int v = grid["v"];
+
+            geometry_msgs::msg::Pose pose;
+
+            pose.position.x = grid["x"];
+            pose.position.y = grid["y"];
+            pose.position.z = grid["z"];
+
+            grid_map_[u][v] = pose;
+        }
+    };
+
+
     void BlossomPathPlanner::StraightPath(
         nav_msgs::msg::Path& path_msg,
-        double sx, double sy, double gx, double gy
+        double sx, double sy, double sz,
+        double gx, double gy, double gz
     ){        
         
         double dx = gx - sx;
         double dy = gy - sy;
-        double distance = sqrt(dx*dx + dy*dy);
+        double dz = gz - sz;
+        double distance = sqrt(dx*dx + dy*dy + dz*dz);
 
         if(distance < 1e-6){
             return;
@@ -55,11 +90,13 @@ namespace nhk2026_pursuit::blossom_path{
 
         double ux = dx / distance;
         double uy = dy / distance;
+        double uz = dz / distance;
        
         //shorten path
         if (distance > shorten_){
             gx -= shorten_ * ux;
             gy -= shorten_ * uy;
+            gz -= shorten_ * uz;
         }
 
         //create path
@@ -67,44 +104,53 @@ namespace nhk2026_pursuit::blossom_path{
             double t = static_cast<double>(i) / num_points_;
             geometry_msgs::msg::PoseStamped p;
             p.header = path_msg.header;
+
             p.pose.position.x = sx + t * (gx - sx);
             p.pose.position.y = sy + t * (gy - sy);
+            p.pose.position.z = sz + t * (gz - sz);
 
             path_msg.poses.push_back(p);
         }
     };
 
 
-    //グリッドの配列を入力したら、座標の配列が出力される関数
-    std::vector<std::pair<double,double>> BlossomPathPlanner::grid2World(
+    std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
         const std::vector<GridIndex>& grids)
     {
-        std::vector<std::pair<double, double>> waypoints;
+        std::vector<geometry_msgs::msg::Pose> waypoints;
 
         if(!pose_){
             RCLCPP_INFO(this->get_logger(), "no pose");
             return waypoints;
         }
 
-        //後でorigin resolutionをjsonから読み込む
-        //仮にblueフィールドの値を入れる
-        double origin_x   = -1.825;
-        double origin_y   = 2.6;
-        double resolution = 1.2;
+        geometry_msgs::msg::Pose init_pose;
+        init_pose.position.x = pose_->x;
+        init_pose.position.y = pose_->y;
+        init_pose.position.z = 0.0;
 
-        waypoints.push_back({pose_->x, pose_->y});
+        waypoints.push_back(init_pose);
 
-        for (size_t i = 0; i < grids.size(); ++i){
-            const GridIndex& grid = grids[i];
-            double world_x = origin_x - grid.v * resolution;
-            double world_y = origin_y + grid.u * resolution;
-            
-            waypoints.push_back({world_x, world_y});
+        for (const GridIndex& grid : grids){
+            geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
+            geometry_msgs::msg::Pose middle_pose1, middle_pose2;
+
+            middle_pose1.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_pose1.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_pose1.position.z = waypoints.back().position.z;
+
+            middle_pose2.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_pose2.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_pose2.position.z = world_pose.position.z;
+
+            waypoints.push_back(middle_pose1);
+            waypoints.push_back(middle_pose2);
+            waypoints.push_back(world_pose);
         }
 
         return waypoints;
-
     };
+
 
 
 
@@ -134,21 +180,18 @@ namespace nhk2026_pursuit::blossom_path{
             {4,1},
             {4,0},
             {5,0},
-
         };
         
-        std::vector<std::pair<double,double>> waypoints = grid2World(grids);
+        std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);
+        
         
         for(size_t i=0; i<waypoints.size()-1; ++i){
             StraightPath(path_msg, 
-                        waypoints[i].first, waypoints[i].second, 
-                        waypoints[i+1].first, waypoints[i+1].second);
+                        waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
+                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z);
         }
         
         path_pub_->publish(path_msg);
-
-
-
 
         //visualization
         visualization_msgs::msg::Marker arrow;
