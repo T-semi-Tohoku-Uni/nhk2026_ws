@@ -89,12 +89,14 @@ private:
             count--;
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
             if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
+            
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
+            if (!publish_robomas_for_duration(0.0, 2.0, goal_handle)) return;
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
-
+            
             
             result->success = true;
             result->msg = "Step down Completed!";
@@ -163,6 +165,11 @@ private:
         rclcpp::Rate loop_rate(20);
         while (rclcpp::ok() && (this->now() - start_time).seconds() < duration_sec) {
             if (goal_handle->is_canceling()) {
+                // ★中断時：安全のためにすぐ速度0を送信して停止
+                std_msgs::msg::Float32MultiArray stop_msg;
+                stop_msg.data = {0.0f};
+                robomas_pub_->publish(stop_msg);
+
                 cancel_action(goal_handle, "Canceled during robomas publish");
                 return false;
             }
@@ -171,6 +178,12 @@ private:
             robomas_pub_->publish(msg);
             loop_rate.sleep();
         }
+
+        // ★正常終了時：最後に速度0を送信して停止
+        std_msgs::msg::Float32MultiArray stop_msg;
+        stop_msg.data = {0.0f};
+        robomas_pub_->publish(stop_msg);
+
         return true;
     }
 
@@ -179,7 +192,8 @@ private:
         rclcpp::Rate loop_rate(20);
         while (rclcpp::ok() && (this->now() - start_time).seconds() < duration_sec) {
             if (goal_handle->is_canceling()) {
-                cmd_vel_pub_->publish(geometry_msgs::msg::Twist()); // ★中断時は安全のためにすぐ停止！
+                // ★中断時：空のTwist(全速度0)を送信してすぐ停止
+                cmd_vel_pub_->publish(geometry_msgs::msg::Twist()); 
                 cancel_action(goal_handle, "Canceled during cmd_vel publish");
                 return false;
             }
@@ -189,7 +203,10 @@ private:
             cmd_vel_pub_->publish(msg);
             loop_rate.sleep();
         }
+
+        // ★正常終了時：最後に空のTwist(全速度0)を送信して停止
         cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
+        
         return true;
     }
 
