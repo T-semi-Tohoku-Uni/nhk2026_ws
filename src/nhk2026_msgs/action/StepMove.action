@@ -1,4 +1,4 @@
-string mag
+string msg
 ---
 bool success
 string msg
