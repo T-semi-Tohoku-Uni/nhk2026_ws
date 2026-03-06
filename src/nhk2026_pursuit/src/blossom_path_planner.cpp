@@ -77,6 +77,7 @@ namespace nhk2026_pursuit::blossom_path{
         nav_msgs::msg::Path& path_msg,
         double sx, double sy, double sz,
         double gx, double gy, double gz
+        // double yaw
     ){        
         
         double dx = gx - sx;
@@ -109,6 +110,11 @@ namespace nhk2026_pursuit::blossom_path{
             p.pose.position.y = sy + t * (gy - sy);
             p.pose.position.z = sz + t * (gz - sz);
 
+            //add theta information in the path
+            // tf2::Quaternion q;
+            // q.setRPY(0.0, 0.0, yaw);
+            // p.pose.orientation = tf2::toMsg(q);
+
             path_msg.poses.push_back(p);
         }
     };
@@ -120,7 +126,7 @@ namespace nhk2026_pursuit::blossom_path{
         std::vector<geometry_msgs::msg::Pose> waypoints;
 
         if(!pose_){
-            RCLCPP_INFO(this->get_logger(), "no pose");
+            RCLCPP_WARN(this->get_logger(), "no pose");
             return waypoints;
         }
 
@@ -131,20 +137,46 @@ namespace nhk2026_pursuit::blossom_path{
 
         waypoints.push_back(init_pose);
 
-        for (const GridIndex& grid : grids){
+        for (int i = 0; i < static_cast<int>(grids.size()); ++i){
+
+            const GridIndex& grid = grids[i];
+
             geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
-            geometry_msgs::msg::Pose middle_pose1, middle_pose2;
 
-            middle_pose1.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_pose1.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_pose1.position.z = waypoints.back().position.z;
+            geometry_msgs::msg::Pose middle_start, middle_end;
 
-            middle_pose2.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_pose2.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_pose2.position.z = world_pose.position.z;
+            middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_start.position.z = waypoints.back().position.z;
 
-            waypoints.push_back(middle_pose1);
-            waypoints.push_back(middle_pose2);
+            middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            middle_end.position.z = world_pose.position.z;
+
+        
+            //角度の計算
+            double yaw = 0.0;
+
+            if(i==0){
+                waypoints.push_back(middle_start);
+                waypoints.push_back(middle_end);
+                waypoints.push_back(world_pose);
+                continue;
+            }
+            
+            const GridIndex& prev_grid = grids[i-1];
+            int du = grid.u - prev_grid.u;
+            int dv = grid.v - prev_grid.v;
+            yaw = atan2(static_cast<double>(du), -static_cast<double>(dv));
+
+            tf2::Quaternion q;
+            q.setRPY(0.0, 0.0, yaw);
+
+            waypoints.back().orientation = tf2::toMsg(q);    
+
+            
+            waypoints.push_back(middle_start);
+            waypoints.push_back(middle_end);
             waypoints.push_back(world_pose);
         }
 
@@ -188,7 +220,9 @@ namespace nhk2026_pursuit::blossom_path{
         for(size_t i=0; i<waypoints.size()-1; ++i){
             StraightPath(path_msg, 
                         waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
-                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z);
+                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z
+                        
+                    );
         }
         
         path_pub_->publish(path_msg);
