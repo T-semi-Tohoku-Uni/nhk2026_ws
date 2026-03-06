@@ -131,9 +131,15 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         geometry_msgs::msg::Pose init_pose;
-        init_pose.position.x = pose_->x;
-        init_pose.position.y = pose_->y;
-        init_pose.position.z = 0.0;
+        init_pose.position.x  = pose_->x;
+        init_pose.position.y  = pose_->y;
+        init_pose.position.z  = 0.0;
+        
+
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, pose_->theta);
+        init_pose.orientation = tf2::toMsg(q);
+
 
         waypoints.push_back(init_pose);
 
