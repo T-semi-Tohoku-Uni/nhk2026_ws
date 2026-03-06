@@ -76,8 +76,8 @@ namespace nhk2026_pursuit::blossom_path{
     void BlossomPathPlanner::StraightPath(
         nav_msgs::msg::Path& path_msg,
         double sx, double sy, double sz,
-        double gx, double gy, double gz
-        // double yaw
+        double gx, double gy, double gz,
+        double yaw
     ){        
         
         double dx = gx - sx;
@@ -111,9 +111,9 @@ namespace nhk2026_pursuit::blossom_path{
             p.pose.position.z = sz + t * (gz - sz);
 
             //add theta information in the path
-            // tf2::Quaternion q;
-            // q.setRPY(0.0, 0.0, yaw);
-            // p.pose.orientation = tf2::toMsg(q);
+            tf2::Quaternion q;
+            q.setRPY(0.0, 0.0, yaw);
+            p.pose.orientation = tf2::toMsg(q);
 
             path_msg.poses.push_back(p);
         }
@@ -167,14 +167,14 @@ namespace nhk2026_pursuit::blossom_path{
             const GridIndex& prev_grid = grids[i-1];
             int du = grid.u - prev_grid.u;
             int dv = grid.v - prev_grid.v;
-            yaw = atan2(static_cast<double>(du), -static_cast<double>(dv));
+            yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
 
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
 
             waypoints.back().orientation = tf2::toMsg(q);    
 
-            
+
             waypoints.push_back(middle_start);
             waypoints.push_back(middle_end);
             waypoints.push_back(world_pose);
@@ -205,8 +205,8 @@ namespace nhk2026_pursuit::blossom_path{
         //仮にグリッドの配列を入れる
         std::vector<GridIndex> grids = {
             {0,0},
-            {1,0},
-            {2,0},
+            {0,1},
+            {1,1},
             {2,1},
             {3,1},
             {4,1},
@@ -218,10 +218,17 @@ namespace nhk2026_pursuit::blossom_path{
         
         
         for(size_t i=0; i<waypoints.size()-1; ++i){
+
+            tf2::Quaternion q;
+            tf2::fromMsg(waypoints[i].orientation, q);
+            double roll, pitch, yaw;
+            tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+
             StraightPath(path_msg, 
                         waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
-                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z
-                        
+                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
+                        yaw
                     );
         }
         

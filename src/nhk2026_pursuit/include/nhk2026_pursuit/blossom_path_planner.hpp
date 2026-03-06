@@ -33,8 +33,8 @@ namespace nhk2026_pursuit::blossom_path{
             void StraightPath(
                 nav_msgs::msg::Path& path_msg,
                 double sx, double sy, double sz,
-                double gx, double gy, double gz
-                // double yaw
+                double gx, double gy, double gz,
+                double yaw
             );
             std::vector<geometry_msgs::msg::Pose> grid2World(const std::vector<GridIndex>& grids);
             void planBlossomPath(
