@@ -73,20 +73,19 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-    void BlossomPathPlanner::StraightPath(
-        nav_msgs::msg::Path& path_msg,
+    nav_msgs::msg::Path BlossomPathPlanner::StraightPath(
         double sx, double sy, double sz,
         double gx, double gy, double gz,
         double yaw
     ){        
-        
+        nav_msgs::msg::Path path_msg;
         double dx = gx - sx;
         double dy = gy - sy;
         double dz = gz - sz;
         double distance = sqrt(dx*dx + dy*dy + dz*dz);
 
         if(distance < 1e-6){
-            return;
+            return nav_msgs::msg::Path();
         }
 
         double ux = dx / distance;
@@ -117,7 +116,17 @@ namespace nhk2026_pursuit::blossom_path{
 
             path_msg.poses.push_back(p);
         }
+
+        return path_msg;
     };
+
+    // //std::vector<nav_msgs::msg::Path> path_segmentsを受け取って、それらを結合して一つのPathを返す関数
+    // nav_msgs::msg::Path BlossomPathPlanner::mergePaths(
+        
+    // ){
+
+    // };
+
 
 
     std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
@@ -142,6 +151,8 @@ namespace nhk2026_pursuit::blossom_path{
 
 
         waypoints.push_back(init_pose);
+
+        std::vector<nav_msgs::msg::Path> paths;
 
         for (int i = 0; i < static_cast<int>(grids.size()); ++i){
 
@@ -180,10 +191,32 @@ namespace nhk2026_pursuit::blossom_path{
 
             waypoints.back().orientation = tf2::toMsg(q);    
 
-
             waypoints.push_back(middle_start);
             waypoints.push_back(middle_end);
             waypoints.push_back(world_pose);
+
+            nav_msgs::msg::Path path_msg_first = StraightPath( 
+                                                    waypoints.back().position.x, waypoints.back().position.y, waypoints.back().position.z,
+                                                    middle_start.position.x, middle_start.position.y, middle_start.position.z,
+                                                    yaw
+                                                );
+
+            nav_msgs::msg::Path path_msg_second = StraightPath( 
+                                                    middle_start.position.x, middle_start.position.y, middle_start.position.z,
+                                                    middle_end.position.x, middle_end.position.y, middle_end.position.z,
+                                                    yaw
+                                                );
+                                
+            nav_msgs::msg::Path path_msg_third = StraightPath( 
+                                                    middle_end.position.x, middle_end.position.y, middle_end.position.z,
+                                                    world_pose.position.x, world_pose.position.y, world_pose.position.z,
+                                                    yaw
+                                                );
+
+            std::vector<nav_msgs::msg::Path> path_segments = {path_msg_first, path_msg_second, path_msg_third};
+            
+            path_pub_->publish(mergePaths(path_segments));
+
         }
 
         return waypoints;
@@ -232,11 +265,11 @@ namespace nhk2026_pursuit::blossom_path{
             tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
 
-            StraightPath(path_msg, 
-                        waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
-                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
-                        yaw
-                    );
+            // StraightPath(path_msg, 
+            //             waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
+            //             waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
+            //             yaw
+            //         );
         }
         
         path_pub_->publish(path_msg);
