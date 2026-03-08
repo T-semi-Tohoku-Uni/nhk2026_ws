@@ -75,12 +75,12 @@ private:
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             
-            if (!publish_robomas_until_lidar(2.0,0,0,10.0)) return;
+            if (!publish_robomas_until_lidar(2.0,0,0,10.0, goal_handle)) return;
            
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             
-            if (!publish_cmd_vel_until_lidar(2.0,0.0,1,0,10.0)) return;
+            if (!publish_cmd_vel_until_lidar(2.0,0.0,1,0,10.0, goal_handle)) return;
            
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
@@ -95,11 +95,11 @@ private:
             RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             count--;
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
-            if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0)) return;
+            if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0, goal_handle)) return;
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
-            if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0)) return;
+            if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
             
@@ -243,12 +243,19 @@ private:
 
     bool publish_cmd_vel_until_lidar(
         double linear_y, double angular_z, 
-        size_t target_index, int target_value, double timeout_sec) 
+        size_t target_index, int target_value, double timeout_sec,
+        const std::shared_ptr<GoalHandleStepMove>& goal_handle) // ★ 引数追加
     {
         auto start_time = this->now();
-        rclcpp::Rate loop_rate(20); // 20Hzで送信
+        rclcpp::Rate loop_rate(20);
 
         while (rclcpp::ok() && (this->now() - start_time).seconds() < timeout_sec) {
+            // ★ 1. キャンセル監視を追加
+            if (goal_handle->is_canceling()) {
+                cmd_vel_pub_->publish(geometry_msgs::msg::Twist()); // すぐ停止
+                cancel_action(goal_handle, "Canceled during lidar wait");
+                return false;
+            }
             
             bool condition_met = false;
             {
@@ -274,7 +281,9 @@ private:
 
         cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
 
+        // ★ 2. タイムアウト時に abort_action を呼んで正しくエラー終了させる
         if ((this->now() - start_time).seconds() >= timeout_sec) {
+            abort_action(goal_handle, "Timeout: lidar condition not met (cmd_vel)");
             return false;
         }
 
@@ -283,14 +292,23 @@ private:
     
     bool publish_robomas_until_lidar(
         float value, 
-        size_t target_index, int target_value, double timeout_sec) 
+        size_t target_index, int target_value, double timeout_sec,
+        const std::shared_ptr<GoalHandleStepMove>& goal_handle) // ★ 引数追加
     {
         auto start_time = this->now();
         rclcpp::Rate loop_rate(20);
 
         while (rclcpp::ok() && (this->now() - start_time).seconds() < timeout_sec) {
+            // ★ 1. キャンセル監視を追加
+            if (goal_handle->is_canceling()) {
+                std_msgs::msg::Float32MultiArray stop_msg;
+                stop_msg.data = {0.0f};
+                robomas_pub_->publish(stop_msg); // すぐ停止
+                cancel_action(goal_handle, "Canceled during robomas wait");
+                return false;
+            }
+
             bool condition_met = false;
-            
             {
                 std::lock_guard<std::mutex> lock(lidar_mutex_);
                 if (target_index < lidar_data_.size() && lidar_data_[target_index] == target_value) {
@@ -306,13 +324,18 @@ private:
             
             loop_rate.sleep();
         }
-
         
         std_msgs::msg::Float32MultiArray stop_msg;
         stop_msg.data = {0.0f};
         robomas_pub_->publish(stop_msg);
 
-        return (this->now() - start_time).seconds() < timeout_sec; 
+        // ★ 2. タイムアウト時に abort_action を呼んで正しくエラー終了させる
+        if ((this->now() - start_time).seconds() >= timeout_sec) {
+            abort_action(goal_handle, "Timeout: lidar condition not met (robomas)");
+            return false;
+        }
+
+        return true;
     }
 
     rclcpp::CallbackGroup::SharedPtr callback_group_;
