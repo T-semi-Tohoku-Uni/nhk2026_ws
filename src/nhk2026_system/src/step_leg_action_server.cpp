@@ -131,12 +131,10 @@ void StepLegActionServer::execute(const std::shared_ptr<GoalHandleLegMove> goal_
             return;
         }
 
-        // 1. 各アームが目標に到達しているかを計算
         bool right_reached = std::fabs(this->now_joint_.position[0] - goal->joint_states.position[0]) <= this->kPosTolerance_;
         bool left_reached  = std::fabs(this->now_joint_.position[1] - goal->joint_states.position[1]) <= this->kPosTolerance_;
         bool back_reached  = std::fabs(this->now_joint_.position[2] - goal->joint_states.position[2]) <= this->kPosTolerance_;
 
-        // 2. まだ到達していないアームにだけ司令を送る（ここは独立した if なので同時に動く）
         if (!right_reached)
         {
             std_msgs::msg::Float32MultiArray cmd;
@@ -155,8 +153,7 @@ void StepLegActionServer::execute(const std::shared_ptr<GoalHandleLegMove> goal_
             cmd.data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
             back_leg_motor_publisher_->publish(cmd);
         }
-        
-        // 3. 3つすべてのアームが目標に到達したかチェックする
+    
         if (right_reached && left_reached && back_reached)
         {
             result->success = true;

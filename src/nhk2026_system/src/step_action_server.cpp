@@ -10,6 +10,8 @@
 #include "nhk2026_msgs/action/leg_move.hpp" 
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp" // LiDAR用
+#include <mutex> 
 
 using namespace std::chrono_literals; 
 using std::placeholders::_1; 
@@ -40,6 +42,11 @@ public:
         robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/leg_robomas", 10);
         cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
         count = 0;
+        auto sub_opt = rclcpp::SubscriptionOptions();
+        sub_opt.callback_group = callback_group_;
+        lidar_sub_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
+            "/1dlidar", 10, std::bind(&StepActionServer::lidar_callback, this, _1), sub_opt
+        );
     }
 
 private:
@@ -68,13 +75,13 @@ private:
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             
-            if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
-            if (!publish_robomas_for_duration(0.0f, 0.5, goal_handle)) return;
+            if (!publish_robomas_until_lidar(2.0,0,0,10.0)) return;
+           
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             
-            if (!publish_cmd_vel_for_duration(0.5, 0.0, 5.0, goal_handle)) return;
-            if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.5, goal_handle)) return;
+            if (!publish_cmd_vel_until_lidar(2.0,0.0,1,0,10.0)) return;
+           
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
 
@@ -88,13 +95,14 @@ private:
             RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             count--;
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
-            if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
+            if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0)) return;
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
+            if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_robomas_for_duration(10.0f, 2.0, goal_handle)) return;
-            if (!publish_robomas_for_duration(0.0, 2.0, goal_handle)) return;
+            
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             
             
@@ -225,13 +233,99 @@ private:
         result->msg = msg;
         goal_handle->canceled(result);
     }
-       
+
+
+    // LiDARの受信コールバック
+    void lidar_callback(const std_msgs::msg::Int32MultiArray::SharedPtr msg) {
+        std::lock_guard<std::mutex> lock(lidar_mutex_); // 配列を安全に上書き
+        lidar_data_ = msg->data;
+    }
+
+    bool publish_cmd_vel_until_lidar(
+        double linear_y, double angular_z, 
+        size_t target_index, int target_value, double timeout_sec) 
+    {
+        auto start_time = this->now();
+        rclcpp::Rate loop_rate(20); // 20Hzで送信
+
+        while (rclcpp::ok() && (this->now() - start_time).seconds() < timeout_sec) {
+            
+            bool condition_met = false;
+            {
+                std::lock_guard<std::mutex> lock(lidar_mutex_);
+                if (target_index < lidar_data_.size()) {
+                    if (lidar_data_[target_index] == target_value) {
+                        condition_met = true;
+                    }
+                }
+            }
+
+            if (condition_met) {
+                break; 
+            }
+
+            geometry_msgs::msg::Twist msg;
+            msg.linear.y = linear_y; 
+            msg.angular.z = angular_z;
+            cmd_vel_pub_->publish(msg);
+            
+            loop_rate.sleep();
+        }
+
+        cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
+
+        if ((this->now() - start_time).seconds() >= timeout_sec) {
+            return false;
+        }
+
+        return true; 
+    }
+    
+    bool publish_robomas_until_lidar(
+        float value, 
+        size_t target_index, int target_value, double timeout_sec) 
+    {
+        auto start_time = this->now();
+        rclcpp::Rate loop_rate(20);
+
+        while (rclcpp::ok() && (this->now() - start_time).seconds() < timeout_sec) {
+            bool condition_met = false;
+            
+            {
+                std::lock_guard<std::mutex> lock(lidar_mutex_);
+                if (target_index < lidar_data_.size() && lidar_data_[target_index] == target_value) {
+                    condition_met = true;
+                }
+            }
+
+            if (condition_met) break; 
+
+            std_msgs::msg::Float32MultiArray msg;
+            msg.data = {value}; 
+            robomas_pub_->publish(msg);
+            
+            loop_rate.sleep();
+        }
+
+        
+        std_msgs::msg::Float32MultiArray stop_msg;
+        stop_msg.data = {0.0f};
+        robomas_pub_->publish(stop_msg);
+
+        return (this->now() - start_time).seconds() < timeout_sec; 
+    }
+
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp_action::Server<StepMove>::SharedPtr action_server_;
     rclcpp_action::Client<LegMove>::SharedPtr leg_client_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     int count; 
+
+    rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr lidar_sub_;
+    std::vector<int> lidar_data_;
+    std::mutex lidar_mutex_; // 非同期で配列にアクセスするための鍵
+    
 };
 
 int main(int argc, char **argv) {
