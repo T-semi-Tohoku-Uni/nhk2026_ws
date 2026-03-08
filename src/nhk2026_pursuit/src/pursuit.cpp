@@ -13,6 +13,9 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include "visualization_msgs/msg/marker.hpp"
 #include <functional>
+#include <ignition/transport/Node.hh>
+#include <ignition/msgs/pose.pb.h>
+#include <ignition/msgs/boolean.pb.h>
 
 using namespace std::chrono_literals; 
 
@@ -312,7 +315,7 @@ class FollowNode: public rclcpp::Node {
 
             marker.pose.position.x = path_[current_waypoint_index_].pose.position.x;
             marker.pose.position.y = path_[current_waypoint_index_].pose.position.y;
-            marker.pose.position.z = 0.0;
+            marker.pose.position.z = path_[current_waypoint_index_].pose.position.z;
             marker.pose.orientation.w = 1.0;
 
             // 点の大きさ
@@ -370,7 +373,44 @@ class FollowNode: public rclcpp::Node {
                 
             }
 
-           
+            
+            RCLCPP_INFO(this->get_logger(), "current_waypoint_index:%d",current_waypoint_index_);
+
+
+            ignition::transport::Node node;
+            //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
+            //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
+            if (path_[current_waypoint_index_].pose.position.z - /*pose_.z*/ 0.0 > 0){
+                ignition::msgs::Pose req;
+                ignition::msgs::Boolean rep;
+                bool result;
+                req.set_name("robot");
+                ignition::msgs::Vector3d* position = req.mutable_position();
+                ignition::msgs::Quaternion* orientation = req.mutable_orientation();
+                orientation->set_x(0.0);
+                orientation->set_y(0.0);
+                orientation->set_z(0.0);
+                orientation->set_w(1.0);
+                position->set_x(-1.825);
+                position->set_y(3.8);
+                position->set_z(0.21);
+
+                
+
+                bool executed = node.Request(
+                    "/world/nhk2026/set_pose",
+                    req,
+                    1000,
+                    rep,
+                    result
+                );
+            }
+
+            
+
+
+
+
 
             if ((linear_goal_distance < max_reaching_distance)){ //&& theta_goal < max_reaching_theta) {
                 //goal reached
