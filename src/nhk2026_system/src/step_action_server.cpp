@@ -45,7 +45,7 @@ public:
         auto sub_opt = rclcpp::SubscriptionOptions();
         sub_opt.callback_group = callback_group_;
         lidar_sub_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
-            "/1dlidar", 10, std::bind(&StepActionServer::lidar_callback, this, _1), sub_opt
+            "/onedlidar", 10, std::bind(&StepActionServer::lidar_callback, this, _1), sub_opt
         );
     }
 

@@ -15,7 +15,7 @@
     sub_float_bridge_topic: ["right_leg", "left_leg", "back_leg","leg_robomas"]
     sub_float_bridge_canid: [0x211, 0x212, 0x213,0x214] 
 
-    pub_int_bridge_topic: ["1dlidar"] 
+    pub_int_bridge_topic: ["onedlidar"] 
     pub_int_bridge_canid: [0x401]          
 
     # sub_int_bridge_topic: ["test_i_s"]
