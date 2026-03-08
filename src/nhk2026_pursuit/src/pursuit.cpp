@@ -341,43 +341,21 @@ class FollowNode: public rclcpp::Node {
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
-
-                // double current_yaw = getYaw(path_[current_waypoint_index_].pose.orientation);
-                // double next_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
-                // double yaw_diff = std::abs(next_yaw - current_yaw);
-                // RCLCPP_INFO(this->get_logger(), "theta %.2f", current_yaw);
-                // if (yaw_diff > M_PI) yaw_diff = 2*M_PI - yaw_diff;
-
-                // //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                // if (yaw_diff > 1e-2
-                //     && linear_goal_distance < max_reaching_distance) 
-                // {
-                //     is_rotating_ = true;  
-                //     break;
-                // }
-
-                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation
-                    /*&& linear_error < max_reaching_distance*/) 
-                {
-                    if(linear_error < max_reaching_distance){
-                        is_rotating_ = true; 
-                    }
-                     
-                    break;
-                }
-
                 current_waypoint_index_++;
                 linear_error = std::hypot(
                     path_[current_waypoint_index_].pose.position.x - pose_.x, 
                     path_[current_waypoint_index_].pose.position.y - pose_.y
                 );
-
-                
             }
-
-            
-            RCLCPP_INFO(this->get_logger(), "current_waypoint_index:%d",current_waypoint_index_);
-
+            while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
+                double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
+                double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
+                if (tx == 0 && ty == 0) {
+                    current_waypoint_index_++;
+                } else {
+                    break;
+                }
+            }
 
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
