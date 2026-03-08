@@ -158,7 +158,7 @@ namespace mcl {
                 sdf_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("sdf_cloud", qos_transient);
                 
                 rclcpp::QoS qos_default(10);
-                pubPose_ = this->create_publisher<geometry_msgs::msg::Pose2D>("pose", qos_default);
+                pubPose_ = this->create_publisher<geometry_msgs::msg::Pose>("pose", qos_default);
                 pubPath_ = this->create_publisher<nav_msgs::msg::Path>("trajectory", qos_default);
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
@@ -414,11 +414,7 @@ namespace mcl {
                 mclPose_.orientation.z = q_new.z();
                 mclPose_.orientation.w = q_new.w();
 
-                geometry_msgs::msg::Pose2D pose2d_msg;
-                pose2d_msg.x = x;
-                pose2d_msg.y = y;
-                pose2d_msg.theta = theta;
-                pubPose_->publish(pose2d_msg);
+                pubPose_->publish(mclPose_);
 
                 if (!is_sim_) {
                     geometry_msgs::msg::TransformStamped tf_msg;
@@ -957,7 +953,7 @@ namespace mcl {
             // パブリッシャ / サブスクライバ / タイマー
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr sdf_cloud_pub_;
-            rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pubPose_;
+            rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pubPose_;
             rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr particleMarker_;
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr vel_marker_pub_;

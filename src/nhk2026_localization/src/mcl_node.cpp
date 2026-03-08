@@ -25,6 +25,7 @@
 #include <H5Cpp.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "nhk2026_msgs/msg/multi_laser_scan.hpp"
+#include <geometry_msgs/msg/pose.hpp> 
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -191,7 +192,7 @@ namespace mcl {
 
                 pubPath_ = create_publisher<nav_msgs::msg::Path>("trajectory", 10);
                 path_.header.frame_id = "map";
-                pubPose_ = create_publisher<geometry_msgs::msg::Pose2D>("pose", 10);
+                pubPose_ = create_publisher<geometry_msgs::msg::Pose>("pose", 10);
                 
                 rclcpp::QoS marker_qos(1); 
                 marker_qos.transient_local(); 
@@ -1084,7 +1085,17 @@ namespace mcl {
                 mclPose_.set__x(x);
                 mclPose_.set__y(y);
                 mclPose_.set__theta(theta);
-                pubPose_->publish(mclPose_);
+                
+                geometry_msgs::msg::Pose pose_msg;
+                pose_msg.position.x = x;
+                pose_msg.position.y = y;
+                pose_msg.position.z = 0.0;
+
+                tf2::Quaternion q_pose;
+                q_pose.setRPY(0.0, 0.0, theta);
+                pose_msg.orientation = tf2::toMsg(q_pose);
+
+                pubPose_->publish(pose_msg);
 
                 // TODO: publish odom
                 if (!is_sim_) {
@@ -1496,7 +1507,7 @@ namespace mcl {
             rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
             nav_msgs::msg::Path path_;
             
-            rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pubPose_;
+            rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pubPose_;
 
             // cmd_velのみから現在のodometryを計算する
             // last_time_に前回差分を取得したときの時刻
