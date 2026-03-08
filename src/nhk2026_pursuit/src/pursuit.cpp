@@ -297,17 +297,21 @@ class FollowNode: public rclcpp::Node {
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
-
                 current_waypoint_index_++;
                 linear_error = std::hypot(
                     path_[current_waypoint_index_].pose.position.x - pose_.x, 
                     path_[current_waypoint_index_].pose.position.y - pose_.y
                 );
             }
-
-            
-            RCLCPP_INFO(this->get_logger(), "current_waypoint_index:%d",current_waypoint_index_);
-
+            while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
+                double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
+                double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
+                if (tx == 0 && ty == 0) {
+                    current_waypoint_index_++;
+                } else {
+                    break;
+                }
+            }
 
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
