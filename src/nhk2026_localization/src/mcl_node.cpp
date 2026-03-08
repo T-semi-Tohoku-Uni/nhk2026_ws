@@ -25,6 +25,7 @@
 #include <H5Cpp.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "nhk2026_msgs/msg/multi_laser_scan.hpp"
+#include <geometry_msgs/msg/pose.hpp> 
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -191,7 +192,7 @@ namespace mcl {
 
                 pubPath_ = create_publisher<nav_msgs::msg::Path>("trajectory", 10);
                 path_.header.frame_id = "map";
-                pubPose_ = create_publisher<geometry_msgs::msg::Pose2D>("pose", 10);
+                pubPose_ = create_publisher<geometry_msgs::msg::Pose>("pose", 10);
                 
                 rclcpp::QoS marker_qos(1); 
                 marker_qos.transient_local(); 
@@ -894,14 +895,15 @@ namespace mcl {
                     for (std::size_t i = 0; i < scan.ranges.size(); i += scanStep_) {
                         std::double_t r = scan.ranges[i];
                         
-                        // ※修正: 無効なデータの場合はここでcontinueして無駄な計算を省く
+                        
                         if (std::isnan(r)  || r < scan.range_min || scan.range_max < r) {
                             p_vector.push_back(zRand_*pRand); 
+                            continue;
                         }
 
                         std::double_t theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
                         
-                        // LD-Lidarの場合の角度補正
+                        // LD-Lidarの場合の角度補正 
                         if (current_lidar_pose == 0 && !is_sim_) {
                             theta_lidar -= 3.0*M_PI/2.0;
                         }
@@ -914,6 +916,12 @@ namespace mcl {
                         if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
                             std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
                             std::double_t d = 0.0;
+
+                            double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
+                            if (sdf_val > dynamic_obstacle_threshold) {
+                                p_vector.push_back(zRand_*pRand);
+                                continue; // 尤度計算の対象から外し、ペナルティを与えない
+                            }
                             if (sdf_val >= 0) {
                                 d = sdf_val;
                             } else {
@@ -1077,7 +1085,17 @@ namespace mcl {
                 mclPose_.set__x(x);
                 mclPose_.set__y(y);
                 mclPose_.set__theta(theta);
-                pubPose_->publish(mclPose_);
+                
+                geometry_msgs::msg::Pose pose_msg;
+                pose_msg.position.x = x;
+                pose_msg.position.y = y;
+                pose_msg.position.z = 0.0;
+
+                tf2::Quaternion q_pose;
+                q_pose.setRPY(0.0, 0.0, theta);
+                pose_msg.orientation = tf2::toMsg(q_pose);
+
+                pubPose_->publish(pose_msg);
 
                 // TODO: publish odom
                 if (!is_sim_) {
@@ -1489,7 +1507,7 @@ namespace mcl {
             rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
             nav_msgs::msg::Path path_;
             
-            rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr pubPose_;
+            rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pubPose_;
 
             // cmd_velのみから現在のodometryを計算する
             // last_time_に前回差分を取得したときの時刻
