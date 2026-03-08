@@ -27,6 +27,7 @@ set(srv_files
   "srv/PathPlan.srv"
   "srv/Waypoint.srv"
   "srv/SystemR2.srv"
+  "srv/ResetPose.srv"
   )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

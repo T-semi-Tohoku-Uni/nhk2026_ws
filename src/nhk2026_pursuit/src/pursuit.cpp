@@ -16,6 +16,7 @@
 #include <ignition/transport/Node.hh>
 #include <ignition/msgs/pose.pb.h>
 #include <ignition/msgs/boolean.pb.h>
+#include <nhk2026_msgs/srv/reset_pose.hpp>
 
 using namespace std::chrono_literals; 
 
@@ -97,6 +98,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("max_reaching_theta", max_reaching_theta);
             this->get_parameter("x", x_);
 
+            reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
 
             linear_PID_tan_ = PIDController(Kp_tan, Ki_tan, Kd_tan, dt);
@@ -326,7 +328,6 @@ class FollowNode: public rclcpp::Node {
                 position->set_z(0.21);
 
                 
-
                 bool executed = node.Request(
                     "/world/nhk2026/set_pose",
                     req,
@@ -334,6 +335,31 @@ class FollowNode: public rclcpp::Node {
                     rep,
                     result
                 );
+
+                std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
+                    std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
+                request->pose.position.x = -1.825;
+                request->pose.position.y = 3.8;
+                request->pose.position.z = 0.21;
+                request->pose.orientation.x = 0.0;
+                request->pose.orientation.y = 0.0;
+                request->pose.orientation.z = 0.0;
+                request->pose.orientation.w = 1.0;
+
+
+                reset_pose_client_->async_send_request(
+                    request,
+                    [this](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                    {
+                        auto response = future.get();
+                        RCLCPP_INFO(this->get_logger(),
+                                    "Service call succeeded: %s",
+                                    response->success ? "true" : "false");
+                    }
+                );
+
+
+
             }
 
             
@@ -561,16 +587,18 @@ class FollowNode: public rclcpp::Node {
         // subscriber
         rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+        rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr pose_sub_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
         rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr target_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmd_vel_arrow_pub;
-        rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr pose_sub_;
         rclcpp::TimerBase::SharedPtr timer_;
         std::vector<geometry_msgs::msg::PoseStamped> path_;
         std::mutex mutex_;
         geometry_msgs::msg::Pose2D pose_;
+
+        rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedPtr reset_pose_client_;
 
         //PID control
         PIDController linear_PID_tan_, linear_PID_norm_, omega_PID_;

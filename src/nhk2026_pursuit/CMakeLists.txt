@@ -13,7 +13,7 @@ find_package(nav_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
-# find_package(nhk2026_msgs REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -43,7 +43,7 @@ ament_target_dependencies(pursuit
   rclcpp_action
   tf2_geometry_msgs
   tf2
-  # nhk2026_msgs
+  nhk2026_msgs
   visualization_msgs
   inrof2025_ros_type
 )
