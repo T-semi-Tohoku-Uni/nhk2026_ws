@@ -114,6 +114,11 @@ namespace mcl {
                 this->mapZIndex_ = this->get_parameter("mapZIndex").as_int();
                 this->get_parameter("lidar_threshold", LIDAR_THTRSHOLD_);
 
+                srvSetPose_ = this->create_service<nhk2026_msgs::srv::ResetPose>(
+                    "reset_pose",
+                    std::bind(&MCL::setPoseCallback, this, std::placeholders::_1, std::placeholders::_2)
+                );
+
                 particles_.resize(particleNum_);
                 pro_.resize(particleNum_);
                 mapOrigin_.resize(3, 0.0);
@@ -237,6 +242,49 @@ namespace mcl {
             } 
 
         private:
+            void setPoseCallback(const std::shared_ptr<nhk2026_msgs::srv::ResetPose::Request> request, std::shared_ptr<nhk2026_msgs::srv::ResetPose::Response> response){
+                // timer stop
+                timer_->cancel();
+
+                // reset pose
+                // init robot pos
+                geometry_msgs::msg::Pose2D pose;
+                
+                
+                tf2::Quaternion q(
+                    request->pose.orientation.x,
+                    request->pose.orientation.y,
+                    request->pose.orientation.z,
+                    request->pose.orientation.w
+                );
+
+                double roll, pitch, yaw;
+                tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+
+            
+                pose.set__x(request->pose.position.x);
+                pose.set__y(request->pose.position.y);
+                pose.set__theta(yaw);
+                // initalize mclPose
+                setMCLPose(pose);
+                velOdom_.set__x(request->pose.position.x);
+                velOdom_.set__y(request->pose.position.y);
+                velOdom_.set__theta(yaw);
+                
+                // initialize particle
+                geometry_msgs::msg::Pose2D initialNoise;
+                auto cloud_qos = rclcpp::SensorDataQoS();
+                initialNoise.set__x(0.3); // var of x
+                initialNoise.set__y(0.3); // var of y
+                initialNoise.set__theta(M_PI/18.0); // var of theta
+                resetParticlesDistribution(initialNoise);
+
+                // timer restart
+                timer_->reset();
+
+                response->success = true;
+            }
+
             void setMCLPose(geometry_msgs::msg::Pose2D pose) { mclPose_=pose; }
             std::double_t randNormal(double n) { return (n * sqrt(-2.0 * log((double)rand() / RAND_MAX)) * cos(2.0 * M_PI * rand() / RAND_MAX)); }
             
@@ -1498,6 +1546,8 @@ namespace mcl {
 
             rclcpp::Subscription<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr subScan_;
             nhk2026_msgs::msg::MultiLaserScan::SharedPtr scan_;
+
+            rclcpp::Service<nhk2026_msgs::srv::ResetPose>::SharedPtr srvSetPose_;
 
             bool is_sim_;
             int lidar_select;
