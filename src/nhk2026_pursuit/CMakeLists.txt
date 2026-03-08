@@ -23,6 +23,8 @@ find_package(inrof2025_ros_type REQUIRED)
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
 find_package(nlohmann_json REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(ignition-transport8 REQUIRED)
+find_package(ignition-msgs8 REQUIRED)
 
 
 add_executable(pursuit src/pursuit.cpp)
@@ -78,6 +80,8 @@ target_include_directories(pursuit
   PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
+    ${ignition-transport8_INCLUDE_DIRS}
+    ${ignition-msgs8_INCLUDE_DIRS}
 )
 
 target_include_directories(path_planner
@@ -87,6 +91,7 @@ target_include_directories(path_planner
     ${HDF5_INCLUDE_DIRS}
 
 )
+
 
 target_include_directories(blossom_path_planner
   PUBLIC 
@@ -100,6 +105,11 @@ target_include_directories(blossom_path_planner
 target_link_libraries(path_planner
   ${HDF5_LIBRARIES}
   ${HDF5_CXX_LIBRARIES}
+)
+
+target_link_libraries(pursuit
+  ${ignition-transport8_LIBRARIES}
+  ${ignition-msgs8_LIBRARIES}
 )
 
 target_link_libraries(blossom_path_planner
