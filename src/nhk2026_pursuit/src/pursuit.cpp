@@ -90,7 +90,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("Ki_norm", Ki_norm);
             this->get_parameter("Kd_norm", Kd_norm);
             this->get_parameter("Kp_theta", Kp_theta);
-            this->get_parameter("Kt_theta", Ki_theta);
+            this->get_parameter("Ki_theta", Ki_theta);
             this->get_parameter("Kd_theta", Kd_theta);
             this->get_parameter("max_linear_tolerance", max_linear_tolerance);
             this->get_parameter("max_reaching_distance", max_reaching_distance);
@@ -190,6 +190,23 @@ class FollowNode: public rclcpp::Node {
             pose_.theta = msgs.theta;
             // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
         }
+
+        void resetWaypointIndex(double reset_x, double reset_y) {
+            if (path_.empty()) return;
+
+            int nearest_index = 0;
+
+            for (int i = 0; i < static_cast<int>(path_.size()); i++) {
+                double dx = path_[i].pose.position.x - reset_x;
+                double dy = path_[i].pose.position.y - reset_y;
+                double dist = std::hypot(dx, dy);
+                if (dist < max_linear_tolerance) {
+                    nearest_index = i;  // 条件を満たす中で最大インデックスを更新
+                }
+            }
+            current_waypoint_index_ = nearest_index;
+        }
+
         void controlLoop() {
             //do nothing if if there is no goal or path
             if (!goal_handle_){
@@ -353,12 +370,17 @@ class FollowNode: public rclcpp::Node {
 
                 reset_pose_client_->async_send_request(
                     request,
-                    [this](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                    [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
                     {
                         auto response = future.get();
                         RCLCPP_INFO(this->get_logger(),
                                     "Service call succeeded: %s",
                                     response->success ? "true" : "false");
+                        if (response->success){
+                            resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                        }
+        
+                        
                     }
                 );
 
