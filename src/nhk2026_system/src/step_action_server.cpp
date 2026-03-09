@@ -102,8 +102,8 @@ private:
             if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0, goal_handle)) return;
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
-            //if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0, goal_handle)) return;
-            if (!publish_robomas_until_lidar(-0.3,0,1,10.0, goal_handle)) return;
+            if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0, goal_handle)) return;
+            //if (!publish_robomas_until_lidar(-0.3,0,1,10.0, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_robomas_for_duration(-0.3, 2.0, goal_handle)) return;
             
