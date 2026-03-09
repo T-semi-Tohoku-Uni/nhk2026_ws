@@ -58,9 +58,9 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='ros_gz_bridge_1',
         arguments=[
-            '/joint1@std_msgs/msg/Float32@ignition.msgs.Float32',
-            '/joint2@std_msgs/msg/Float32@ignition.msgs.Float32',
-            '/joint3@std_msgs/msg/Float32@ignition.msgs.Float32',
+            '/joint_sim1@std_msgs/msg/Float64@ignition.msgs.Double',
+            '/joint_sim2@std_msgs/msg/Float64@ignition.msgs.Double',
+            '/joint_sim3@std_msgs/msg/Float64@ignition.msgs.Double',
             '/tf@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
             '/tf_static@tf2_msgs/msg/TFMessage@ignition.msgs.Pose_V',
             '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@ignition.msgs.Clock',
