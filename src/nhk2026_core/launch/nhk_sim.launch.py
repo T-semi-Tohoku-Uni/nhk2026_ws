@@ -166,6 +166,8 @@ def generate_launch_description():
             "num_points": 10,
             "shorten": 0.15,
             "theta_offset": 0.0,
+            "start_shorten": 0.15,
+            "end_shorten": 0.15,
         }],
         remappings=[('clock', '/world/nhk2026/clock')],
     )

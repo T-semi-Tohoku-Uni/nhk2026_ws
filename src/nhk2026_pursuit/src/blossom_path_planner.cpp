@@ -37,9 +37,13 @@ namespace nhk2026_pursuit::blossom_path{
         this->declare_parameter<int>("num_points_", 10);
         this->declare_parameter<double>("shorten", 0.04);
         this->declare_parameter<double>("theta_offset", 0.0);
+        this->declare_parameter<double>("start_shorten", 0.15);
+        this->declare_parameter<double>("end_shorten", 0.15);
         this->get_parameter("num_points_", num_points_);
         this->get_parameter("shorten", shorten_);
         this->get_parameter("theta_offset", theta_offset_);
+        this->get_parameter("start_shorten", start_shorten_);
+        this->get_parameter("end_shorten", end_shorten_);
     };
 
 
@@ -164,22 +168,43 @@ namespace nhk2026_pursuit::blossom_path{
             geometry_msgs::msg::Quaternion q_msg = tf2::toMsg(q);
 
 
-            //中間点の追加
-            geometry_msgs::msg::Pose middle_start, middle_end;
-            middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_start.position.z = waypoints.back().position.z;
-            middle_start.orientation = q_msg;
+            // //中間点の追加
+            // geometry_msgs::msg::Pose middle_start, middle_end;
+            // middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            // middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            // middle_start.position.z = waypoints.back().position.z;
+            // middle_start.orientation = q_msg;
 
-            middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_end.position.z = world_pose.position.z;
-            middle_end.orientation = q_msg;
+            // middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            // middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            // middle_end.position.z = world_pose.position.z;
+            // middle_end.orientation = q_msg;
+
+            //ここで中間地点からのoffsetを加味して経路生成 mid_start -> mid_end -> world_pose
+            double mid_x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            double mid_y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            
+            double dx = world_pose.position.x - waypoints.back().position.x;
+            double dy = world_pose.position.y - waypoints.back().position.y;
+            double distance_start = std::hypot(dx, dy);
+            double ux = (distance_start > 1e-6) ? dx / distance_start : 0.0;
+            double uy = (distance_start > 1e-6) ? dy / distance_start : 0.0;
+
+            geometry_msgs::msg::Pose mid_start, mid_end;
+            mid_start.position.x = mid_x - start_shorten_ * ux;
+            mid_start.position.y = mid_y - start_shorten_ * uy;
+            mid_start.position.z = waypoints.back().position.z;
+            mid_start.orientation = q_msg;
+
+            mid_end.position.x = mid_x + end_shorten_ * ux;
+            mid_end.position.y = mid_y + end_shorten_ * uy;
+            mid_end.position.z = world_pose.position.z;
+            mid_end.orientation = q_msg;
 
             world_pose.orientation = q_msg;
 
-            waypoints.push_back(middle_start);
-            waypoints.push_back(middle_end);
+            waypoints.push_back(mid_start);
+            waypoints.push_back(mid_end);
             waypoints.push_back(world_pose);
         }
 
@@ -211,14 +236,6 @@ namespace nhk2026_pursuit::blossom_path{
         std::vector<GridIndex> grids = {
             {0,1},
             {0,0},
-
-            {0,1},
-            {1,1},
-            {0,1},
-            {0,2},
-            {0,1},
-            {0,0},
-
             {1,0},
             {1,1},
             {2,1},
