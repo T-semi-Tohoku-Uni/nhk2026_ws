@@ -139,27 +139,27 @@
     <joint_name>joint1</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim1</topic>
-    <p_gain>50</p_gain>
-    <i_gain>0.1</i_gain>
-    <d_gain>0.01</d_gain>
+    <p_gain>35.0</p_gain>
+    <i_gain>0.0</i_gain>
+    <d_gain>4.0</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
     <joint_name>joint2</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim2</topic>
-    <p_gain>5.0</p_gain>
-    <i_gain>0.1</i_gain>
-    <d_gain>0.01</d_gain>
+    <p_gain>120.0</p_gain>
+    <i_gain>0.0</i_gain>
+    <d_gain>16.0</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
     <joint_name>joint3</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim3</topic>
-    <p_gain>50</p_gain>
-    <i_gain>0.1</i_gain>
-    <d_gain>0.01</d_gain>
+    <p_gain>30.0</p_gain>
+    <i_gain>0.0</i_gain>
+    <d_gain>4.0</d_gain>
   </plugin>
 </gazebo>
 
