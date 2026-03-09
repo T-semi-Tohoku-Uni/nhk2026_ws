@@ -132,12 +132,16 @@
     <parent>world</parent>
     <child>arm_base</child>
   </joint>
+  <plugin filename="gz-sim-joint-state-publisher-system"
+          name="gz::sim::systems::JointStatePublisher" />
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
     <joint_name>joint1</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim1</topic>
     <p_gain>5.0</p_gain>
+    <i_gain>0.1</i_gain>
+    <d_gain>0.01</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
@@ -145,6 +149,8 @@
     <joint_index>0</joint_index>
     <topic>/joint_sim2</topic>
     <p_gain>5.0</p_gain>
+    <i_gain>0.1</i_gain>
+    <d_gain>0.01</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
@@ -152,6 +158,8 @@
     <joint_index>0</joint_index>
     <topic>/joint_sim3</topic>
     <p_gain>5.0</p_gain>
+    <i_gain>0.1</i_gain>
+    <d_gain>0.01</d_gain>
   </plugin>
 </gazebo>
 
