@@ -95,17 +95,17 @@ private:
             goal_handle->succeed(result);
             RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス正常終了 ===");
 
-        } else if(goal->msg == "step down" && count > 0) {
+        } else if(goal->msg == "step down" && count > -2) {
             RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             count--;
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
             if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0, goal_handle)) return;
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
-            if (!publish_cmd_vel_for_duration(-0.5, 0.0, 5.0, goal_handle)) return;
-            if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0, goal_handle)) return;
+            //if (!publish_cmd_vel_until_lidar(-0.5,0.0,0,1,10.0, goal_handle)) return;
+            if (!publish_robomas_until_lidar(-0.3,0,0,10.0, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
-            if (!publish_robomas_for_duration(0.3, 2.0, goal_handle)) return;
+            if (!publish_robomas_for_duration(-0.3, 2.0, goal_handle)) return;
             
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             
