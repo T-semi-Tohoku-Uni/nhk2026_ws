@@ -89,6 +89,8 @@ private:
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
             if (!publish_cmd_vel_for_duration(0.5, 0.0, 1.0, goal_handle)) return;
+            if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.5, goal_handle)) return;
+            if (!publish_robomas_for_duration(0.0, 0.5, goal_handle)) return;
             count++; 
             result->success = true;
             result->msg = "Step up Completed!";
@@ -109,7 +111,8 @@ private:
             
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             
-            
+            if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.5, goal_handle)) return;
+            if (!publish_robomas_for_duration(0.0, 0.5, goal_handle)) return;
             result->success = true;
             result->msg = "Step down Completed!";
             goal_handle->succeed(result);
