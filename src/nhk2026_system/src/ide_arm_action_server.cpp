@@ -144,6 +144,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
 
         if (std::fabs(this->now_joint_.position[0] - goal->joint_states.position[0]) > this->kPosTolerance_)
         {
+            RCLCPP_INFO(this->get_logger(), "j1 moving!");
             std_msgs::msg::Float32MultiArray cmd;
             std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[0]), goal->max_speed, goal->max_acc};
             cmd.data = cmd_data;
@@ -151,7 +152,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         }
         else if (std::fabs(this->now_joint_.position[1] - goal->joint_states.position[1]) > this->kPosTolerance_)
         {
-            RCLCPP_INFO(this->get_logger(), "j1 complete!");
+            RCLCPP_INFO(this->get_logger(), "j2 moving!");
             std_msgs::msg::Float32MultiArray cmd;
             std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[1]), goal->max_speed, goal->max_acc};
             cmd.data = cmd_data;
@@ -159,7 +160,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         }
         else if (std::fabs(this->now_joint_.position[2] - goal->joint_states.position[2]) > this->kPosTolerance_)
         {
-            RCLCPP_INFO(this->get_logger(), "j2 complete!");
+            RCLCPP_INFO(this->get_logger(), "j3 moving!");
             std_msgs::msg::Float32MultiArray cmd;
             std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
             cmd.data = cmd_data;
@@ -167,7 +168,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         }
         else
         {
-            RCLCPP_INFO(this->get_logger(), "j3 complete!");
+            RCLCPP_INFO(this->get_logger(), "complete!");
             result->success = true;
             result->msg = "goal reached";
             goal_handle->succeed(result);

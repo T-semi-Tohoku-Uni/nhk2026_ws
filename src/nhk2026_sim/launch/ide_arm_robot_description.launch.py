@@ -15,7 +15,6 @@ import xacro
 
 def generate_launch_description():
 
-
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
