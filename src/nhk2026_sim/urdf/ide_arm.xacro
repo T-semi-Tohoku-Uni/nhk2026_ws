@@ -128,25 +128,29 @@
 </joint>
 
 <gazebo>
+  <joint name="arm_base_world_fixed" type="fixed">
+    <parent>world</parent>
+    <child>arm_base</child>
+  </joint>
   <plugin filename="gz-sim-joint-position-controller-system"
           name="gz::sim::systems::JointPositionController">
-    <joint_name>joint_sim1</joint_name>
+    <joint_name>joint1</joint_name>
     <joint_index>0</joint_index>
-    <topic>/joint1</topic>
+    <topic>/joint_sim1</topic>
     <p_gain>5.0</p_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
-          name="gz::sim::systems::JointPositionController2">
-    <joint_name>joint_sim2</joint_name>
+          name="gz::sim::systems::JointPositionController">
+    <joint_name>joint2</joint_name>
     <joint_index>0</joint_index>
-    <topic>/joint2</topic>
+    <topic>/joint_sim2</topic>
     <p_gain>5.0</p_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
-          name="gz::sim::systems::JointPositionController3">
-    <joint_name>joint_sim3</joint_name>
+          name="gz::sim::systems::JointPositionController">
+    <joint_name>joint3</joint_name>
     <joint_index>0</joint_index>
-    <topic>/joint3</topic>
+    <topic>/joint_sim3</topic>
     <p_gain>5.0</p_gain>
   </plugin>
 </gazebo>
