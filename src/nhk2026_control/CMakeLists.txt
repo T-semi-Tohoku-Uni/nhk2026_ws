@@ -31,6 +31,20 @@ install(
   DESTINATION lib/${PROJECT_NAME}
 )
 
+add_executable(ide_arm_sim_bridge
+  src/ide_arm_sim_bridge.cpp
+)
+
+ament_target_dependencies(ide_arm_sim_bridge
+  rclcpp
+  std_msgs
+)
+
+install(
+  TARGETS ide_arm_sim_bridge
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   # the following line skips the linter which checks for copyrights
