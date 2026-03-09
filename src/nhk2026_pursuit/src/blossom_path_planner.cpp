@@ -131,55 +131,62 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         geometry_msgs::msg::Pose init_pose;
-        init_pose.position.x  = pose_->x;
-        init_pose.position.y  = pose_->y;
-        init_pose.position.z  = 0.0;
-        
+        init_pose.position.x = pose_->x;
+        init_pose.position.y = pose_->y;
+        init_pose.position.z = 0.0;
 
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, pose_->theta);
         init_pose.orientation = tf2::toMsg(q);
 
-
         waypoints.push_back(init_pose);
 
-        for (int i = 0; i < static_cast<int>(grids.size()); ++i){
+        for (int i = 0; i < static_cast<int>(grids.size()); ++i) {
 
             const GridIndex& grid = grids[i];
-
             geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
 
-            geometry_msgs::msg::Pose middle_start, middle_end;
 
+            //ここで角度計算
+            // int du, dv;
+
+            // if (i == static_cast<int>(grids.size()) - 1) {
+            //     du = grids[i].u - grids[i-1].u;
+            //     dv = grids[i].v - grids[i-1].v;
+            // } else {
+            //     du = grids[i+1].u - grids[i].u;
+            //     dv = grids[i+1].v - grids[i].v;
+            // }
+
+            double yaw = 0.0;
+            if (i == 0){
+                yaw = pose_->theta;
+            } else {
+                int du, dv;
+                du = grid.u - grids[i-1].u;
+                dv = grid.v - grids[i-1].v;
+                yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
+            }
+            
+            
+            tf2::Quaternion q;
+            q.setRPY(0.0, 0.0, yaw);
+            geometry_msgs::msg::Quaternion q_msg = tf2::toMsg(q);
+
+
+            //中間点の追加
+            geometry_msgs::msg::Pose middle_start, middle_end;
             middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
             middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
             middle_start.position.z = waypoints.back().position.z;
+            middle_start.orientation = q_msg;
 
             middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
             middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
             middle_end.position.z = world_pose.position.z;
+            middle_end.orientation = q_msg;
 
-        
-            //角度の計算
-            double yaw = 0.0;
-
-            if(i==0){
-                waypoints.push_back(middle_start);
-                waypoints.push_back(middle_end);
-                waypoints.push_back(world_pose);
-                continue;
-            }
-            
-            const GridIndex& prev_grid = grids[i-1];
-            int du = grid.u - prev_grid.u;
-            int dv = grid.v - prev_grid.v;
-            yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
-
-            tf2::Quaternion q;
-            q.setRPY(0.0, 0.0, yaw);
-
-            waypoints.back().orientation = tf2::toMsg(q);    
-
+            world_pose.orientation = q_msg;
 
             waypoints.push_back(middle_start);
             waypoints.push_back(middle_end);
@@ -187,6 +194,8 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         return waypoints;
+
+        
     };
 
 
