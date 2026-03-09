@@ -39,8 +39,12 @@ public:
             this, "step_leg", callback_group_
         );
 
-        robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/leg_robomas", 10);
-        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
+        rclcpp::QoS reliable_qos = rclcpp::QoS(10) // キューサイズ（履歴）を10に設定
+            .reliability(rclcpp::ReliabilityPolicy::Reliable) // 確実に届ける（欠損時は再送）
+            .durability(rclcpp::DurabilityPolicy::Volatile);  // 起動後のデータのみ送信
+
+        robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("/leg_robomas", reliable_qos);
+        cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", reliable_qos);
         count = 0;
         auto sub_opt = rclcpp::SubscriptionOptions();
         sub_opt.callback_group = callback_group_;
