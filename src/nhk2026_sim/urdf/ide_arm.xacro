@@ -102,7 +102,7 @@
   <parent link="arm_base_v2_1"/>
   <child link="link_1_v2_1"/>
   <axis xyz="1.0 0.0 0.0"/>
-  <limit upper="3.141593" lower="-3.141593" effort="1000" velocity="100"/>
+  <limit upper="3.141593" lower="0" effort="1000" velocity="100"/>
 </joint>
 
 <joint name="joint2" type="prismatic">
@@ -110,7 +110,7 @@
   <parent link="link_1_v2_1"/>
   <child link="link_2_v1_1"/>
   <axis xyz="-0.0 1.0 0.0"/>
-  <limit upper="0.302" lower="0.0" effort="100" velocity="100"/>
+  <limit upper="0.302" lower="0.0" effort="1000" velocity="100"/>
 </joint>
 
 <joint name="joint3" type="revolute">
@@ -140,7 +140,7 @@
     <joint_index>0</joint_index>
     <topic>/joint_sim1</topic>
     <p_gain>35.0</p_gain>
-    <i_gain>0.0</i_gain>
+    <i_gain>1.0</i_gain>
     <d_gain>4.0</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
@@ -149,7 +149,7 @@
     <joint_index>0</joint_index>
     <topic>/joint_sim2</topic>
     <p_gain>120.0</p_gain>
-    <i_gain>0.0</i_gain>
+    <i_gain>1.0</i_gain>
     <d_gain>16.0</d_gain>
   </plugin>
   <plugin filename="gz-sim-joint-position-controller-system"
@@ -158,7 +158,7 @@
     <joint_index>0</joint_index>
     <topic>/joint_sim3</topic>
     <p_gain>30.0</p_gain>
-    <i_gain>0.0</i_gain>
+    <i_gain>1.0</i_gain>
     <d_gain>4.0</d_gain>
   </plugin>
 </gazebo>
