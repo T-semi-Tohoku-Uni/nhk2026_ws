@@ -14,7 +14,7 @@ IdeArmSimBridge::IdeArmSimBridge()
         const int topic_index = i + 1;
 
         this->joint_control_publisher_.push_back(
-            this->create_publisher<std_msgs::msg::Float32>(
+            this->create_publisher<std_msgs::msg::Float64>(
                 "joint_sim" + std::to_string(topic_index),
                 device
             )
@@ -41,7 +41,7 @@ void IdeArmSimBridge::joint_array_control_callback(
         return;
     }
 
-    std_msgs::msg::Float32 txdata;
+    std_msgs::msg::Float64 txdata;
     txdata.data = rxdata->data[0];
     this->joint_control_publisher_[index]->publish(txdata);
 }
