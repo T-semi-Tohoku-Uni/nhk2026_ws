@@ -94,7 +94,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("Ki_norm", Ki_norm);
             this->get_parameter("Kd_norm", Kd_norm);
             this->get_parameter("Kp_theta", Kp_theta);
-            this->get_parameter("Kt_theta", Ki_theta);
+            this->get_parameter("Ki_theta", Ki_theta);
             this->get_parameter("Kd_theta", Kd_theta);
             this->get_parameter("max_linear_tolerance", max_linear_tolerance);
             this->get_parameter("max_reaching_distance", max_reaching_distance);
@@ -198,35 +198,23 @@ class FollowNode: public rclcpp::Node {
             pose_.theta = msgs.theta;
             // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
         }
-        void rotate(double targetTheta) {
-            double err = normalizePi(targetTheta - pose_.theta);
-            double abs_err = std::abs(err);
-            double speed_cmd = 0.0;
 
-            if (abs_err < stop_angle_) {
-                // 目標到達
-                publishZero();
-                is_rotating_ = false;
-                current_waypoint_index_++;  // 回転完了後にwaypointを進める
-                return;
-            } else if (abs_err > accel_angle_) {
-                speed_cmd = max_rotate_speed_;
-            } else {
-                speed_cmd = slow_rotate_speed_;
+        void resetWaypointIndex(double reset_x, double reset_y) {
+            if (path_.empty()) return;
+
+            int nearest_index = 0;
+
+            for (int i = 0; i < static_cast<int>(path_.size()); i++) {
+                double dx = path_[i].pose.position.x - reset_x;
+                double dy = path_[i].pose.position.y - reset_y;
+                double dist = std::hypot(dx, dy);
+                if (dist < max_linear_tolerance) {
+                    nearest_index = i;  // 条件を満たす中で最大インデックスを更新
+                }
             }
-
-            geometry_msgs::msg::Twist cmd;
-            cmd.linear.x  = 0.0;
-            cmd.linear.y  = 0.0;
-            cmd.angular.z = (err > 0 ? +1 : -1) * speed_cmd;
-            cmd_pub_->publish(cmd);
+            current_waypoint_index_ = nearest_index;
         }
 
-        double normalizePi(double a) {
-            a = std::fmod(a + M_PI, 2.0 * M_PI);
-            if (a < 0) a += 2.0 * M_PI;
-            return a - M_PI;
-        }
         void controlLoop() {
             //do nothing if if there is no goal or path
             if (!goal_handle_){
@@ -397,12 +385,17 @@ class FollowNode: public rclcpp::Node {
 
                 reset_pose_client_->async_send_request(
                     request,
-                    [this](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                    [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
                     {
                         auto response = future.get();
                         RCLCPP_INFO(this->get_logger(),
                                     "Service call succeeded: %s",
                                     response->success ? "true" : "false");
+                        if (response->success){
+                            resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                        }
+        
+                        
                     }
                 );
 
