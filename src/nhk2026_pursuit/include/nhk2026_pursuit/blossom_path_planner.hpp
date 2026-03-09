@@ -30,13 +30,11 @@ namespace nhk2026_pursuit::blossom_path{
             geometry_msgs::msg::Pose2D::SharedPtr pose_;
             void loadJsonFile(const std::string& json_file_path);
             std::vector<std::vector<geometry_msgs::msg::Pose>> grid_map_;
-            nav_msgs::msg::Path StraightPath(
+            void StraightPath(
+                nav_msgs::msg::Path& path_msg,
                 double sx, double sy, double sz,
                 double gx, double gy, double gz,
                 double yaw
-            );
-            nav_msgs::msg::Path BlossomPathPlanner::mergePaths(
-                std::vector<nav_msgs::msg::Path> paths
             );
             std::vector<geometry_msgs::msg::Pose> grid2World(const std::vector<GridIndex>& grids);
             void planBlossomPath(

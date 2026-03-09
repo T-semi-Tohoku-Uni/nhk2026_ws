@@ -73,19 +73,20 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-    nav_msgs::msg::Path BlossomPathPlanner::StraightPath(
+    void BlossomPathPlanner::StraightPath(
+        nav_msgs::msg::Path& path_msg,
         double sx, double sy, double sz,
         double gx, double gy, double gz,
         double yaw
     ){        
-        nav_msgs::msg::Path path_msg;
+        
         double dx = gx - sx;
         double dy = gy - sy;
         double dz = gz - sz;
         double distance = sqrt(dx*dx + dy*dy + dz*dz);
 
         if(distance < 1e-6){
-            return nav_msgs::msg::Path();
+            return;
         }
 
         double ux = dx / distance;
@@ -116,17 +117,7 @@ namespace nhk2026_pursuit::blossom_path{
 
             path_msg.poses.push_back(p);
         }
-
-        return path_msg;
     };
-
-    // //std::vector<nav_msgs::msg::Path> path_segmentsを受け取って、それらを結合して一つのPathを返す関数
-    // nav_msgs::msg::Path BlossomPathPlanner::mergePaths(
-        
-    // ){
-
-    // };
-
 
 
     std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
@@ -157,16 +148,6 @@ namespace nhk2026_pursuit::blossom_path{
 
 
             //ここで角度計算
-            // int du, dv;
-
-            // if (i == static_cast<int>(grids.size()) - 1) {
-            //     du = grids[i].u - grids[i-1].u;
-            //     dv = grids[i].v - grids[i-1].v;
-            // } else {
-            //     du = grids[i+1].u - grids[i].u;
-            //     dv = grids[i+1].v - grids[i].v;
-            // }
-
             double yaw = 0.0;
             if (i == 0){
                 yaw = pose_->theta;
@@ -200,29 +181,6 @@ namespace nhk2026_pursuit::blossom_path{
             waypoints.push_back(middle_start);
             waypoints.push_back(middle_end);
             waypoints.push_back(world_pose);
-
-            nav_msgs::msg::Path path_msg_first = StraightPath( 
-                                                    waypoints.back().position.x, waypoints.back().position.y, waypoints.back().position.z,
-                                                    middle_start.position.x, middle_start.position.y, middle_start.position.z,
-                                                    yaw
-                                                );
-
-            nav_msgs::msg::Path path_msg_second = StraightPath( 
-                                                    middle_start.position.x, middle_start.position.y, middle_start.position.z,
-                                                    middle_end.position.x, middle_end.position.y, middle_end.position.z,
-                                                    yaw
-                                                );
-                                
-            nav_msgs::msg::Path path_msg_third = StraightPath( 
-                                                    middle_end.position.x, middle_end.position.y, middle_end.position.z,
-                                                    world_pose.position.x, world_pose.position.y, world_pose.position.z,
-                                                    yaw
-                                                );
-
-            std::vector<nav_msgs::msg::Path> path_segments = {path_msg_first, path_msg_second, path_msg_third};
-            
-            path_pub_->publish(mergePaths(path_segments));
-
         }
 
         return waypoints;
@@ -253,6 +211,14 @@ namespace nhk2026_pursuit::blossom_path{
         std::vector<GridIndex> grids = {
             {0,1},
             {0,0},
+
+            {0,1},
+            {1,1},
+            {0,1},
+            {0,2},
+            {0,1},
+            {0,0},
+
             {1,0},
             {1,1},
             {2,1},
@@ -268,16 +234,16 @@ namespace nhk2026_pursuit::blossom_path{
         for(size_t i=0; i<waypoints.size()-1; ++i){
 
             tf2::Quaternion q;
-            tf2::fromMsg(waypoints[i].orientation, q);
+            tf2::fromMsg(waypoints[i+1].orientation, q);
             double roll, pitch, yaw;
             tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
 
-            // StraightPath(path_msg, 
-            //             waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
-            //             waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
-            //             yaw
-            //         );
+            StraightPath(path_msg, 
+                        waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
+                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
+                        yaw
+                    );
         }
         
         path_pub_->publish(path_msg);
