@@ -47,7 +47,7 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-     void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg){
+    void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg){
         pose_ = msg;
     };
 
