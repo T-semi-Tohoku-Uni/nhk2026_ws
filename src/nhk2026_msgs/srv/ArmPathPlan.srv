@@ -1,6 +1,10 @@
 geometry_msgs/PoseStamped now_pos
+<<<<<<< HEAD
 geometry_msgs/PoseStamped goal_pos
 
 geometry_msgs/PoseStamped[] waypoints
+=======
+geometry_msgs/PoseStamped waypoints
+>>>>>>> f421835 (fix: add nav_msgs dependency and ArmPathPlan service definition)
 ---
 nav_msgs/Path route
