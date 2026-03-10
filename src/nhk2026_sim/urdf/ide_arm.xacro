@@ -162,7 +162,7 @@
     <topic>/joint_sim3</topic>
     <p_gain>300.0</p_gain>
     <i_gain>25.0</i_gain>
-    <d_gain>42.0</d_gain>
+    <d_gain>48.0</d_gain>
   </plugin>
 </gazebo>
 
