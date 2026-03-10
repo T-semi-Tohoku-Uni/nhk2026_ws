@@ -28,6 +28,7 @@ namespace nhk2026_pursuit::blossom_path{
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
             void poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg);
             geometry_msgs::msg::Pose::SharedPtr pose_;
+            double getYaw(const geometry_msgs::msg::Quaternion& q_msg);
             void loadJsonFile(const std::string& json_file_path);
             std::vector<std::vector<geometry_msgs::msg::Pose>> grid_map_;
             void StraightPath(
