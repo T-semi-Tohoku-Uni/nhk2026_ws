@@ -54,6 +54,8 @@ add_executable(kdl_test
 )
 
 ament_target_dependencies(kdl_test
+  rclcpp
+  std_msgs
   orocos_kdl
   kdl_parser
   ament_index_cpp
