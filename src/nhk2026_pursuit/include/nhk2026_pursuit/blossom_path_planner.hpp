@@ -23,11 +23,11 @@ namespace nhk2026_pursuit::blossom_path{
             
 
         private:
-            rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr subPose_;
+            rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subPose_;
             rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
-            void poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg);
-            geometry_msgs::msg::Pose2D::SharedPtr pose_;
+            void poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg);
+            geometry_msgs::msg::Pose::SharedPtr pose_;
             void loadJsonFile(const std::string& json_file_path);
             std::vector<std::vector<geometry_msgs::msg::Pose>> grid_map_;
             void StraightPath(

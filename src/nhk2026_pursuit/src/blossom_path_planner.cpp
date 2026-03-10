@@ -4,7 +4,7 @@
 
 namespace nhk2026_pursuit::blossom_path{
     BlossomPathPlanner::BlossomPathPlanner(const rclcpp::NodeOptions & options): Node("blossom_path_planner", options){
-        subPose_ = create_subscription<geometry_msgs::msg::Pose2D>(
+        subPose_ = create_subscription<geometry_msgs::msg::Pose>(
             "/pose", 10, std::bind(&BlossomPathPlanner::poseCallback, this, std::placeholders::_1)
         );
     
@@ -47,9 +47,17 @@ namespace nhk2026_pursuit::blossom_path{
     };
 
 
-     void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose2D::SharedPtr msg){
+     void BlossomPathPlanner::poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg){
         pose_ = msg;
     };
+
+    double getYaw(const geometry_msgs::msg::Quaternion& q_msg) {
+            tf2::Quaternion q;
+            tf2::fromMsg(q_msg, q);
+            double roll, pitch, yaw;
+            tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+            return yaw;
+        };
 
 
     void BlossomPathPlanner::loadJsonFile(const std::string& json_file_path){
@@ -135,12 +143,12 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         geometry_msgs::msg::Pose init_pose;
-        init_pose.position.x = pose_->x;
-        init_pose.position.y = pose_->y;
+        init_pose.position.x = pose_->position.x;
+        init_pose.position.y = pose_->position.y;
         init_pose.position.z = 0.0;
 
         tf2::Quaternion q;
-        q.setRPY(0.0, 0.0, pose_->theta);
+        q.setRPY(0.0, 0.0, getYaw(pose_->orientation));
         init_pose.orientation = tf2::toMsg(q);
 
         waypoints.push_back(init_pose);
@@ -154,7 +162,7 @@ namespace nhk2026_pursuit::blossom_path{
             //ここで角度計算
             double yaw = 0.0;
             if (i == 0){
-                yaw = pose_->theta;
+                yaw = getYaw(pose_->orientation);
             } else {
                 int du, dv;
                 du = grid.u - grids[i-1].u;
@@ -167,18 +175,6 @@ namespace nhk2026_pursuit::blossom_path{
             q.setRPY(0.0, 0.0, yaw);
             geometry_msgs::msg::Quaternion q_msg = tf2::toMsg(q);
 
-
-            // //中間点の追加
-            // geometry_msgs::msg::Pose middle_start, middle_end;
-            // middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            // middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            // middle_start.position.z = waypoints.back().position.z;
-            // middle_start.orientation = q_msg;
-
-            // middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            // middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            // middle_end.position.z = world_pose.position.z;
-            // middle_end.orientation = q_msg;
 
             //ここで中間地点からのoffsetを加味して経路生成 mid_start -> mid_end -> world_pose
             double mid_x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
