@@ -203,15 +203,21 @@ class FollowNode: public rclcpp::Node {
             if (path_.empty()) return;
 
             int nearest_index = 0;
-            double min_dist = std::numeric_limits<double>::max();
 
             for (int i = 0; i < static_cast<int>(path_.size()); i++) {
                 double dx = path_[i].pose.position.x - reset_x;
                 double dy = path_[i].pose.position.y - reset_y;
                 double dist = std::hypot(dx, dy);
-                if (dist < min_dist) {
-                    min_dist = dist;
-                    nearest_index = i;  // 条件を満たす中で最大インデックスを更新
+                if (dist < max_linear_tolerance 
+                    &&  (i + 1 >= static_cast<int>(path_.size()) 
+                    ||  path_[i+1].pose.orientation != path_[i].pose.orientation)) {
+
+                    current_waypoint_index_ = i;
+                    return;
+                }
+
+                if (dist < max_linear_tolerance) {
+                    nearest_index = i;
                 }
             }
             current_waypoint_index_ = nearest_index;
