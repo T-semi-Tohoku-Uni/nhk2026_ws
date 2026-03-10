@@ -10,10 +10,6 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
-find_package(orocos_kdl REQUIRED)
-find_package(kdl_parser REQUIRED)
-find_package(ament_index_cpp REQUIRED)
-find_package(trac_ik_lib QUIET)
 
 include_directories(
   include
@@ -46,23 +42,6 @@ ament_target_dependencies(ide_arm_sim_bridge
 
 install(
   TARGETS ide_arm_sim_bridge
-  DESTINATION lib/${PROJECT_NAME}
-)
-
-add_executable(kdl_test
-  src/kdl_test.cpp
-)
-
-ament_target_dependencies(kdl_test
-  rclcpp
-  std_msgs
-  orocos_kdl
-  kdl_parser
-  ament_index_cpp
-)
-
-install(
-  TARGETS kdl_test
   DESTINATION lib/${PROJECT_NAME}
 )
 
