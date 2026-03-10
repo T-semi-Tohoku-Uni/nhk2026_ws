@@ -208,17 +208,26 @@ class FollowNode: public rclcpp::Node {
                 double dx = path_[i].pose.position.x - reset_x;
                 double dy = path_[i].pose.position.y - reset_y;
                 double dist = std::hypot(dx, dy);
-                if (dist < max_linear_tolerance 
-                    &&  (i + 1 >= static_cast<int>(path_.size()) 
-                    ||  path_[i+1].pose.orientation != path_[i].pose.orientation)) {
+                // if (dist < max_linear_tolerance 
+                //     &&  (i + 1 >= static_cast<int>(path_.size()) 
+                //     ||  path_[i+1].pose.orientation != path_[i].pose.orientation)) {
 
-                    current_waypoint_index_ = i;
-                    return;
-                }
+                //     current_waypoint_index_ = i;
+                //     return;
+                // }
+
+                // if (dist < max_linear_tolerance) {
+                //     nearest_index = i;
+                // }
 
                 if (dist < max_linear_tolerance) {
-                    nearest_index = i;
+                    if (path_[i+1].pose.orientation != path_[i].pose.orientation ){
+                        current_waypoint_index_ = i;
+                        return; 
+                    }
                 }
+                nearest_index = i;
+
             }
             current_waypoint_index_ = nearest_index;
         }
