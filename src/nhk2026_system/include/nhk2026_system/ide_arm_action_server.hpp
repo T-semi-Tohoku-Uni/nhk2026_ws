@@ -59,10 +59,12 @@ private:
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robot_description_subscriber_;
 
     std::atomic_bool goal_active_{false};
+    std::shared_ptr<GoalHandleArmMove> active_goal_handle_;
     float kPosTolerance_;
     bool joint_subscribe_flag_{false};
     bool robot_description_flag_{false};
     geometry_msgs::msg::PoseStamped goal_pos_;
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;
+    KDL::Chain chain;
 };

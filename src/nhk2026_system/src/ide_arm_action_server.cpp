@@ -70,8 +70,12 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         RCLCPP_ERROR(this->get_logger(), "please start joint state publisher");
         return rclcpp_action::GoalResponse::REJECT;
     }
-
-    if (goal->joint_states.position.size() < 3)
+    else if (!this->robot_description_flag_)
+    {
+        RCLCPP_ERROR(this->get_logger(), "please robot state publisher");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    else if (goal->joint_states.position.size() < 3)
     {
         RCLCPP_ERROR(this->get_logger(), "joint states' size is short");
         return rclcpp_action::GoalResponse::REJECT;
@@ -100,6 +104,8 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
 
 void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove> goal_handle)
 {
+    this->active_goal_handle_ = goal_handle;
+
     rclcpp::QoS device = rclcpp::QoS(rclcpp::KeepLast(10))
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
@@ -121,6 +127,23 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
         std::bind(&IdeArmActionServer::feedback_timer_callback, this)
     );
 
+
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
+    KDL::JntArray q_current(chain.getNrOfJoints());
+    q_current(0) = goal->joint_states.position[0];
+    q_current(1) = goal->joint_states.position[1];
+    q_current(2) = goal->joint_states.position[2];
+
+    KDL::Frame current_pose;
+    int fk_status = fk_solver.JntToCart(q_current, current_pose);
+    if (fk_status < 0) {
+        RCLCPP_ERROR(this->get_logger(), "FK failed.");
+    }
+    
+    double roll, pitch, yaw;
+    current_pose.M.GetRPY(roll, pitch, yaw);
+
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
@@ -139,6 +162,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             result->msg = "goal canceled";
             goal_handle->canceled(result);
             this->goal_active_ = false;
+            this->active_goal_handle_.reset();
             return;
         }
 
@@ -173,6 +197,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             result->msg = "goal reached";
             goal_handle->succeed(result);
             this->goal_active_ = false;
+            this->active_goal_handle_.reset();
             return;
         }
 
@@ -183,13 +208,41 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     result->msg = "rclcpp shutdown";
     goal_handle->abort(result);
     this->goal_active_ = false;
+    this->active_goal_handle_.reset();
 
 }
 
 void IdeArmActionServer::feedback_timer_callback()
 {
     ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
-    // todo フィードバックを送る
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    KDL::JntArray q_current(chain.getNrOfJoints());
+    q_current(0) = this->now_joint_.position[0];
+    q_current(1) = this->now_joint_.position[1];
+    q_current(2) = this->now_joint_.position[2];
+
+    KDL::Frame current_pose;
+    int fk_status = fk_solver.JntToCart(q_current, current_pose);
+    if (fk_status < 0) {
+        RCLCPP_ERROR(this->get_logger(), "FK failed.");
+    }
+    
+    feedback->current.pose.position.x = current_pose.p.x();
+    feedback->current.pose.position.y = current_pose.p.y();
+    feedback->current.pose.position.z = current_pose.p.z();
+
+    double ox, oy, oz, ow;
+    current_pose.M.GetQuaternion(ox, oy, oz, ow);
+    feedback->current.pose.orientation.w = ow;
+    feedback->current.pose.orientation.x = ox;
+    feedback->current.pose.orientation.y = oy;
+    feedback->current.pose.orientation.z = oz;
+    feedback->current.header.frame_id = "arm_base";
+    feedback->current.header.stamp = this->get_clock()->now();
+
+    if (this->active_goal_handle_ && this->goal_active_) {
+        this->active_goal_handle_->publish_feedback(feedback);
+    }
 }
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
@@ -202,6 +255,24 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
     this->joint_subscribe_flag_ = true;
     this->now_joint_ = *rxdata;
     // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
+}
+
+void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata)
+{
+    this->robot_description_flag_ = true;
+
+    KDL::Tree tree;
+
+    if (!kdl_parser::treeFromString(rxdata->data, tree)) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into KDL tree.");
+    }
+
+    const std::string base_link = "arm_base";
+    const std::string end_link = "tcp_link";
+
+    if (!tree.getChain(base_link, end_link, chain)) {
+        RCLCPP_ERROR(this->get_logger(), ("Failed to extract KDL chain from " + base_link + " to " + end_link).c_str());
+    }
 }
 
 int main(int argc, char *argv[])
