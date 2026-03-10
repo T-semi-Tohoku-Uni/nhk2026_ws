@@ -151,8 +151,16 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
         RCLCPP_ERROR(this->get_logger(), "FK failed.");
     }
     
-    double roll, pitch, yaw;
-    current_pose.M.GetRPY(roll, pitch, yaw);
+    this->goal_pos_.pose.position.x = current_pose.p.x();
+    this->goal_pos_.pose.position.y = current_pose.p.y();
+    this->goal_pos_.pose.position.z = current_pose.p.z();
+
+    double ox, oy, oz, ow;
+    current_pose.M.GetQuaternion(ox, oy, oz, ow);
+    this->goal_pos_.pose.orientation.w = ow;
+    this->goal_pos_.pose.orientation.x = ox;
+    this->goal_pos_.pose.orientation.y = oy;
+    this->goal_pos_.pose.orientation.z = oz;
 
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
@@ -249,6 +257,14 @@ void IdeArmActionServer::feedback_timer_callback()
     feedback->current.pose.orientation.z = oz;
     feedback->current.header.frame_id = "arm_base";
     feedback->current.header.stamp = this->get_clock()->now();
+
+    double distance = std::sqrt(
+        std::pow(current_pose.p.x() - this->goal_pos_.pose.position.x, 2) +
+        std::pow(current_pose.p.y() - this->goal_pos_.pose.position.y, 2) +
+        std::pow(current_pose.p.z() - this->goal_pos_.pose.position.z, 2)
+    );
+
+    feedback->pos_error = distance;
 
     if (this->active_goal_handle_ && this->goal_active_) {
         this->active_goal_handle_->publish_feedback(feedback);
