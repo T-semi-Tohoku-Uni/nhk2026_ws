@@ -884,7 +884,7 @@ namespace mcl {
                     std::double_t pRand = 1.0 / scan.range_max * mapResolution_;
                     std::string frame_id = scan.header.frame_id;
                     // ★追加: frame_idからどのLiDARのデータかを判定 (0:LD, 1:Front, 2:Back)
-                    RCLCPP_INFO(this->get_logger(), "Received frame_id: '%s'", frame_id.c_str());
+                    // RCLCPP_INFO(this->get_logger(), "Received frame_id: '%s'", frame_id.c_str());
                     int current_lidar_pose = 1; // デフォルトはFront
                     if (scan.header.frame_id.find("lidar_back") != std::string::npos) {
                         current_lidar_pose = 2;
