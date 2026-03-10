@@ -203,12 +203,14 @@ class FollowNode: public rclcpp::Node {
             if (path_.empty()) return;
 
             int nearest_index = 0;
+            double min_dist = std::numeric_limits<double>::max();
 
             for (int i = 0; i < static_cast<int>(path_.size()); i++) {
                 double dx = path_[i].pose.position.x - reset_x;
                 double dy = path_[i].pose.position.y - reset_y;
                 double dist = std::hypot(dx, dy);
-                if (dist < max_linear_tolerance) {
+                if (dist < min_dist) {
+                    min_dist = dist;
                     nearest_index = i;  // 条件を満たす中で最大インデックスを更新
                 }
             }
@@ -356,7 +358,6 @@ class FollowNode: public rclcpp::Node {
             marker_pub_->publish(marker);
             // --- ★ここまで修正版 ---
 
-            
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
@@ -390,7 +391,7 @@ class FollowNode: public rclcpp::Node {
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
             //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            if (path_[current_waypoint_index_].pose.position.z - /*pose_.z*/ 0.0 > 0){
+            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0){
                 ignition::msgs::Pose req;
                 ignition::msgs::Boolean rep;
                 bool result;
@@ -447,7 +448,7 @@ class FollowNode: public rclcpp::Node {
 
             
 
-
+            
 
 
 
