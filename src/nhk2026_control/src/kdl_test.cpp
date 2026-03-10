@@ -45,13 +45,13 @@ void callback(const std_msgs::msg::String::SharedPtr rxdata)
 
 int main(int argc, char *argv[])
 {
+    rclcpp::init(argc, argv);
     auto node = rclcpp::Node("kdl");
     auto subscriber = node.create_subscription<std_msgs::msg::String>(
         "robot_description",
         rclcpp::SystemDefaultsQoS(),
         std::bind(callback, std::placeholders::_1)
     );
-    rclcpp::init(argc, argv);
     rclcpp::spin(node.get_node_base_interface());
     rclcpp::shutdown();
     return 0;

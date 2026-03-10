@@ -142,7 +142,7 @@
     <joint_name>joint1</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim1</topic>
-    <p_gain>300.0</p_gain>
+    <p_gain>900.0</p_gain>
     <i_gain>25.0</i_gain>
     <d_gain>48.0</d_gain>
   </plugin>
@@ -160,7 +160,7 @@
     <joint_name>joint3</joint_name>
     <joint_index>0</joint_index>
     <topic>/joint_sim3</topic>
-    <p_gain>300.0</p_gain>
+    <p_gain>900.0</p_gain>
     <i_gain>25.0</i_gain>
     <d_gain>48.0</d_gain>
   </plugin>
