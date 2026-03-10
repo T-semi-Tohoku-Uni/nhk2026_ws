@@ -47,5 +47,7 @@ namespace nhk2026_pursuit::blossom_path{
             double theta_offset_;
             const int HEIGHT_ = 6;
             const int WIDTH_ = 3;
+            double start_shorten_;
+            double end_shorten_;
     };
 }

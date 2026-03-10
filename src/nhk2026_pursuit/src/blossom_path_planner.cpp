@@ -34,12 +34,16 @@ namespace nhk2026_pursuit::blossom_path{
 
         loadJsonFile(json_path);
 
-        this->declare_parameter<int>("num_points_", 10);
-        this->declare_parameter<double>("shorten", 0.04);
-        this->declare_parameter<double>("theta_offset", 0.0);
+        this->declare_parameter<int>("num_points_", 2);
+        this->declare_parameter<double>("shorten_", 0.04);
+        this->declare_parameter<double>("theta_offset_", 0.0);
+        this->declare_parameter<double>("start_shorten_", 0.15);
+        this->declare_parameter<double>("end_shorten_", 0.15);
         this->get_parameter("num_points_", num_points_);
-        this->get_parameter("shorten", shorten_);
-        this->get_parameter("theta_offset", theta_offset_);
+        this->get_parameter("shorten_", shorten_);
+        this->get_parameter("theta_offset_", theta_offset_);
+        this->get_parameter("start_shorten_", start_shorten_);
+        this->get_parameter("end_shorten_", end_shorten_);
     };
 
 
@@ -135,52 +139,78 @@ namespace nhk2026_pursuit::blossom_path{
         init_pose.position.y = pose_->y;
         init_pose.position.z = 0.0;
 
+        tf2::Quaternion q;
+        q.setRPY(0.0, 0.0, pose_->theta);
+        init_pose.orientation = tf2::toMsg(q);
+
         waypoints.push_back(init_pose);
 
-        for (int i = 0; i < static_cast<int>(grids.size()); ++i){
+        for (int i = 0; i < static_cast<int>(grids.size()); ++i) {
 
             const GridIndex& grid = grids[i];
-
             geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
 
-            geometry_msgs::msg::Pose middle_start, middle_end;
 
-            middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_start.position.z = waypoints.back().position.z;
-
-            middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
-            middle_end.position.z = world_pose.position.z;
-
-        
-            //角度の計算
+            //ここで角度計算
             double yaw = 0.0;
-
-            if(i==0){
-                waypoints.push_back(middle_start);
-                waypoints.push_back(middle_end);
-                waypoints.push_back(world_pose);
-                continue;
+            if (i == 0){
+                yaw = pose_->theta;
+            } else {
+                int du, dv;
+                du = grid.u - grids[i-1].u;
+                dv = grid.v - grids[i-1].v;
+                yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
             }
             
-            const GridIndex& prev_grid = grids[i-1];
-            int du = grid.u - prev_grid.u;
-            int dv = grid.v - prev_grid.v;
-            yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
-
+            
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
+            geometry_msgs::msg::Quaternion q_msg = tf2::toMsg(q);
 
-            waypoints.back().orientation = tf2::toMsg(q);    
 
+            // //中間点の追加
+            // geometry_msgs::msg::Pose middle_start, middle_end;
+            // middle_start.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            // middle_start.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            // middle_start.position.z = waypoints.back().position.z;
+            // middle_start.orientation = q_msg;
 
-            waypoints.push_back(middle_start);
-            waypoints.push_back(middle_end);
+            // middle_end.position.x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            // middle_end.position.y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            // middle_end.position.z = world_pose.position.z;
+            // middle_end.orientation = q_msg;
+
+            //ここで中間地点からのoffsetを加味して経路生成 mid_start -> mid_end -> world_pose
+            double mid_x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
+            double mid_y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            
+            double dx = world_pose.position.x - waypoints.back().position.x;
+            double dy = world_pose.position.y - waypoints.back().position.y;
+            double distance_start = std::hypot(dx, dy);
+            double ux = (distance_start > 1e-6) ? dx / distance_start : 0.0;
+            double uy = (distance_start > 1e-6) ? dy / distance_start : 0.0;
+
+            geometry_msgs::msg::Pose mid_start, mid_end;
+            mid_start.position.x = mid_x - start_shorten_ * ux;
+            mid_start.position.y = mid_y - start_shorten_ * uy;
+            mid_start.position.z = waypoints.back().position.z;
+            mid_start.orientation = q_msg;
+
+            mid_end.position.x = mid_x + end_shorten_ * ux;
+            mid_end.position.y = mid_y + end_shorten_ * uy;
+            mid_end.position.z = world_pose.position.z;
+            mid_end.orientation = q_msg;
+
+            world_pose.orientation = q_msg;
+
+            waypoints.push_back(mid_start);
+            waypoints.push_back(mid_end);
             waypoints.push_back(world_pose);
         }
 
         return waypoints;
+
+        
     };
 
 
@@ -221,7 +251,7 @@ namespace nhk2026_pursuit::blossom_path{
         for(size_t i=0; i<waypoints.size()-1; ++i){
 
             tf2::Quaternion q;
-            tf2::fromMsg(waypoints[i].orientation, q);
+            tf2::fromMsg(waypoints[i+1].orientation, q);
             double roll, pitch, yaw;
             tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
 

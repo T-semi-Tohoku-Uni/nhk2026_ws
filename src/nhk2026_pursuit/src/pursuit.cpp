@@ -80,6 +80,10 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("max_theta_tolerance", 0.3);
             this->declare_parameter<double>("max_reaching_theta", 0.1);
             this->declare_parameter<int>("x", 2);
+            this->declare_parameter<double>("max_rotate_speed_", 0.5);
+            this->declare_parameter<double>("slow_rotate_speed_", 0.4);
+            this->declare_parameter<double>("accel_angle_", M_PI / 10);
+            this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -97,6 +101,10 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("max_theta_tolerance", max_theta_tolerance);
             this->get_parameter("max_reaching_theta", max_reaching_theta);
             this->get_parameter("x", x_);
+            this->get_parameter("max_rotate_speed_", max_rotate_speed_);
+            this->get_parameter("slow_rotate_speed_", slow_rotate_speed_);
+            this->get_parameter("accel_angle_", accel_angle_);
+            this->get_parameter("stop_angle_", stop_angle_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -207,6 +215,35 @@ class FollowNode: public rclcpp::Node {
             current_waypoint_index_ = nearest_index;
         }
 
+        void rotate(double targetTheta) {
+            double err = normalizePi(targetTheta - pose_.theta);
+            double abs_err = std::abs(err);
+            double speed_cmd = 0.0;
+
+            if (abs_err < stop_angle_) {
+                // 目標到達
+                publishZero();
+                is_rotating_ = false;
+                current_waypoint_index_++;  // 回転完了後にwaypointを進める
+                return;
+            } else if (abs_err > accel_angle_) {
+                speed_cmd = max_rotate_speed_;
+            } else {
+                speed_cmd = slow_rotate_speed_;
+            }
+
+            geometry_msgs::msg::Twist cmd;
+            cmd.linear.x  = 0.0;
+            cmd.linear.y  = 0.0;
+            cmd.angular.z = (err > 0 ? +1 : -1) * speed_cmd;
+            cmd_pub_->publish(cmd);
+        }
+
+        double normalizePi(double a) {
+            a = std::fmod(a + M_PI, 2.0 * M_PI);
+            if (a < 0) a += 2.0 * M_PI;
+            return a - M_PI;
+        }
         void controlLoop() {
             //do nothing if if there is no goal or path
             if (!goal_handle_){
@@ -215,6 +252,12 @@ class FollowNode: public rclcpp::Node {
             }
             if (path_.empty()){
                 publishZero();
+                return;
+            }
+            if (is_rotating_) {
+                publishZero();  
+                double target_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
+                rotate(target_yaw);
                 return;
             }
 
@@ -311,6 +354,7 @@ class FollowNode: public rclcpp::Node {
             marker_pub_->publish(marker);
             // --- ★ここまで修正版 ---
 
+            
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
@@ -319,6 +363,8 @@ class FollowNode: public rclcpp::Node {
                     path_[current_waypoint_index_].pose.position.x - pose_.x, 
                     path_[current_waypoint_index_].pose.position.y - pose_.y
                 );
+
+                
             }
             while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
                 double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
@@ -394,6 +440,8 @@ class FollowNode: public rclcpp::Node {
 
 
 
+           
+
             if ((linear_goal_distance < max_reaching_distance)){ //&& theta_goal < max_reaching_theta) {
                 //goal reached
                 RCLCPP_INFO(this->get_logger(), "Goal reached.");
@@ -437,7 +485,6 @@ class FollowNode: public rclcpp::Node {
 
 
             printCmdVelArrow(linear_speed_cmd_x, linear_speed_cmd_y, clipped_v_x_f, clipped_v_y_f);
-
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
@@ -447,6 +494,13 @@ class FollowNode: public rclcpp::Node {
             goal_handle_->publish_feedback(feedback_msg);
 
         }
+        double getYaw(const geometry_msgs::msg::Quaternion& q_msg) {
+            tf2::Quaternion q;
+            tf2::fromMsg(q_msg, q);
+            double roll, pitch, yaw;
+            tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+            return yaw;
+        };
 
         void printWayPointArrow(geometry_msgs::msg::Pose waypoint_pose, geometry_msgs::msg::Pose goal_pose) {
             visualization_msgs::msg::Marker arrow;
@@ -640,6 +694,13 @@ class FollowNode: public rclcpp::Node {
         // waypoint index
         int current_waypoint_index_;    
         int x_;
+
+        // rotate control
+        bool   is_rotating_       = false;
+        double max_rotate_speed_  = 0.5;
+        double slow_rotate_speed_ = 0.4;
+        double accel_angle_       = M_PI / 10;
+        double stop_angle_        = M_PI / 90;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
