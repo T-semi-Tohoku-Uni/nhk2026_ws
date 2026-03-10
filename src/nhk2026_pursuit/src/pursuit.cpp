@@ -128,7 +128,7 @@ class FollowNode: public rclcpp::Node {
             //     "odom", odomQos, std::bind(&FollowNode::odomCallback, this, std::placeholders::_1)
             // );
             rclcpp::QoS poseQos(rclcpp::KeepLast(5));
-            pose_sub_= this->create_subscription<geometry_msgs::msg::Pose2D> (
+            pose_sub_= this->create_subscription<geometry_msgs::msg::Pose>(
                 "pose", poseQos, std::bind(&FollowNode::odomCallback, this, std::placeholders::_1)
             );
             cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -147,7 +147,7 @@ class FollowNode: public rclcpp::Node {
             rclcpp::QoS cmdVelArrowQos(rclcpp::KeepLast(10));
             cmd_vel_arrow_pub = this->create_publisher<visualization_msgs::msg::Marker>("cmd_vel_arrow_marker", cmdVelArrowQos);
 
-            target_pub_ = this->create_publisher<geometry_msgs::msg::Pose2D>("target_pose", 10);
+            target_pub_ = this->create_publisher<geometry_msgs::msg::Pose>("target_pose", 10);
             action_server_ = rclcpp_action::create_server<inrof2025_ros_type::action::Follow>(
                 this,
                 "follow",
@@ -191,11 +191,11 @@ class FollowNode: public rclcpp::Node {
             path_ = msgs.poses;
             current_waypoint_index_ = 0;
         }
-        void odomCallback(geometry_msgs::msg::Pose2D msgs) {
+        void odomCallback(geometry_msgs::msg::Pose msgs) {
             // std::lock_guard<std::mutex> lock(mutex_);
-            pose_.x = msgs.x;
-            pose_.y = msgs.y;
-            pose_.theta = msgs.theta;
+            pose_.position.x = msgs.position.x;
+            pose_.position.y = msgs.position.y;
+            pose_.orientation = msgs.orientation;
             // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
         }
 
@@ -215,8 +215,10 @@ class FollowNode: public rclcpp::Node {
             current_waypoint_index_ = nearest_index;
         }
 
+
         void rotate(double targetTheta) {
-            double err = normalizePi(targetTheta - pose_.theta);
+            double yaw = getYaw(pose_.orientation);
+            double err = normalizePi(targetTheta - yaw);
             double abs_err = std::abs(err);
             double speed_cmd = 0.0;
 
@@ -263,16 +265,16 @@ class FollowNode: public rclcpp::Node {
 
 
             // publish goal position
-            geometry_msgs::msg::Pose2D target_pose;
-            target_pose.x = path_[current_waypoint_index_].pose.position.x;
-            target_pose.y = path_[current_waypoint_index_].pose.position.y;
+            geometry_msgs::msg::Pose target_pose;
+            target_pose.position.x = path_[current_waypoint_index_].pose.position.x;
+            target_pose.position.y = path_[current_waypoint_index_].pose.position.y;
             //goal_pose.theta = path_[]
 
             target_pub_ ->publish(target_pose);
 
             //error calculation linear
-            double dx = path_[current_waypoint_index_].pose.position.x - pose_.x;
-            double dy = path_[current_waypoint_index_].pose.position.y - pose_.y;
+            double dx = path_[current_waypoint_index_].pose.position.x - pose_.position.x;
+            double dy = path_[current_waypoint_index_].pose.position.y - pose_.position.y;
             double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
             double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
             double norm = std::hypot(tx, ty);
@@ -285,8 +287,8 @@ class FollowNode: public rclcpp::Node {
             double error_tan = dx * tx + dy * ty;
             double error_norm = dx * nx + dy * ny;
             double linear_error = std::hypot(dx, dy);
-            double linear_goal_x = path_[path_.size() -1].pose.position.x - pose_.x;
-            double linear_goal_y = path_[path_.size() -1].pose.position.y - pose_.y;
+            double linear_goal_x = path_[path_.size() -1].pose.position.x - pose_.position.x;
+            double linear_goal_y = path_[path_.size() -1].pose.position.y - pose_.position.y;
             double linear_goal_distance = std::hypot(linear_goal_x, linear_goal_y);
 
 
@@ -301,7 +303,7 @@ class FollowNode: public rclcpp::Node {
             double roll, pitch, yaw;
             tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
 
-            double theta_error = yaw - pose_.theta;
+            double theta_error = yaw - getYaw(pose_.orientation);
             while (theta_error > M_PI) theta_error -= 2*M_PI;
             while (theta_error < -M_PI) theta_error += 2*M_PI;
 
@@ -315,7 +317,7 @@ class FollowNode: public rclcpp::Node {
             double roll_goal, pitch_goal, yaw_goal;
             tf2::Matrix3x3(q_goal).getRPY(roll_goal, pitch_goal, yaw_goal);
 
-            double theta_goal = yaw_goal - pose_.theta;
+            double theta_goal = yaw_goal - getYaw(pose_.orientation);
             while (theta_goal >= M_2_PI) theta_goal -= M_2_PI;
             while (theta_goal < 0) theta_goal += M_2_PI;
 
@@ -369,8 +371,8 @@ class FollowNode: public rclcpp::Node {
 
                 current_waypoint_index_++;
                 linear_error = std::hypot(
-                    path_[current_waypoint_index_].pose.position.x - pose_.x, 
-                    path_[current_waypoint_index_].pose.position.y - pose_.y
+                    path_[current_waypoint_index_].pose.position.x - pose_.position.x, 
+                    path_[current_waypoint_index_].pose.position.y - pose_.position.y
                 );        
             }
 
@@ -466,7 +468,7 @@ class FollowNode: public rclcpp::Node {
             double linear_cmd_norm = linear_PID_norm_.compute(error_norm, 0.0);
             
             //PID control for theta speed
-            double theta_speed_cmd = omega_PID_.compute(target_theta, pose_.theta);
+            double theta_speed_cmd = omega_PID_.compute(target_theta, getYaw(pose_.orientation));
 
 
             //convert to x,y speed
@@ -475,8 +477,8 @@ class FollowNode: public rclcpp::Node {
 
 
             geometry_msgs::msg::Twist linear_speed;
-            linear_speed.linear.x = cos(pose_.theta) * linear_speed_cmd_x + sin(pose_.theta) * linear_speed_cmd_y;
-            linear_speed.linear.y = -sin(pose_.theta) * linear_speed_cmd_x + cos(pose_.theta) * linear_speed_cmd_y;
+            linear_speed.linear.x = cos(getYaw(pose_.orientation)) * linear_speed_cmd_x + sin(getYaw(pose_.orientation)) * linear_speed_cmd_y;
+            linear_speed.linear.y = -sin(getYaw(pose_.orientation)) * linear_speed_cmd_x + cos(getYaw(pose_.orientation)) * linear_speed_cmd_y;
             linear_speed.angular.z = theta_speed_cmd;
 
             //apply speed limits 
@@ -488,17 +490,17 @@ class FollowNode: public rclcpp::Node {
             double clipped_v_y_r = clipped_v.linear.y;
 
 
-            double clipped_v_x_f = cos(pose_.theta) * clipped_v_x_r - sin(pose_.theta) * clipped_v_y_r;
-            double clipped_v_y_f = sin(pose_.theta) * clipped_v_x_r + cos(pose_.theta) * clipped_v_y_r; 
+            double clipped_v_x_f = cos(getYaw(pose_.orientation)) * clipped_v_x_r - sin(getYaw(pose_.orientation)) * clipped_v_y_r;
+            double clipped_v_y_f = sin(getYaw(pose_.orientation)) * clipped_v_x_r + cos(getYaw(pose_.orientation)) * clipped_v_y_r; 
 
 
             printCmdVelArrow(linear_speed_cmd_x, linear_speed_cmd_y, clipped_v_x_f, clipped_v_y_f);
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
-            feedback_msg->x = pose_.x;
-            feedback_msg->y = pose_.y;
-            feedback_msg->theta = pose_.theta;
+            feedback_msg->x = pose_.position.x;
+            feedback_msg->y = pose_.position.y;
+            feedback_msg->theta = getYaw(pose_.orientation);
             goal_handle_->publish_feedback(feedback_msg);
 
         }
@@ -549,10 +551,10 @@ class FollowNode: public rclcpp::Node {
         }
 
         void printCmdVelArrow(double vx, double vy, double cliped_vx, double cliped_vy) {
-            // convert pose2d to pose
+            // convert Pose to pose
             geometry_msgs::msg::Pose pose;
-            pose.position.x = pose_.x;
-            pose.position.y = pose_.y;
+            pose.position.x = pose_.position.x;
+            pose.position.y = pose_.position.y;
             pose.position.z = 0.0;
             tf2::Quaternion q;
             double yaw;
@@ -675,16 +677,16 @@ class FollowNode: public rclcpp::Node {
         // subscriber
         rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-        rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr pose_sub_;
+        rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr pose_sub_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
-        rclcpp::Publisher<geometry_msgs::msg::Pose2D>::SharedPtr target_pub_;
+        rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr target_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmd_vel_arrow_pub;
         rclcpp::TimerBase::SharedPtr timer_;
         std::vector<geometry_msgs::msg::PoseStamped> path_;
         std::mutex mutex_;
-        geometry_msgs::msg::Pose2D pose_;
+        geometry_msgs::msg::Pose pose_;
 
         rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedPtr reset_pose_client_;
 
