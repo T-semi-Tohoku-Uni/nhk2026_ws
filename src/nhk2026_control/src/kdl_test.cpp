@@ -81,7 +81,7 @@ int main()
     // 現在の関節角の例
     KDL::JntArray q_current(chain.getNrOfJoints());
     q_current(0) = 0.4;
-    q_current(1) = 0.2;
+    q_current(1) = 0.1;
     q_current(2) = -0.2;
 
     KDL::Frame current_pose;
