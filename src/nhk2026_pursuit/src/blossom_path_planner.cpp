@@ -34,16 +34,16 @@ namespace nhk2026_pursuit::blossom_path{
 
         loadJsonFile(json_path);
 
-        this->declare_parameter<int>("num_points_", 10);
-        this->declare_parameter<double>("shorten", 0.04);
-        this->declare_parameter<double>("theta_offset", 0.0);
-        this->declare_parameter<double>("start_shorten", 0.15);
-        this->declare_parameter<double>("end_shorten", 0.15);
+        this->declare_parameter<int>("num_points_", 2);
+        this->declare_parameter<double>("shorten_", 0.04);
+        this->declare_parameter<double>("theta_offset_", 0.0);
+        this->declare_parameter<double>("start_shorten_", 0.15);
+        this->declare_parameter<double>("end_shorten_", 0.15);
         this->get_parameter("num_points_", num_points_);
-        this->get_parameter("shorten", shorten_);
-        this->get_parameter("theta_offset", theta_offset_);
-        this->get_parameter("start_shorten", start_shorten_);
-        this->get_parameter("end_shorten", end_shorten_);
+        this->get_parameter("shorten_", shorten_);
+        this->get_parameter("theta_offset_", theta_offset_);
+        this->get_parameter("start_shorten_", start_shorten_);
+        this->get_parameter("end_shorten_", end_shorten_);
     };
 
 
