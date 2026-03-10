@@ -76,6 +76,10 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("max_theta_tolerance", 0.3);
             this->declare_parameter<double>("max_reaching_theta", 0.1);
             this->declare_parameter<int>("x", 2);
+            this->declare_parameter<double>("max_rotate_speed_", 0.5);
+            this->declare_parameter<double>("slow_rotate_speed_", 0.4);
+            this->declare_parameter<double>("accel_angle_", M_PI / 10);
+            this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -93,6 +97,10 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("max_theta_tolerance", max_theta_tolerance);
             this->get_parameter("max_reaching_theta", max_reaching_theta);
             this->get_parameter("x", x_);
+            this->get_parameter("max_rotate_speed_", max_rotate_speed_);
+            this->get_parameter("slow_rotate_speed_", slow_rotate_speed_);
+            this->get_parameter("accel_angle_", accel_angle_);
+            this->get_parameter("stop_angle_", stop_angle_);
 
 
 
@@ -185,35 +193,35 @@ class FollowNode: public rclcpp::Node {
             pose_.theta = msgs.theta;
             // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
         }
-        // void rotate(double targetTheta) {
-        //     double err = normalizePi(targetTheta - pose_.theta);
-        //     double abs_err = std::abs(err);
-        //     double speed_cmd = 0.0;
+        void rotate(double targetTheta) {
+            double err = normalizePi(targetTheta - pose_.theta);
+            double abs_err = std::abs(err);
+            double speed_cmd = 0.0;
 
-        //     if (abs_err < stop_angle_) {
-        //         // 目標到達
-        //         publishZero();
-        //         is_rotating_ = false;
-        //         // current_waypoint_index_++;  // 回転完了後にwaypointを進める
-        //         return;
-        //     } else if (abs_err > accel_angle_) {
-        //         speed_cmd = max_rotate_speed_;
-        //     } else {
-        //         speed_cmd = slow_rotate_speed_;
-        //     }
+            if (abs_err < stop_angle_) {
+                // 目標到達
+                publishZero();
+                is_rotating_ = false;
+                current_waypoint_index_++;  // 回転完了後にwaypointを進める
+                return;
+            } else if (abs_err > accel_angle_) {
+                speed_cmd = max_rotate_speed_;
+            } else {
+                speed_cmd = slow_rotate_speed_;
+            }
 
-        //     geometry_msgs::msg::Twist cmd;
-        //     cmd.linear.x  = 0.0;
-        //     cmd.linear.y  = 0.0;
-        //     cmd.angular.z = (err > 0 ? +1 : -1) * speed_cmd;
-        //     cmd_pub_->publish(cmd);
-        // }
+            geometry_msgs::msg::Twist cmd;
+            cmd.linear.x  = 0.0;
+            cmd.linear.y  = 0.0;
+            cmd.angular.z = (err > 0 ? +1 : -1) * speed_cmd;
+            cmd_pub_->publish(cmd);
+        }
 
-        // double normalizePi(double a) {
-        //     a = std::fmod(a + M_PI, 2.0 * M_PI);
-        //     if (a < 0) a += 2.0 * M_PI;
-        //     return a - M_PI;
-        // }
+        double normalizePi(double a) {
+            a = std::fmod(a + M_PI, 2.0 * M_PI);
+            if (a < 0) a += 2.0 * M_PI;
+            return a - M_PI;
+        }
         void controlLoop() {
             //do nothing if if there is no goal or path
             if (!goal_handle_){
@@ -224,12 +232,12 @@ class FollowNode: public rclcpp::Node {
                 publishZero();
                 return;
             }
-            // if (is_rotating_) {
-            //     publishZero();  
-            //     double target_yaw = getYaw(path_[current_waypoint_index_].pose.orientation);
-            //     rotate(target_yaw);
-            //     return;
-            // }
+            if (is_rotating_) {
+                publishZero();  
+                double target_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
+                rotate(target_yaw);
+                return;
+            }
 
 
             // publish goal position
@@ -324,15 +332,32 @@ class FollowNode: public rclcpp::Node {
             marker_pub_->publish(marker);
             // --- ★ここまで修正版 ---
 
+            
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
 
-                //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                if (path_[current_waypoint_index_+1].pose.orientation != path_[current_waypoint_index_].pose.orientation
-                    /* && linear_goal_distance < max_reaching_distance*/) 
+                // double current_yaw = getYaw(path_[current_waypoint_index_].pose.orientation);
+                // double next_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
+                // double yaw_diff = std::abs(next_yaw - current_yaw);
+                // RCLCPP_INFO(this->get_logger(), "theta %.2f", current_yaw);
+                // if (yaw_diff > M_PI) yaw_diff = 2*M_PI - yaw_diff;
+
+                // //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
+                // if (yaw_diff > 1e-2
+                //     && linear_goal_distance < max_reaching_distance) 
+                // {
+                //     is_rotating_ = true;  
+                //     break;
+                // }
+
+                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation
+                    /*&& linear_error < max_reaching_distance*/) 
                 {
-                    // is_rotating_ = true;  
+                    if(linear_error < max_reaching_distance){
+                        is_rotating_ = true; 
+                    }
+                     
                     break;
                 }
 
