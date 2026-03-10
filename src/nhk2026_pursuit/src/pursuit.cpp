@@ -418,7 +418,7 @@ class FollowNode: public rclcpp::Node {
                 orientation->set_z(0.0);
                 orientation->set_w(1.0);
                 position->set_x(-1.825);
-                position->set_y(3.8);
+                position->set_y(3.3);
                 position->set_z(0.21);
 
                 
@@ -433,7 +433,7 @@ class FollowNode: public rclcpp::Node {
                 std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
                     std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
                 request->pose.position.x = -1.825;
-                request->pose.position.y = 3.8;
+                request->pose.position.y = 3.3;
                 request->pose.position.z = 0.21;
                 request->pose.orientation.x = 0.0;
                 request->pose.orientation.y = 0.0;
@@ -449,9 +449,9 @@ class FollowNode: public rclcpp::Node {
                         RCLCPP_INFO(this->get_logger(),
                                     "Service call succeeded: %s",
                                     response->success ? "true" : "false");
-                        if (response->success){
-                            resetWaypointIndex(request->pose.position.x, request->pose.position.y);
-                        }
+                        // if (response->success){
+                        //     resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                        // }
         
                         
                     }
