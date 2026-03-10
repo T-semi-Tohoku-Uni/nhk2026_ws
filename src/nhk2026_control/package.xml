@@ -15,6 +15,7 @@
   <depend>orocos_kdl_vendor</depend>
   <depend>kdl_parser</depend>
   <depend>ament_index_cpp</depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
