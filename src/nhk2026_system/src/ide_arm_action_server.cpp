@@ -24,6 +24,16 @@ IdeArmActionServer::IdeArmActionServer()
         std::bind(&IdeArmActionServer::joint_state_callback, this, _1)
     );
 
+    rclcpp::QoS robot = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+
+    this->robot_description_subscriber_ = this->create_subscription<std_msgs::msg::String>(
+        std::string("robot_description"),
+        robot,
+        std::bind(&IdeArmActionServer::robot_description_callback, this, _1)
+    );
+
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
 
