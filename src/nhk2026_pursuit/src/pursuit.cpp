@@ -329,12 +329,23 @@ class FollowNode: public rclcpp::Node {
 
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
+
+                //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
+                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation) {
+
+                    if(linear_error < max_reaching_distance){
+                        is_rotating_ = true; 
+                    }
+                    break;
+                }
+
                 current_waypoint_index_++;
                 linear_error = std::hypot(
                     path_[current_waypoint_index_].pose.position.x - pose_.x, 
                     path_[current_waypoint_index_].pose.position.y - pose_.y
-                );
+                );        
             }
+
             while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
                 double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
                 double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
