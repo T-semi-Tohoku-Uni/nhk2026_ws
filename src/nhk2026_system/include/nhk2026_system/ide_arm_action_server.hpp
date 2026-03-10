@@ -8,6 +8,16 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
+#include <kdl/tree.hpp>
+#include <kdl/chain.hpp>
+#include <kdl/frames.hpp>
+#include <kdl/jntarray.hpp>
+
+#include <kdl/chainfksolverpos_recursive.hpp>
+#include <kdl/chainiksolverpos_lma.hpp>
+
+#include <kdl_parser/kdl_parser.hpp>
+
 #include <atomic>
 
 using namespace std::placeholders;
