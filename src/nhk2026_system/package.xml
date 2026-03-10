@@ -15,6 +15,10 @@
   <depend>nhk2026_msgs</depend>
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
+  <depend>orocos_kdl_vendor</depend>
+  <depend>kdl_parser</depend>
+  <depend>ament_index_cpp</depend>
+  <exec_depend>xacro</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
