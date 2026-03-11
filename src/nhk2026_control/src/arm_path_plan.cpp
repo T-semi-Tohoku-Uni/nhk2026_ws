@@ -18,7 +18,29 @@ void ArmPathPlan::path_gen_callback(
     std::pair<double, double> start = {request->now_pos.pose.position.y, request->now_pos.pose.position.z};
     std::pair<double, double> goal  = {request->goal_pos.pose.position.y, request->goal_pos.pose.position.z};
 
-    std::vector<std::pair<double, double>> path = this->generator(start, goal);
+    std::vector<std::pair<double, double>> path;
+
+    std::vector<std::pair<double, double>> all_points;
+    all_points.push_back(start);
+    for (size_t i = 0; i < request->waypoints.size(); i ++)
+    {
+        std::pair<double, double> waypoints_path_one;
+        waypoints_path_one.first = request->waypoints[i].pose.position.y;
+        waypoints_path_one.second = request->waypoints[i].pose.position.z;
+        all_points.push_back(waypoints_path_one);
+    }
+    all_points.push_back(goal);
+
+    if (!all_points.empty()) {
+        for (size_t i = 0; i + 1 < all_points.size(); i++) {
+            std::vector<std::pair<double, double>> segment = this->generator(all_points[i], all_points[i + 1]);
+            if (i == 0) {
+                path.insert(path.end(), segment.begin(), segment.end());
+            } else {
+                path.insert(path.end(), segment.begin() + 1, segment.end());
+            }
+        }
+    }
 
     nav_msgs::msg::Path msg;
     msg.header.frame_id = "arm_base";
