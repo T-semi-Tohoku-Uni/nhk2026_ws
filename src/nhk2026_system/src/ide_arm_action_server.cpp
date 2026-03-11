@@ -34,6 +34,8 @@ IdeArmActionServer::IdeArmActionServer()
         std::bind(&IdeArmActionServer::robot_description_callback, this, _1)
     );
 
+    this->path_client_ = this->create_client<nhk2026_msgs::srv::ArmPathPlan>(std::string("arm_path"));
+
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
 
@@ -85,11 +87,17 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         RCLCPP_ERROR(this->get_logger(), "please robot state publisher");
         return rclcpp_action::GoalResponse::REJECT;
     }
-    else if (goal->joint_states.position.size() < 3)
+    else if (!this->path_client_->service_is_ready())
     {
-        RCLCPP_ERROR(this->get_logger(), "joint states' size is short");
+        RCLCPP_ERROR(this->get_logger(), "arm_path service is not available");
         return rclcpp_action::GoalResponse::REJECT;
     }
+
+    nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
+    request->goal_pos = goal->goal_pos;
+    request->now_pos = this->now_pos_;
+    
+    // todo pathのサービスを投げる
 
     bool expected = false;
     if (!this->goal_active_.compare_exchange_strong(expected, true))
@@ -137,31 +145,6 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
         std::bind(&IdeArmActionServer::feedback_timer_callback, this)
     );
 
-
-    KDL::ChainFkSolverPos_recursive fk_solver(chain);
-    const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
-    KDL::JntArray q_current(chain.getNrOfJoints());
-    q_current(0) = goal->joint_states.position[0];
-    q_current(1) = goal->joint_states.position[1];
-    q_current(2) = goal->joint_states.position[2];
-
-    KDL::Frame current_pose;
-    int fk_status = fk_solver.JntToCart(q_current, current_pose);
-    if (fk_status < 0) {
-        RCLCPP_ERROR(this->get_logger(), "FK failed.");
-    }
-    
-    this->goal_pos_.pose.position.x = current_pose.p.x();
-    this->goal_pos_.pose.position.y = current_pose.p.y();
-    this->goal_pos_.pose.position.z = current_pose.p.z();
-
-    double ox, oy, oz, ow;
-    current_pose.M.GetQuaternion(ox, oy, oz, ow);
-    this->goal_pos_.pose.orientation.w = ow;
-    this->goal_pos_.pose.orientation.x = ox;
-    this->goal_pos_.pose.orientation.y = oy;
-    this->goal_pos_.pose.orientation.z = oz;
-
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
@@ -183,41 +166,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             this->active_goal_handle_.reset();
             return;
         }
-
-        if (std::fabs(this->now_joint_.position[0] - goal->joint_states.position[0]) > this->kPosTolerance_)
-        {
-            RCLCPP_INFO(this->get_logger(), "j1 moving!");
-            std_msgs::msg::Float32MultiArray cmd;
-            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[0]), goal->max_speed, goal->max_acc};
-            cmd.data = cmd_data;
-            j1_motor_publisher_->publish(cmd);
-        }
-        else if (std::fabs(this->now_joint_.position[1] - goal->joint_states.position[1]) > this->kPosTolerance_)
-        {
-            RCLCPP_INFO(this->get_logger(), "j2 moving!");
-            std_msgs::msg::Float32MultiArray cmd;
-            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[1]), goal->max_speed, goal->max_acc};
-            cmd.data = cmd_data;
-            j2_motor_publisher_->publish(cmd);
-        }
-        else if (std::fabs(this->now_joint_.position[2] - goal->joint_states.position[2]) > this->kPosTolerance_)
-        {
-            RCLCPP_INFO(this->get_logger(), "j3 moving!");
-            std_msgs::msg::Float32MultiArray cmd;
-            std::vector<float> cmd_data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
-            cmd.data = cmd_data;
-            j3_motor_publisher_->publish(cmd);
-        }
-        else
-        {
-            RCLCPP_INFO(this->get_logger(), "complete!");
-            result->success = true;
-            result->msg = "goal reached";
-            goal_handle->succeed(result);
-            this->goal_active_ = false;
-            this->active_goal_handle_.reset();
-            return;
-        }
+        
 
         loop_rate.sleep();
     }

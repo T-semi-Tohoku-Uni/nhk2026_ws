@@ -8,6 +8,7 @@
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
+#include "nhk2026_msgs/srv/arm_path_plan.hpp"
 
 #include <kdl/tree.hpp>
 #include <kdl/chain.hpp>
@@ -57,6 +58,7 @@ private:
     rclcpp::TimerBase::SharedPtr feedback_timer_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robot_description_subscriber_;
+    rclcpp::Client<nhk2026_msgs::srv::ArmPathPlan>::SharedPtr path_client_;
 
     std::atomic_bool goal_active_{false};
     std::shared_ptr<GoalHandleArmMove> active_goal_handle_;
@@ -67,4 +69,5 @@ private:
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;
     KDL::Chain chain;
+    nav_msgs::msg::Path path_;
 };
