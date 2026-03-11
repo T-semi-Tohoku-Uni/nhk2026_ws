@@ -156,6 +156,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
+    request->waypoints = goal->waypoints;
 
     auto future = this->path_client_->async_send_request(request);
     while (rclcpp::ok() && future.wait_for(10ms) != std::future_status::ready)
