@@ -15,7 +15,25 @@ void ArmPathPlan::path_gen_callback(
     std::shared_ptr<nhk2026_msgs::srv::ArmPathPlan::Response> response
 )
 {
-    
+    std::pair<double, double> start = {request->now_pos.pose.position.y, request->now_pos.pose.position.z};
+    std::pair<double, double> goal  = {request->goal_pos.pose.position.y, request->goal_pos.pose.position.z};
+
+    std::vector<std::pair<double, double>> path = this->generator(start, goal);
+
+    nav_msgs::msg::Path msg;
+    msg.header.frame_id = "arm_base";
+    msg.header.stamp = this->now();
+
+    for (std::pair<double, double> &p : path) {
+        geometry_msgs::msg::PoseStamped pose;
+        pose.header = msg.header;
+        pose.pose.position.x = -0.182751;
+        pose.pose.position.y = p.first;
+        pose.pose.position.z = p.second;
+        msg.poses.push_back(pose);
+    }
+
+    response->route = msg;
 }
 
 std::vector<std::pair<double, double>> ArmPathPlan::generator(
