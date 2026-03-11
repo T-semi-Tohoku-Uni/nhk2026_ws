@@ -182,25 +182,6 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     }
 
     this->path_ = future.get()->route;
-    RCLCPP_INFO(this->get_logger(), "path size: %zu", this->path_.poses.size());
-    for (size_t i = 0; i < this->path_.poses.size(); ++i)
-    {
-        const auto &pose = this->path_.poses[i].pose.position;
-        RCLCPP_INFO(
-            this->get_logger(),
-            "path[%zu]: x=%.3f y=%.3f z=%.3f",
-            i,
-            pose.x,
-            pose.y,
-            pose.z
-        );
-    }
-
-    result->success = false;
-    result->msg = "rclcpp shutdown";
-    goal_handle->abort(result);
-    this->goal_active_ = false;
-    this->active_goal_handle_.reset();
 
     rclcpp::Rate loop_rate(100.0);
     while (rclcpp::ok())
