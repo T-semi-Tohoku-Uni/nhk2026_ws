@@ -23,6 +23,10 @@ void ArmPathPlan::path_gen_callback(
     nav_msgs::msg::Path msg;
     msg.header.frame_id = "arm_base";
     msg.header.stamp = this->now();
+    constexpr double roll = 1.57;
+    constexpr double half_roll = roll * 0.5;
+    constexpr double qx = std::sin(half_roll);
+    constexpr double qw = std::cos(half_roll);
 
     for (std::pair<double, double> &p : path) {
         geometry_msgs::msg::PoseStamped pose;
@@ -30,6 +34,10 @@ void ArmPathPlan::path_gen_callback(
         pose.pose.position.x = -0.182751;
         pose.pose.position.y = p.first;
         pose.pose.position.z = p.second;
+        pose.pose.orientation.x = qx;
+        pose.pose.orientation.y = 0.0;
+        pose.pose.orientation.z = 0.0;
+        pose.pose.orientation.w = qw;
         msg.poses.push_back(pose);
     }
 
