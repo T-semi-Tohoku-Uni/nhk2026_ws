@@ -15,7 +15,34 @@ void ArmPathPlan::path_gen_callback(
     std::shared_ptr<nhk2026_msgs::srv::ArmPathPlan::Response> response
 )
 {
+    
+}
 
+std::vector<std::pair<double, double>> ArmPathPlan::generator(
+    std::pair<double, double> start_point,
+    std::pair<double, double> goal_point
+)
+{
+    std::vector<std::pair<double, double>> path;
+
+    double sx = start_point.first;
+    double sy = start_point.second;
+    double gx = goal_point.first;
+    double gy = goal_point.second;
+
+    double dist = std::hypot(gx - sx, gy - sy);
+    double step = 0.005;
+    int n = std::max(2, static_cast<int>(dist / step) + 1);
+
+    for (int i = 0; i < n; i++) {
+        double t = static_cast<double>(i) / (n - 1);
+        path.push_back({
+            sx + t * (gx - sx),
+            sy + t * (gy - sy)
+        });
+    }
+
+    return path;
 }
 
 int main(int argc, char *argv[])
