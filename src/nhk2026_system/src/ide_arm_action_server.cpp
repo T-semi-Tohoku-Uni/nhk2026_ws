@@ -1,5 +1,6 @@
 #include "ide_arm_action_server.hpp"
 #include <cmath>
+#include <future>
 
 using namespace std::chrono_literals;
 
@@ -96,8 +97,7 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
-    
-    // todo pathのサービスを投げる
+    this->goal_pos_ = goal->goal_pos;
 
     bool expected = false;
     if (!this->goal_active_.compare_exchange_strong(expected, true))
@@ -153,6 +153,54 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
 {
     const std::shared_ptr<const nhk2026_msgs::action::ArmMove_Goal> goal = goal_handle->get_goal();
     ArmMove::Result::SharedPtr result = std::make_shared<ArmMove::Result>();
+    nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
+    request->goal_pos = goal->goal_pos;
+    request->now_pos = this->now_pos_;
+
+    auto future = this->path_client_->async_send_request(request);
+    while (rclcpp::ok() && future.wait_for(10ms) != std::future_status::ready)
+    {
+        if (goal_handle->is_canceling())
+        {
+            result->success = false;
+            result->msg = "goal canceled";
+            goal_handle->canceled(result);
+            this->goal_active_ = false;
+            this->active_goal_handle_.reset();
+            return;
+        }
+    }
+
+    if (!rclcpp::ok())
+    {
+        result->success = false;
+        result->msg = "rclcpp shutdown";
+        goal_handle->abort(result);
+        this->goal_active_ = false;
+        this->active_goal_handle_.reset();
+        return;
+    }
+
+    this->path_ = future.get()->route;
+    RCLCPP_INFO(this->get_logger(), "path size: %zu", this->path_.poses.size());
+    for (size_t i = 0; i < this->path_.poses.size(); ++i)
+    {
+        const auto &pose = this->path_.poses[i].pose.position;
+        RCLCPP_INFO(
+            this->get_logger(),
+            "path[%zu]: x=%.3f y=%.3f z=%.3f",
+            i,
+            pose.x,
+            pose.y,
+            pose.z
+        );
+    }
+
+    result->success = false;
+    result->msg = "rclcpp shutdown";
+    goal_handle->abort(result);
+    this->goal_active_ = false;
+    this->active_goal_handle_.reset();
 
     rclcpp::Rate loop_rate(100.0);
     while (rclcpp::ok())
@@ -229,7 +277,37 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
     }
     this->joint_subscribe_flag_ = true;
     this->now_joint_ = *rxdata;
-    // todo jointからエンドエフェクタの場所を計算（ここじゃなくてもいいかも）
+
+    if (!this->robot_description_flag_ || chain.getNrOfJoints() < 3)
+    {
+        return;
+    }
+
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    KDL::JntArray q_current(chain.getNrOfJoints());
+    q_current(0) = rxdata->position[0];
+    q_current(1) = rxdata->position[1];
+    q_current(2) = rxdata->position[2];
+
+    KDL::Frame current_pose;
+    if (fk_solver.JntToCart(q_current, current_pose) < 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "FK failed in joint_state_callback.");
+        return;
+    }
+
+    this->now_pos_.pose.position.x = current_pose.p.x();
+    this->now_pos_.pose.position.y = current_pose.p.y();
+    this->now_pos_.pose.position.z = current_pose.p.z();
+
+    double ox, oy, oz, ow;
+    current_pose.M.GetQuaternion(ox, oy, oz, ow);
+    this->now_pos_.pose.orientation.w = ow;
+    this->now_pos_.pose.orientation.x = ox;
+    this->now_pos_.pose.orientation.y = oy;
+    this->now_pos_.pose.orientation.z = oz;
+    this->now_pos_.header.frame_id = "arm_base";
+    this->now_pos_.header.stamp = this->get_clock()->now();
 }
 
 void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata)
