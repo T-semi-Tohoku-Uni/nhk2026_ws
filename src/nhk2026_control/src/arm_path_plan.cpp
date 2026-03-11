@@ -23,7 +23,7 @@ void ArmPathPlan::path_gen_callback(
     nav_msgs::msg::Path msg;
     msg.header.frame_id = "arm_base";
     msg.header.stamp = this->now();
-    constexpr double roll = 1.57;
+    constexpr double roll = -1.57;
     constexpr double half_roll = roll * 0.5;
     constexpr double qx = std::sin(half_roll);
     constexpr double qw = std::cos(half_roll);
