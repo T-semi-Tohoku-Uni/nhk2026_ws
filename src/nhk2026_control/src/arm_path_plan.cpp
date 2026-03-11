@@ -3,6 +3,14 @@
 ArmPathPlan::ArmPathPlan()
 : rclcpp::Node("arm_path_plan")
 {
+    rclcpp::QoS route_qos(rclcpp::KeepLast(1));
+    route_qos.reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE);
+    route_qos.durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+
+    this->route_publisher_ = this->create_publisher<nav_msgs::msg::Path>(
+        std::string("arm_route"),
+        route_qos
+    );
     this->arm_path_service_ = this->create_service<nhk2026_msgs::srv::ArmPathPlan>(
         std::string("arm_path"),
         std::bind(&ArmPathPlan::path_gen_callback, this, std::placeholders::_1, std::placeholders::_2)
@@ -64,6 +72,7 @@ void ArmPathPlan::path_gen_callback(
     }
 
     response->route = msg;
+    this->route_publisher_->publish(msg);
 }
 
 std::vector<std::pair<double, double>> ArmPathPlan::generator(
