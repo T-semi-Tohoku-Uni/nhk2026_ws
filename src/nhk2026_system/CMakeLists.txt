@@ -15,6 +15,10 @@ find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(orocos_kdl REQUIRED)
+find_package(kdl_parser REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(trac_ik_lib QUIET)
 
 include_directories(
   include
@@ -50,6 +54,9 @@ ament_target_dependencies(ide_arm_action_server
   geometry_msgs
   sensor_msgs
   nhk2026_msgs
+  orocos_kdl
+  kdl_parser
+  ament_index_cpp
 )
 
 install(

@@ -7,9 +7,11 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
 
 include_directories(
   include
@@ -28,6 +30,35 @@ ament_target_dependencies(joint_state_publisher_ide
 
 install(
   TARGETS joint_state_publisher_ide
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(ide_arm_sim_bridge
+  src/ide_arm_sim_bridge.cpp
+)
+
+ament_target_dependencies(ide_arm_sim_bridge
+  rclcpp
+  std_msgs
+)
+
+install(
+  TARGETS ide_arm_sim_bridge
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(arm_path_plan
+  src/arm_path_plan.cpp
+)
+
+ament_target_dependencies(arm_path_plan
+  nav_msgs
+  rclcpp
+  nhk2026_msgs
+)
+
+install(
+  TARGETS arm_path_plan
   DESTINATION lib/${PROJECT_NAME}
 )
 
