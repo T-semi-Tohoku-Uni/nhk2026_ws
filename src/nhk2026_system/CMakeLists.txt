@@ -18,7 +18,6 @@ find_package(nhk2026_msgs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
-find_package(trac_ik_lib QUIET)
 
 include_directories(
   include

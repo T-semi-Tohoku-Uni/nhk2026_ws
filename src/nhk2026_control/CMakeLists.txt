@@ -12,6 +12,9 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(orocos_kdl REQUIRED)
+find_package(kdl_parser REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
 include_directories(
   include
@@ -48,13 +51,17 @@ install(
 )
 
 add_executable(arm_path_plan
-  src/arm_path_plan.cpp
+  src/arm_path_plan_server.cpp
 )
 
 ament_target_dependencies(arm_path_plan
   nav_msgs
   rclcpp
   nhk2026_msgs
+  std_msgs
+  orocos_kdl
+  kdl_parser
+  ament_index_cpp
 )
 
 install(

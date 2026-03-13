@@ -1,4 +1,4 @@
-#include "arm_path_plan.hpp"
+#include "arm_path_plan_server.hpp"
 
 ArmPathPlan::ArmPathPlan()
 : rclcpp::Node("arm_path_plan")
