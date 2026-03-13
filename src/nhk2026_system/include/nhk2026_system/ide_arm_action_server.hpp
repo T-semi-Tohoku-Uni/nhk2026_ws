@@ -69,7 +69,6 @@ private:
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;
     KDL::Chain chain;
-    nav_msgs::msg::Path path_;
     std::string joint1_name_;
     std::string joint2_name_;
     std::string joint3_name_;

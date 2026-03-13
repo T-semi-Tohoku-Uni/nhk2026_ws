@@ -84,8 +84,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     std::shared_ptr<const ArmMove::Goal> goal
 )
 {
-    // todo アームの到達範囲をチェック
-
     if (!this->joint_subscribe_flag_)
     {
         RCLCPP_ERROR(this->get_logger(), "please start joint state publisher");
@@ -99,6 +97,49 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     else if (!this->path_client_->service_is_ready())
     {
         RCLCPP_ERROR(this->get_logger(), "arm_path service is not available");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    if (this->joint_positions_.size() < chain.getNrOfJoints())
+    {
+        RCLCPP_ERROR(this->get_logger(), "joint positions are not ready");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    const auto &target_pose = goal->goal_pos.pose;
+    const double q_norm =
+        std::abs(target_pose.orientation.x) +
+        std::abs(target_pose.orientation.y) +
+        std::abs(target_pose.orientation.z) +
+        std::abs(target_pose.orientation.w);
+    const KDL::Rotation target_rotation = (q_norm > 1e-6)
+        ? KDL::Rotation::Quaternion(
+            target_pose.orientation.x,
+            target_pose.orientation.y,
+            target_pose.orientation.z,
+            target_pose.orientation.w
+        )
+        : KDL::Rotation::Identity();
+    const KDL::Frame target_frame(
+        target_rotation,
+        KDL::Vector(
+            target_pose.position.x,
+            target_pose.position.y,
+            target_pose.position.z
+        )
+    );
+
+    KDL::ChainIkSolverPos_LMA ik_solver(chain);
+    KDL::JntArray q_init(chain.getNrOfJoints());
+    KDL::JntArray q_out(chain.getNrOfJoints());
+    for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
+    {
+        q_init(i) = this->joint_positions_[i];
+    }
+
+    if (ik_solver.CartToJnt(q_init, target_frame, q_out) < 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "goal pose is out of reach");
         return rclcpp_action::GoalResponse::REJECT;
     }
 
@@ -189,20 +230,6 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         return;
     }
 
-    this->path_ = future.get()->route;
-    if (this->path_.poses.empty())
-    {
-        result->success = false;
-        result->msg = "planned path is empty";
-        goal_handle->abort(result);
-        this->goal_active_ = false;
-        this->active_goal_handle_.reset();
-        return;
-    }
-
-    KDL::ChainIkSolverPos_LMA ik_solver(this->chain);
-    KDL::JntArray q_init(this->chain.getNrOfJoints());
-    KDL::JntArray q_out(this->chain.getNrOfJoints());
     std_msgs::msg::Float32MultiArray j1_msg;
     std_msgs::msg::Float32MultiArray j2_msg;
     std_msgs::msg::Float32MultiArray j3_msg;
@@ -214,71 +241,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     size_t i = 0;
     while (rclcpp::ok())
     {
-        if (i >= this->path_.poses.size())
-        {
-            result->success = true;
-            result->msg = "goal reached";
-            goal_handle->succeed(result);
-            this->goal_active_ = false;
-            this->active_goal_handle_.reset();
-            return;
-        }
-
-        const auto &target_pose = this->path_.poses[i].pose;
-        const double q_norm =
-            std::abs(target_pose.orientation.x) +
-            std::abs(target_pose.orientation.y) +
-            std::abs(target_pose.orientation.z) +
-            std::abs(target_pose.orientation.w);
-        const KDL::Rotation target_rotation = (q_norm > 1e-6)
-            ? KDL::Rotation::Quaternion(
-                target_pose.orientation.x,
-                target_pose.orientation.y,
-                target_pose.orientation.z,
-                target_pose.orientation.w
-            )
-            : KDL::Rotation::Identity();
-        const KDL::Frame target_frame(
-            target_rotation,
-            KDL::Vector(
-                target_pose.position.x,
-                target_pose.position.y,
-                target_pose.position.z
-            )
-        );
-
-        q_init(0) = this->joint_positions_[0];
-        q_init(1) = this->joint_positions_[1];
-        q_init(2) = this->joint_positions_[2];
-
-        if (ik_solver.CartToJnt(q_init, target_frame, q_out) >= 0)
-        {
-            j1_msg.data[0] = static_cast<float>(q_out(0));
-            j2_msg.data[0] = static_cast<float>(q_out(1));
-            j3_msg.data[0] = static_cast<float>(q_out(2));
-            this->j1_motor_publisher_->publish(j1_msg);
-            this->j2_motor_publisher_->publish(j2_msg);
-            this->j3_motor_publisher_->publish(j3_msg);
-        }
-        else
-        {
-            result->success = false;
-            result->msg = "ik failed";
-            goal_handle->abort(result);
-            this->goal_active_ = false;
-            this->active_goal_handle_.reset();
-            return;
-        }
-
-        const double distance = std::sqrt(
-            std::pow(this->now_pos_.pose.position.x - target_pose.position.x, 2) +
-            std::pow(this->now_pos_.pose.position.y - target_pose.position.y, 2) +
-            std::pow(this->now_pos_.pose.position.z - target_pose.position.z, 2)
-        );
-        if (distance <= this->kPosTolerance_)
-        {
-            ++i;
-        }
+        
 
         if (goal_handle->is_canceling())
         {
