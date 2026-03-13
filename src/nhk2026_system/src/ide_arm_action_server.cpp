@@ -40,6 +40,14 @@ IdeArmActionServer::IdeArmActionServer()
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
 
+    this->declare_parameter<std::string>("joint1_name", "joint1");
+    this->declare_parameter<std::string>("joint2_name", "joint2");
+    this->declare_parameter<std::string>("joint3_name", "joint3");
+
+    this->joint1_name_ = this->get_parameter("joint1_name").as_string();
+    this->joint2_name_ = this->get_parameter("joint2_name").as_string();
+    this->joint3_name_ = this->get_parameter("joint3_name").as_string();
+
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&IdeArmActionServer::parameters_callback, this, _1)
     );
@@ -115,7 +123,6 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
     const std::shared_ptr<GoalHandleArmMove> goal_handle
 )
 {
-    // todo 位置を元に戻す
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -240,9 +247,9 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             )
         );
 
-        q_init(0) = this->now_joint_.position[0];
-        q_init(1) = this->now_joint_.position[1];
-        q_init(2) = this->now_joint_.position[2];
+        q_init(0) = this->joint_positions_[0];
+        q_init(1) = this->joint_positions_[1];
+        q_init(2) = this->joint_positions_[2];
 
         if (ik_solver.CartToJnt(q_init, target_frame, q_out) >= 0)
         {
@@ -299,9 +306,9 @@ void IdeArmActionServer::feedback_timer_callback()
     ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
     KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::JntArray q_current(chain.getNrOfJoints());
-    q_current(0) = this->now_joint_.position[0];
-    q_current(1) = this->now_joint_.position[1];
-    q_current(2) = this->now_joint_.position[2];
+    q_current(0) = this->joint_positions_[0];
+    q_current(1) = this->joint_positions_[1];
+    q_current(2) = this->joint_positions_[2];
 
     KDL::Frame current_pose;
     int fk_status = fk_solver.JntToCart(q_current, current_pose);
@@ -342,8 +349,6 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
         RCLCPP_WARN(this->get_logger(), "joint size is invalid");
         return;
     }
-    this->joint_subscribe_flag_ = true;
-    this->now_joint_ = *rxdata;
 
     if (!this->robot_description_flag_ || chain.getNrOfJoints() < 3)
     {
@@ -352,9 +357,46 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
     KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::JntArray q_current(chain.getNrOfJoints());
-    q_current(0) = rxdata->position[0];
-    q_current(1) = rxdata->position[1];
-    q_current(2) = rxdata->position[2];
+
+    if (this->joint_positions_.size() < 3)
+    {
+        this->joint_positions_.resize(3);
+    }
+
+    std::vector<double> next_joint_positions(3);
+    int flag = 0;
+
+    const size_t joint_count = std::min(rxdata->name.size(), rxdata->position.size());
+    for (size_t i = 0; i < joint_count; ++i)
+    {
+        const auto &joint_name = rxdata->name[i];
+        if (joint_name == this->joint1_name_)
+        {
+            next_joint_positions[0] = rxdata->position[i];
+            flag += 1;
+        }
+        else if (joint_name == this->joint2_name_)
+        {
+            next_joint_positions[1] = rxdata->position[i];
+            flag += 1;
+        }
+        else if (joint_name == this->joint3_name_)
+        {
+            next_joint_positions[2] = rxdata->position[i];
+            flag += 1;
+        }
+    }
+
+    if (flag < 3) return;
+
+    this->joint_positions_ = next_joint_positions;
+    
+    this->joint_subscribe_flag_ = true;
+    this->now_joint_ = *rxdata;
+
+    q_current(0) = this->joint_positions_[0];
+    q_current(1) = this->joint_positions_[1];
+    q_current(2) = this->joint_positions_[2];
 
     KDL::Frame current_pose;
     if (fk_solver.JntToCart(q_current, current_pose) < 0)
