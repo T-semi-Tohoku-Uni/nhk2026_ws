@@ -2,5 +2,7 @@ geometry_msgs/PoseStamped now_pos
 geometry_msgs/PoseStamped goal_pos
 
 geometry_msgs/PoseStamped[] waypoints
+
+std_msgs/Bool parallel_enable
 ---
-nav_msgs/Path route
+sensor_msgs/JointState[] route
