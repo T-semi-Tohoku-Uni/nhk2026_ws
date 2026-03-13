@@ -11,6 +11,16 @@ ArmPathPlan::ArmPathPlan()
         std::string("arm_route"),
         route_qos
     );
+
+    rclcpp::QoS robot = rclcpp::QoS(rclcpp::KeepLast(10))
+        .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
+        .durability(RMW_QOS_POLICY_DURABILITY_TRANSIENT_LOCAL);
+    this->robot_description_subscriber_ = this->create_subscription<std_msgs::msg::String>(
+        std::string("robot_description"),
+        robot,
+        std::bind(&ArmPathPlan::robot_description_callback, this, std::placeholders::_1)
+    );
+    
     this->arm_path_service_ = this->create_service<nhk2026_msgs::srv::ArmPathPlan>(
         std::string("arm_path"),
         std::bind(&ArmPathPlan::path_gen_callback, this, std::placeholders::_1, std::placeholders::_2)
@@ -50,29 +60,9 @@ void ArmPathPlan::path_gen_callback(
         }
     }
 
-    nav_msgs::msg::Path msg;
+    sensor_msgs::msg::JointState msg;
     msg.header.frame_id = "arm_base";
     msg.header.stamp = this->now();
-    constexpr double roll = -1.57;
-    constexpr double half_roll = roll * 0.5;
-    constexpr double qx = std::sin(half_roll);
-    constexpr double qw = std::cos(half_roll);
-
-    for (std::pair<double, double> &p : path) {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.header = msg.header;
-        pose.pose.position.x = -0.182751;
-        pose.pose.position.y = p.first;
-        pose.pose.position.z = p.second;
-        pose.pose.orientation.x = qx;
-        pose.pose.orientation.y = 0.0;
-        pose.pose.orientation.z = 0.0;
-        pose.pose.orientation.w = qw;
-        msg.poses.push_back(pose);
-    }
-
-    response->route = msg;
-    this->route_publisher_->publish(msg);
 }
 
 std::vector<std::pair<double, double>> ArmPathPlan::generator(
@@ -100,6 +90,24 @@ std::vector<std::pair<double, double>> ArmPathPlan::generator(
     }
 
     return path;
+}
+
+void ArmPathPlan::robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata)
+{
+    this->robot_description_flag_ = true;
+
+    KDL::Tree tree;
+
+    if (!kdl_parser::treeFromString(rxdata->data, tree)) {
+        RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into KDL tree.");
+    }
+
+    const std::string base_link = "arm_base";
+    const std::string end_link = "tcp_link";
+
+    if (!tree.getChain(base_link, end_link, this->chain_)) {
+        RCLCPP_ERROR(this->get_logger(), ("Failed to extract KDL chain from " + base_link + " to " + end_link).c_str());
+    }
 }
 
 int main(int argc, char *argv[])
