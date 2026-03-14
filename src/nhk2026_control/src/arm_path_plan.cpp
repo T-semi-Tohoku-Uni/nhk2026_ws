@@ -1,4 +1,4 @@
-#include "arm_path_plan.hpp"
+#include "nhk2026_control/arm_path_plan.hpp"
 
 ArmPathPlan::ArmPathPlan()
 : rclcpp::Node("arm_path_plan")

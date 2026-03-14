@@ -30,8 +30,13 @@ function(setup_node_dependencies target)
     std_msgs
     geometry_msgs
     sensor_msgs
+    nav_msgs
     lifecycle_msgs
     nhk2026_msgs
+    orocos_kdl
+    kdl_parser
+    ament_index_cpp
+
   )
 
   target_include_directories(${target}
