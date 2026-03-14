@@ -150,6 +150,11 @@ namespace mcl {
                 // set mesurementModel
                 measurementModel_ = MeasurementModel::LikelihoodFieldModel;
 
+                // コンストラクタ内に追加
+                subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
+                    "/initial_pose", 10, std::bind(&MCL::initialPoseCallback, this, std::placeholders::_1)
+                );
+
                 //  mapの読み込みパブリッシュ
                 rclcpp::QoS map_qos(rclcpp::KeepLast(1));
                 map_qos.transient_local().reliable();
@@ -591,6 +596,37 @@ namespace mcl {
 
                 // 4. ファイルに保存
                 cv::imwrite("debug_pose_on_map.png", debug_pose_img);
+            }
+
+            void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
+                // 1. 推定位置を更新
+                geometry_msgs::msg::Pose2D new_pose;
+                new_pose.x = msg->position.x;
+                new_pose.y = msg->position.y;
+
+                // クォータニオンからYaw角へ変換
+                tf2::Quaternion q(
+                    msg->orientation.x,
+                    msg->orientation.y,
+                    msg->orientation.z,
+                    msg->orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+                new_pose.theta = yaw;
+
+                setMCLPose(new_pose);
+
+                // 2. パーティクルを再散布 (ノイズ量は適宜調整)
+                geometry_msgs::msg::Pose2D resetNoise;
+                resetNoise.set__x(0.1);      // xの標準偏差 [m]
+                resetNoise.set__y(0.1);      // yの標準偏差 [m]
+                resetNoise.set__theta(M_PI / 36.0); // thetaの標準偏差 (5度)
+
+                resetParticlesDistribution(resetNoise);
+
+                RCLCPP_INFO(this->get_logger(), "Pose reset: x=%.2f, y=%.2f, theta=%.2f", 
+                            mclPose_.x, mclPose_.y, mclPose_.theta);
             }
 
             void publishVoxelMap(const std::vector<uint8_t>& map_data, hsize_t dim_x, hsize_t dim_y, hsize_t dim_z) {
@@ -1586,6 +1622,8 @@ namespace mcl {
             // TODO: delete
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
+
+            rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
 
             std::vector<SensorTransform> lidar_transforms_ = std::vector<SensorTransform>(3);
 
