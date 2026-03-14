@@ -1,4 +1,4 @@
-#include "ide_arm_sim_bridge.hpp"
+#include "nhk2026_control/ide_arm_sim_bridge.hpp"
 
 IdeArmSimBridge::IdeArmSimBridge()
 : rclcpp::Node("ide_arm_sim_bridge")
