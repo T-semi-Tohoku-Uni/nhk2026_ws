@@ -149,6 +149,7 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     {
         if (q_out(i) < lower_limits[i] || q_out(i) > upper_limits[i])
         {
+            RCLCPP_ERROR(this->get_logger(), "q_out[%u]: %f", i, q_out(i));
             RCLCPP_ERROR(this->get_logger(), "goal pose exceeds joint limits");
             return rclcpp_action::GoalResponse::REJECT;
         }
@@ -536,6 +537,13 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
     this->j1_limit_down_ = joint1->limits->lower;
     this->j2_limit_down_ = joint2->limits->lower;
     this->j3_limit_down_ = joint3->limits->lower;
+
+    RCLCPP_INFO(
+        this->get_logger(),
+        "joint limits: j1[%.6f, %.6f], j2[%.6f, %.6f], j3[%.6f, %.6f]",
+        this->j1_limit_down_, this->j1_limit_up_,
+        this->j2_limit_down_, this->j2_limit_up_,
+        this->j3_limit_down_, this->j3_limit_up_);
 }
 
 int main(int argc, char *argv[])
