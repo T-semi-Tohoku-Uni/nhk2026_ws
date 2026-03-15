@@ -99,15 +99,17 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         RCLCPP_ERROR(this->get_logger(), "arm_path service is not available");
         return rclcpp_action::GoalResponse::REJECT;
     }
-    bool expected = false;
-    if (!this->goal_active_.compare_exchange_strong(expected, true)) {
-        RCLCPP_ERROR(this->get_logger(), "action server is active");
-        return rclcpp_action::GoalResponse::REJECT;
-    }
-
     if (this->joint_positions_.size() < chain.getNrOfJoints())
     {
         RCLCPP_ERROR(this->get_logger(), "joint positions are not ready");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    // todo アームが到達可能か
+
+    bool expected = false;
+    if (!this->goal_active_.compare_exchange_strong(expected, true)) {
+        RCLCPP_ERROR(this->get_logger(), "action server is active");
         return rclcpp_action::GoalResponse::REJECT;
     }
 

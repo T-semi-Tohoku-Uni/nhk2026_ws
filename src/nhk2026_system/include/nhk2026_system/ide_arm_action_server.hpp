@@ -72,6 +72,12 @@ private:
     std::string joint1_name_;
     std::string joint2_name_;
     std::string joint3_name_;
+    double j1_limit_up_;
+    double j2_limit_up_;
+    double j3_limit_up_;
+    double j1_limit_down_;
+    double j2_limit_down_;
+    double j3_limit_down_;
 
     std::vector<double> joint_positions_;
 
