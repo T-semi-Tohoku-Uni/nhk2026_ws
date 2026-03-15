@@ -1,9 +1,10 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <MoveArm x="0.25" y="0.00" z="0.6" roll="0.0" pitch="1.57" yaw="0.0" />
-      <MoveArm x="0.18" y="0.60" z="0.6" roll="0.0" pitch="1.57" yaw="0.0" />
-      <MoveArm x="0.25" y="0.00" z="0.6" roll="0.0" pitch="1.57" yaw="0.0" />
+      <MoveArm y="0.60" z="0.3" roll="-1.57" />
+      <MoveArm y="0.60" z="0.6" roll="-1.57" />
+      <MoveArm y="0.80" z="0.6" roll="0.0" />
+      <MoveArm y="1.00" z="0.6" roll="0.0" />
     </Sequence>
   </BehaviorTree>
 </root>

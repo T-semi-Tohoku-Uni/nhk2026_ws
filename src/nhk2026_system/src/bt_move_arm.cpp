@@ -6,12 +6,9 @@
 BT::PortsList MoveArmAction::providedPorts()
 {
   return providedBasicPorts({
-    BT::InputPort<double>("x"),
     BT::InputPort<double>("y"),
     BT::InputPort<double>("z"),
     BT::InputPort<double>("roll", 0.0, "Target roll in radians"),
-    BT::InputPort<double>("pitch", 0.0, "Target pitch in radians"),
-    BT::InputPort<double>("yaw", 0.0, "Target yaw in radians"),
     BT::InputPort<std::string>("frame_id", "base_link", "Target frame"),
     BT::InputPort<double>("max_speed", 0.2, "Max speed"),
     BT::InputPort<double>("max_acc", 0.2, "Max acceleration")
@@ -20,28 +17,25 @@ BT::PortsList MoveArmAction::providedPorts()
 
 bool MoveArmAction::setGoal(Goal & goal)
 {
-  auto x = getInput<double>("x");
   auto y = getInput<double>("y");
   auto z = getInput<double>("z");
   auto roll = getInput<double>("roll");
-  auto pitch = getInput<double>("pitch");
-  auto yaw = getInput<double>("yaw");
   auto frame_id = getInput<std::string>("frame_id");
   auto max_speed = getInput<double>("max_speed");
   auto max_acc = getInput<double>("max_acc");
 
-  if (!x || !y || !z || !roll || !pitch || !yaw || !frame_id || !max_speed || !max_acc) {
+  if (!y || !z || !roll || !frame_id || !max_speed || !max_acc) {
     RCLCPP_ERROR(logger(), "%s: missing required input", name().c_str());
     return false;
   }
 
   tf2::Quaternion q;
-  q.setRPY(roll.value(), pitch.value(), yaw.value());
+  q.setRPY(roll.value(), 0, 0);
   q.normalize();
 
   goal.goal_pos.header.stamp = now();
   goal.goal_pos.header.frame_id = frame_id.value();
-  goal.goal_pos.pose.position.x = x.value();
+  goal.goal_pos.pose.position.x = -0.182751;
   goal.goal_pos.pose.position.y = y.value();
   goal.goal_pos.pose.position.z = z.value();
   goal.goal_pos.pose.orientation = tf2::toMsg(q);
