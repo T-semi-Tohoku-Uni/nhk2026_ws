@@ -204,6 +204,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
     request->waypoints = goal->waypoints;
+    request->urdf.data = this->urdf_;
 
     auto future = this->path_client_->async_send_request(request);
     while (rclcpp::ok() && future.wait_for(10ms) != std::future_status::ready)
@@ -236,11 +237,102 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     j2_msg.data.resize(1);
     j3_msg.data.resize(1);
 
-    rclcpp::Rate loop_rate(100.0);
+    rclcpp::Rate loop_rate(10.0);
     size_t i = 0;
+    const auto response = future.get();
+    if (!response || response->route.empty())
+    {
+        result->success = false;
+        result->msg = "path plan failed";
+        goal_handle->abort(result);
+        this->goal_active_ = false;
+        this->active_goal_handle_.reset();
+        return;
+    }
+
     while (rclcpp::ok())
     {
-        
+        if (i >= response->route.size())
+        {
+            result->success = true;
+            result->msg = "success";
+            goal_handle->succeed(result);
+            this->goal_active_ = false;
+            this->active_goal_handle_.reset();
+            return;
+        }
+
+        const auto &target_joint_state = response->route[i];
+        if (
+            target_joint_state.position.size() < 3 ||
+            target_joint_state.name.size() != target_joint_state.position.size() ||
+            this->joint_positions_.size() < 3
+        )
+        {
+            result->success = false;
+            result->msg = "joint state is invalid";
+            goal_handle->abort(result);
+            this->goal_active_ = false;
+            this->active_goal_handle_.reset();
+            return;
+        }
+
+        bool found_joint1 = false;
+        bool found_joint2 = false;
+        bool found_joint3 = false;
+        std::vector<double> target_positions(3, 0.0);
+        for (size_t joint_index = 0; joint_index < target_joint_state.name.size(); ++joint_index)
+        {
+            const auto &joint_name = target_joint_state.name[joint_index];
+            const auto joint_position = static_cast<float>(target_joint_state.position[joint_index]);
+            if (joint_name == this->joint1_name_)
+            {
+                j1_msg.data[0] = joint_position;
+                target_positions[0] = target_joint_state.position[joint_index];
+                found_joint1 = true;
+            }
+            else if (joint_name == this->joint2_name_)
+            {
+                j2_msg.data[0] = joint_position;
+                target_positions[1] = target_joint_state.position[joint_index];
+                found_joint2 = true;
+            }
+            else if (joint_name == this->joint3_name_)
+            {
+                j3_msg.data[0] = joint_position;
+                target_positions[2] = target_joint_state.position[joint_index];
+                found_joint3 = true;
+            }
+        }
+
+        if (!found_joint1 || !found_joint2 || !found_joint3)
+        {
+            result->success = false;
+            result->msg = "planned joint names are invalid";
+            goal_handle->abort(result);
+            this->goal_active_ = false;
+            this->active_goal_handle_.reset();
+            return;
+        }
+
+        this->j1_motor_publisher_->publish(j1_msg);
+        this->j2_motor_publisher_->publish(j2_msg);
+        this->j3_motor_publisher_->publish(j3_msg);
+
+        bool reached = true;
+        for (size_t joint_index = 0; joint_index < 3; ++joint_index)
+        {
+            if (std::abs(this->joint_positions_[joint_index] - target_positions[joint_index]) > this->kPosTolerance_)
+            {
+                reached = false;
+                break;
+            }
+        }
+
+        if (reached)
+        {
+            ++i;
+        }
 
         if (goal_handle->is_canceling())
         {
@@ -389,6 +481,7 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
 
     if (!kdl_parser::treeFromString(rxdata->data, tree)) {
         RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into KDL tree.");
+        return;
     }
 
     const std::string base_link = "arm_base";
@@ -396,7 +489,10 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
 
     if (!tree.getChain(base_link, end_link, chain)) {
         RCLCPP_ERROR(this->get_logger(), ("Failed to extract KDL chain from " + base_link + " to " + end_link).c_str());
+        return;
     }
+
+    this->urdf_ = rxdata->data;
 }
 
 int main(int argc, char *argv[])

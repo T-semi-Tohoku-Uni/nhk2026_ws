@@ -74,4 +74,6 @@ private:
     std::string joint3_name_;
 
     std::vector<double> joint_positions_;
+
+    std::string urdf_;
 };
