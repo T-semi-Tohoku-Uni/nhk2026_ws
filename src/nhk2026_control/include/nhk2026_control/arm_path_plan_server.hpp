@@ -25,17 +25,9 @@ public:
 private:
     rclcpp::Service<nhk2026_msgs::srv::ArmPathPlan>::SharedPtr arm_path_service_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr route_publisher_;
-    rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robot_description_subscriber_;
-    bool robot_description_flag_{false};
-    KDL::Chain chain_;
 
     void path_gen_callback(
         const std::shared_ptr<nhk2026_msgs::srv::ArmPathPlan::Request> request,
         std::shared_ptr<nhk2026_msgs::srv::ArmPathPlan::Response> response
     );
-    std::vector<std::pair<double, double>> generator(
-        std::pair<double, double> start_point,
-        std::pair<double, double> goal_point
-    );
-    void robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata);
 };
