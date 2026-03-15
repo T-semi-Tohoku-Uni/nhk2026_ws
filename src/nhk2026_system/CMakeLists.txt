@@ -24,7 +24,6 @@ find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(trac_ik_lib QUIET)
 
 include_directories(
   include
