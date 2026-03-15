@@ -2,5 +2,7 @@ geometry_msgs/PoseStamped now_pos
 geometry_msgs/PoseStamped goal_pos
 
 geometry_msgs/PoseStamped[] waypoints
+
+std_msgs/String urdf
 ---
 sensor_msgs/JointState[] route
