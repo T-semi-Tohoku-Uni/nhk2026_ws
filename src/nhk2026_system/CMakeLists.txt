@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.8)
 project(nhk2026_system)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
@@ -10,6 +13,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
+find_package(behaviortree_ros2 REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
@@ -18,6 +22,9 @@ find_package(nhk2026_msgs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(trac_ik_lib QUIET)
 
 include_directories(
   include
@@ -60,6 +67,27 @@ ament_target_dependencies(ide_arm_action_server
 
 install(
   TARGETS ide_arm_action_server
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(ide_arm_bt_node
+  src/ide_arm_bt_node.cpp
+  src/bt_move_arm.cpp
+)
+
+ament_target_dependencies(ide_arm_bt_node
+  rclcpp
+  rclcpp_action
+  geometry_msgs
+  nhk2026_msgs
+  ament_index_cpp
+  tf2
+  tf2_geometry_msgs
+)
+target_link_libraries(ide_arm_bt_node behaviortree_ros2::behaviortree_ros2)
+
+install(
+  TARGETS ide_arm_bt_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
