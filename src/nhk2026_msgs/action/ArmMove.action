@@ -2,6 +2,8 @@ geometry_msgs/PoseStamped goal_pos
 geometry_msgs/PoseStamped[] waypoints
 float32 max_speed
 float32 max_acc
+
+bool enable_parallel
 ---
 bool success
 string msg
