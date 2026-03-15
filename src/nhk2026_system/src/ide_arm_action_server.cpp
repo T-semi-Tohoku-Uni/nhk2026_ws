@@ -105,14 +105,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         return rclcpp_action::GoalResponse::REJECT;
     }
 
-    // todo アームが到達可能か
-
-    bool expected = false;
-    if (!this->goal_active_.compare_exchange_strong(expected, true)) {
-        RCLCPP_ERROR(this->get_logger(), "action server is active");
-        return rclcpp_action::GoalResponse::REJECT;
-    }
-
     const auto &target_pose = goal->goal_pos.pose;
     const double q_norm =
         std::abs(target_pose.orientation.x) +
@@ -147,6 +139,41 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     if (ik_solver.CartToJnt(q_init, target_frame, q_out) < 0)
     {
         RCLCPP_ERROR(this->get_logger(), "goal pose is out of reach");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    const double lower_limits[] = {this->j1_limit_down_, this->j2_limit_down_, this->j3_limit_down_};
+    const double upper_limits[] = {this->j1_limit_up_, this->j2_limit_up_, this->j3_limit_up_};
+    const unsigned int limit_joint_count = std::min<unsigned int>(3, chain.getNrOfJoints());
+    for (unsigned int i = 0; i < limit_joint_count; ++i)
+    {
+        if (q_out(i) < lower_limits[i] || q_out(i) > upper_limits[i])
+        {
+            RCLCPP_ERROR(this->get_logger(), "goal pose exceeds joint limits");
+            return rclcpp_action::GoalResponse::REJECT;
+        }
+    }
+
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    KDL::Frame reached_frame;
+    if (fk_solver.JntToCart(q_out, reached_frame) < 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "FK failed for goal pose");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    const double dx = reached_frame.p.x() - target_pose.position.x;
+    const double dy = reached_frame.p.y() - target_pose.position.y;
+    const double dz = reached_frame.p.z() - target_pose.position.z;
+    if ((dx * dx + dy * dy + dz * dz) > (this->kPosTolerance_ * this->kPosTolerance_))
+    {
+        RCLCPP_ERROR(this->get_logger(), "goal pose is not reachable within tolerance");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    bool expected = false;
+    if (!this->goal_active_.compare_exchange_strong(expected, true)) {
+        RCLCPP_ERROR(this->get_logger(), "action server is active");
         return rclcpp_action::GoalResponse::REJECT;
     }
 
@@ -495,6 +522,20 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
     }
 
     this->urdf_ = rxdata->data;
+    urdf::Model model;
+    model.initString(rxdata->data);
+
+    auto joint1 = model.getJoint(this->joint1_name_);
+    auto joint2 = model.getJoint(this->joint2_name_);
+    auto joint3 = model.getJoint(this->joint3_name_);
+
+    this->j1_limit_up_ = joint1->limits->upper;
+    this->j2_limit_up_ = joint2->limits->upper;
+    this->j3_limit_up_ = joint3->limits->upper;
+
+    this->j1_limit_down_ = joint1->limits->lower;
+    this->j2_limit_down_ = joint2->limits->lower;
+    this->j3_limit_down_ = joint3->limits->lower;
 }
 
 int main(int argc, char *argv[])

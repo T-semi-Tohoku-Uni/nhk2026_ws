@@ -20,6 +20,8 @@
 
 #include <kdl_parser/kdl_parser.hpp>
 
+#include <urdf/model.h>
+
 #include <atomic>
 
 using namespace std::placeholders;
