@@ -93,22 +93,20 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         RCLCPP_ERROR(this->get_logger(), "arm_path service is not available");
         return rclcpp_action::GoalResponse::REJECT;
     }
+    bool expected = false;
+    if (!this->goal_active_.compare_exchange_strong(expected, true)) {
+        RCLCPP_ERROR(this->get_logger(), "action server is active");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
 
     nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
     this->goal_pos_ = goal->goal_pos;
 
-    bool expected = false;
-    if (!this->goal_active_.compare_exchange_strong(expected, true))
-    {
-        RCLCPP_ERROR(this->get_logger(), "action server is active");
-        return rclcpp_action::GoalResponse::REJECT;
-    }
-
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
     
-    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    return rclcpp_action::GoalResponse::ACCEPT_AND_DEFER;
 }
 
 rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
@@ -146,6 +144,7 @@ void IdeArmActionServer::handle_accepted(const std::shared_ptr<GoalHandleArmMove
     );
 
     RCLCPP_INFO(this->get_logger(), "Goal accepted. Start execution.");
+    goal_handle->execute();
     std::thread{std::bind(&IdeArmActionServer::execute, this, _1), goal_handle}.detach();
 }
 
