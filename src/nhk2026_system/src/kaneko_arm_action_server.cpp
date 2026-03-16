@@ -44,7 +44,7 @@ public:
         this->robstride_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("robstride_angle", device_qos);
         this->robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("robomas_position", device_qos);
 
-        this->declare_parameter<double>("kPosTolerance", 0.01);
+        this->declare_parameter<double>("kPosTolerance", 0.05);
         this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
     }
 
