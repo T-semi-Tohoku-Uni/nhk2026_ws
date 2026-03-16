@@ -461,7 +461,8 @@ class FollowNode: public rclcpp::Node {
 
             }
 
-            
+            RCLCPP_INFO(this->get_logger(), "pose x: %.2f, y: %.2f, orientation: %.2f", 
+                pose_.position.x, pose_.position.y, getYaw(pose_.orientation));
 
            
 
