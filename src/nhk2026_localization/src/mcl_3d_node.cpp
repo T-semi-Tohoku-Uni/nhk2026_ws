@@ -20,6 +20,7 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #include <fstream> 
 #include <geometry_msgs/msg/pose2_d.hpp>
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -179,6 +180,10 @@ namespace mcl {
                     "initial_pose", 10, std::bind(&MCL_3D::initialPoseCallback, this, std::placeholders::_1)
                 );
 
+                subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
+                    "/quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
+                );
+
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
                 path_.header.frame_id = "map";
 
@@ -335,6 +340,16 @@ namespace mcl {
                             "Pose reset: x=%.2f, y=%.2f, z=%.2f, yaw=%.2f", 
                             mclPose_.position.x, mclPose_.position.y, mclPose_.position.z, yaw);
             }
+
+            void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+                if (msg->data.size() >= 4) {
+                    external_quat_.x = msg->data[1];
+                    external_quat_.y = msg->data[2];
+                    external_quat_.z = msg->data[3];
+                    external_quat_.w = msg->data[0];
+                    has_external_quat_ = true;
+                }
+            }
             
             double randNormal(double sigma) {
                 if (sigma <= 0.0) return 0.0;
@@ -468,27 +483,47 @@ namespace mcl {
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
-                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y; 
+                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y;
                 std::double_t dy2 = delta.angular.z * delta.angular.z;
 
-                std::double_t sigma_xy = std::sqrt(odomNoise1_*dd2 + odomNoise2_*dy2);
-                std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                // 位置のノイズ用標準偏差
+                std::double_t sigma_xy = std::sqrt(odomNoise1_ * dd2 + odomNoise2_ * dy2);
+                
+                // 外部クォータニオンからYawを取得（一度だけ計算）
+                double ext_yaw = 0.0;
+                if (has_external_quat_) {
+                    tf2::Quaternion q(external_quat_.x, external_quat_.y, external_quat_.z, external_quat_.w);
+                    tf2::Matrix3x3 m(q);
+                    double r, p;
+                    m.getRPY(r, p, ext_yaw);
+                }
 
-                for (size_t i = 0; i < this->particles_.size(); i++ ) {
+                for (size_t i = 0; i < this->particles_.size(); i++) {
                     std::double_t dx = delta.linear.x + randNormal(sigma_xy);
                     std::double_t dy = delta.linear.y + randNormal(sigma_xy);
-                    std::double_t dtheta = delta.angular.z + randNormal(sigma_theta);
-
-                    std::double_t theta_ = this->particles_[i].getTheta();
-                    std::double_t x_ = this->particles_[i].getX() + std::cos(theta_)*dx - std::sin(theta_)*dy;
-                    std::double_t y_ = this->particles_[i].getY() + std::sin(theta_)*dx + std::cos(theta_)*dy;
-                    std::double_t z_ = this->particles_[i].getZ(); 
                     
-                    theta_ += dtheta;
-                    particles_[i].setPose(x_, y_, z_, theta_);
+                    std::double_t theta_old = this->particles_[i].getTheta();
+                    
+                    // 移動後の位置計算
+                    std::double_t x_ = this->particles_[i].getX() + std::cos(theta_old) * dx - std::sin(theta_old) * dy;
+                    std::double_t y_ = this->particles_[i].getY() + std::sin(theta_old) * dx + std::cos(theta_old) * dy;
+                    std::double_t z_ = this->particles_[i].getZ();
+
+                    // 向きの更新
+                    std::double_t theta_new;
+                    if (has_external_quat_) {
+                        // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
+                        // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
+                        theta_new = ext_yaw + randNormal(0.005); // 0.005rad程度の微小ノイズ
+                    } else {
+                        // 外部姿勢がない場合は従来のオドメトリ
+                        std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                        theta_new = theta_old + delta.angular.z + randNormal(sigma_theta);
+                    }
+
+                    particles_[i].setPose(x_, y_, z_, theta_new);
                 }
             }
-
             void resampleParticles(void) {
                 double threshold = ((double)particles_.size()) * resampleThreshold_;
                 if (effectiveSampleSize_ > threshold) return;
@@ -997,6 +1032,7 @@ namespace mcl {
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
             rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
+             rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
 
             // 状態変数
             geometry_msgs::msg::Pose mclPose_;
@@ -1004,6 +1040,10 @@ namespace mcl {
             nav_msgs::msg::Path path_;
             std::vector<Point3D> local_points_;
             std::mt19937 gen_; 
+
+           
+            geometry_msgs::msg::Quaternion external_quat_;
+            bool has_external_quat_ = false;
 
             // 各種パラメータ
             std::double_t zHit_, zShort_, zMax_, zRand_;
