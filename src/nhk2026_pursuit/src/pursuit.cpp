@@ -195,9 +195,13 @@ class FollowNode: public rclcpp::Node {
             // std::lock_guard<std::mutex> lock(mutex_);
             pose_.position.x = msgs.position.x;
             pose_.position.y = msgs.position.y;
+            pose_.position.z = msgs.position.z;
             pose_.orientation = msgs.orientation;
-            // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
+            RCLCPP_INFO(this->get_logger(), "pose z: %.4f, path z: %.4f", 
+                pose_.position.z, 
+                path_.empty() ? 0.0 : path_[current_waypoint_index_].pose.position.z);
         }
+        
 
         void resetWaypointIndex(double reset_x, double reset_y) {
             if (path_.empty()) return;
@@ -406,7 +410,7 @@ class FollowNode: public rclcpp::Node {
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
             //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0){
+            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0 ) {
                 ignition::msgs::Pose req;
                 ignition::msgs::Boolean rep;
                 bool result;
@@ -417,9 +421,9 @@ class FollowNode: public rclcpp::Node {
                 orientation->set_y(0.0);
                 orientation->set_z(0.0);
                 orientation->set_w(1.0);
-                position->set_x(-3.025);
-                position->set_y(2.6);
-                position->set_z(0.0);
+                position->set_x(-1.825);
+                position->set_y(3.3);
+                position->set_z(0.21);
 
                 
                 bool executed = node.Request(
@@ -432,8 +436,8 @@ class FollowNode: public rclcpp::Node {
 
                 std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
                     std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
-                request->pose.position.x = -3.025;
-                request->pose.position.y = 2.6;
+                request->pose.position.x = -1.825;
+                request->pose.position.y = 3.3;
                 request->pose.position.z = 0.21;
                 request->pose.orientation.x = 0.0;
                 request->pose.orientation.y = 0.0;
@@ -460,10 +464,6 @@ class FollowNode: public rclcpp::Node {
 
 
             }
-
-            RCLCPP_INFO(this->get_logger(), "pose x: %.2f, y: %.2f, orientation: %.2f", 
-                pose_.position.x, pose_.position.y, getYaw(pose_.orientation));
-
            
 
             if ((linear_goal_distance < max_reaching_distance)){ //&& theta_goal < max_reaching_theta) {
