@@ -1044,7 +1044,7 @@ namespace mcl {
                     //x_lidar = range * cos(theta );
                     //y_lidar = range * sin(theta );
                     x_lidar = range * cos(theta ) + 0.27;
-                    y_lidar = range * sin(theta ) - 0.3615;
+                    y_lidar = range * sin(-1 * theta ) - 0.3615;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }
 
