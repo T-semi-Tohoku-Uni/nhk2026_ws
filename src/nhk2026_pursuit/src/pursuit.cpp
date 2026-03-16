@@ -417,9 +417,9 @@ class FollowNode: public rclcpp::Node {
                 orientation->set_y(0.0);
                 orientation->set_z(0.0);
                 orientation->set_w(1.0);
-                position->set_x(-1.825);
-                position->set_y(3.3);
-                position->set_z(0.21);
+                position->set_x(-3.025);
+                position->set_y(2.6);
+                position->set_z(0.0);
 
                 
                 bool executed = node.Request(
@@ -432,8 +432,8 @@ class FollowNode: public rclcpp::Node {
 
                 std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
                     std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
-                request->pose.position.x = -1.825;
-                request->pose.position.y = 3.3;
+                request->pose.position.x = -3.025;
+                request->pose.position.y = 2.6;
                 request->pose.position.z = 0.21;
                 request->pose.orientation.x = 0.0;
                 request->pose.orientation.y = 0.0;
