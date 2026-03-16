@@ -22,6 +22,9 @@ set(msg_files
 set(action_files
   "action/Follow.action"
   "action/ArmMove.action"
+  "action/LegMove.action"
+  "action/StepMove.action"
+  "action/KnekoArm.action"
 )
 
 set(srv_files
