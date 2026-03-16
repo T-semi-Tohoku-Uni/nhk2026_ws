@@ -190,6 +190,7 @@ class FollowNode: public rclcpp::Node {
             // std::lock_guard<std::mutex> lock(mutex_);
             path_ = msgs.poses;
             current_waypoint_index_ = 0;
+            last_teleport_z_ = -1.0;
         }
         void odomCallback(geometry_msgs::msg::Pose msgs) {
             // std::lock_guard<std::mutex> lock(mutex_);
@@ -410,7 +411,9 @@ class FollowNode: public rclcpp::Node {
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
             //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0 ) {
+            double current_path_z = path_[current_waypoint_index_].pose.position.z;
+            if (current_path_z > 0 && current_path_z != last_teleport_z_) {
+                last_teleport_z_ = current_path_z; 
                 ignition::msgs::Pose req;
                 ignition::msgs::Boolean rep;
                 bool result;
@@ -725,6 +728,9 @@ class FollowNode: public rclcpp::Node {
         double slow_rotate_speed_ = 0.4;
         double accel_angle_       = M_PI / 10;
         double stop_angle_        = M_PI / 90;
+
+        //teleport 
+        double last_teleport_z_ = -1.0;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
