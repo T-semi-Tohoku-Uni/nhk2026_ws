@@ -1036,15 +1036,15 @@ namespace mcl {
                     x_lidar = range*cos(theta) + 0.084;
                     y_lidar = range*sin(theta) + 0.013 - 0.013;
                 } else if(lidar_pose == 1){
-                    x_lidar = range * cos(-1 * theta + M_PI/2) - 0.094036;
-                    y_lidar = range * sin(-1 * theta + M_PI/2) + 0.2255;
+                    x_lidar = range * cos(-1 * theta + M_PI/2) - 0.157;
+                    y_lidar = range * sin(-1 * theta + M_PI/2) + 0.2885;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }else if(lidar_pose == 2){
                     
                     //x_lidar = range * cos(theta );
                     //y_lidar = range * sin(theta );
-                    x_lidar = range * cos(theta ) + 0.2084;
-                    y_lidar = range * sin(theta ) - 0.2999;
+                    x_lidar = range * cos(theta ) + 0.27;
+                    y_lidar = range * sin(theta ) - 0.3615;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }
 
