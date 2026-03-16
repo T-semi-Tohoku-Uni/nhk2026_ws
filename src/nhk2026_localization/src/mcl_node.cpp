@@ -266,12 +266,14 @@ namespace mcl {
                 pose.set__x(request->pose.position.x);
                 pose.set__y(request->pose.position.y);
                 pose.set__theta(yaw);
+
                 // initalize mclPose
                 setMCLPose(pose);
                 velOdom_.set__x(request->pose.position.x);
                 velOdom_.set__y(request->pose.position.y);
                 velOdom_.set__theta(yaw);
-                
+                current_z_ = request->pose.position.z; 
+
                 // initialize particle
                 geometry_msgs::msg::Pose2D initialNoise;
                 auto cloud_qos = rclcpp::SensorDataQoS();
@@ -1138,7 +1140,7 @@ namespace mcl {
                 geometry_msgs::msg::Pose pose_msg;
                 pose_msg.position.x = x;
                 pose_msg.position.y = y;
-                pose_msg.position.z = 0.0;
+                pose_msg.position.z = current_z_;
 
                 tf2::Quaternion q_pose;
                 q_pose.setRPY(0.0, 0.0, theta);
@@ -1595,6 +1597,8 @@ namespace mcl {
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
+
+            double current_z_ = 0.0;
     };
 }
 
