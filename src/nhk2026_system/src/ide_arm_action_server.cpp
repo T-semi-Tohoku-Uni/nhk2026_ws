@@ -1,6 +1,11 @@
 #include "ide_arm_action_server.hpp"
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+
+#include <algorithm>
 #include <cmath>
 #include <future>
+#include <limits>
 
 using namespace std::chrono_literals;
 
@@ -128,16 +133,56 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         )
     );
 
-    KDL::ChainIkSolverPos_LMA ik_solver(chain);
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    KDL::JntArray q_min(chain.getNrOfJoints());
+    KDL::JntArray q_max(chain.getNrOfJoints());
     KDL::JntArray q_init(chain.getNrOfJoints());
     KDL::JntArray q_out(chain.getNrOfJoints());
+    for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
+    {
+        q_min(i) = -std::numeric_limits<double>::max();
+        q_max(i) = std::numeric_limits<double>::max();
+    }
+
+    if (chain.getNrOfJoints() > 0)
+    {
+        q_min(0) = this->j1_limit_down_;
+        q_max(0) = this->j1_limit_up_;
+    }
+    if (chain.getNrOfJoints() > 1)
+    {
+        q_min(1) = this->j2_limit_down_;
+        q_max(1) = this->j2_limit_up_;
+    }
+    if (chain.getNrOfJoints() > 2)
+    {
+        q_min(2) = this->j3_limit_down_;
+        q_max(2) = this->j3_limit_up_;
+    }
+
     for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
     {
         q_init(i) = this->joint_positions_[i];
     }
 
+    KDL::ChainIkSolverVel_pinv ik_vel_solver(chain);
+    KDL::ChainIkSolverPos_NR_JL ik_solver(
+        chain,
+        q_min,
+        q_max,
+        fk_solver,
+        ik_vel_solver,
+        100,
+        1e-6
+    );
+
     if (ik_solver.CartToJnt(q_init, target_frame, q_out) < 0)
     {
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "IK seed: [%.6f, %.6f, %.6f]",
+            q_init(0), q_init(1), q_init(2)
+        );
         RCLCPP_ERROR(this->get_logger(), "goal pose is out of reach");
         return rclcpp_action::GoalResponse::REJECT;
     }
@@ -149,13 +194,17 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     {
         if (q_out(i) < lower_limits[i] || q_out(i) > upper_limits[i])
         {
+            RCLCPP_ERROR(
+                this->get_logger(),
+                "IK seed: [%.6f, %.6f, %.6f]",
+                q_init(0), q_init(1), q_init(2)
+            );
             RCLCPP_ERROR(this->get_logger(), "q_out[%u]: %f", i, q_out(i));
             RCLCPP_ERROR(this->get_logger(), "goal pose exceeds joint limits");
             return rclcpp_action::GoalResponse::REJECT;
         }
     }
 
-    KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::Frame reached_frame;
     if (fk_solver.JntToCart(q_out, reached_frame) < 0)
     {
