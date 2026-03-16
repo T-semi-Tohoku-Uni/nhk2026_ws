@@ -150,9 +150,8 @@ namespace mcl {
                 // set mesurementModel
                 measurementModel_ = MeasurementModel::LikelihoodFieldModel;
 
-                // コンストラクタ内に追加
                 subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
-                    "/initial_pose", 10, std::bind(&MCL::initialPoseCallback, this, std::placeholders::_1)
+                    "initial_pose", 10, std::bind(&MCL::initialPoseCallback, this, std::placeholders::_1)
                 );
 
                 //  mapの読み込みパブリッシュ
@@ -165,7 +164,7 @@ namespace mcl {
                 // setup subscriper
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
-                    "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL::cmdVelCallback, this, std::placeholders::_1)
+                    "cmd_vel_feedback", cmdVelQos, std::bind(&MCL::cmdVelCallback, this, std::placeholders::_1)
                 );
 
                

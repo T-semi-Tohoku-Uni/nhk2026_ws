@@ -175,6 +175,10 @@ namespace mcl {
                     "/livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
                 );
 
+                subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
+                    "initial_pose", 10, std::bind(&MCL_3D::initialPoseCallback, this, std::placeholders::_1)
+                );
+
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
                 path_.header.frame_id = "map";
 
@@ -299,6 +303,37 @@ namespace mcl {
 
                     filtered_cloud_pub_->publish(filtered_cloud_msg);
                 }
+            }
+            
+            void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
+                // 1. 推定位置 (mclPose_) を受信したメッセージで更新
+                // msgは Pose型なので、そのまま position と orientation をコピー
+                mclPose_.position = msg->position;
+                mclPose_.orientation = msg->orientation;
+
+                // クォータニオンからYaw角を抽出（パーティクル散布時の計算用）
+                tf2::Quaternion q(
+                    msg->orientation.x,
+                    msg->orientation.y,
+                    msg->orientation.z,
+                    msg->orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+
+                // 2. パーティクルを再散布
+                // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
+                double noise_x = 0.1;           // xの標準偏差 [m]
+                double noise_y = 0.1;           // yの標準偏差 [m]
+                double noise_yaw = 5.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double initial_w = 1.0 / static_cast<double>(particles_.size());
+
+                // 既存の散布関数を呼び出す（引数をシンプルに整理）
+                resetParticlesDistribution(noise_x, noise_y, noise_yaw, initial_w);
+
+                RCLCPP_INFO(this->get_logger(), 
+                            "Pose reset: x=%.2f, y=%.2f, z=%.2f, yaw=%.2f", 
+                            mclPose_.position.x, mclPose_.position.y, mclPose_.position.z, yaw);
             }
             
             double randNormal(double sigma) {
@@ -961,6 +996,7 @@ namespace mcl {
 
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
+            rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
 
             // 状態変数
             geometry_msgs::msg::Pose mclPose_;
