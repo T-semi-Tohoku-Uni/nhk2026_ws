@@ -23,11 +23,6 @@ set(ALL_DEPENDENCIES
   sensor_msgs
 )
 
-install(
-  TARGETS joint_state_publisher_ide
-  DESTINATION lib/${PROJECT_NAME}
-)
-
 add_executable(ide_arm_sim_bridge
   src/ide_arm_sim_bridge.cpp
 )
