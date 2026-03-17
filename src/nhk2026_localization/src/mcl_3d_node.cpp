@@ -108,9 +108,9 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("zHit", 0.9);
                 this->declare_parameter<std::double_t>("zRand", 0.1);
                 this->declare_parameter<double>("odomNoise1", 1.5);
-                this->declare_parameter<double>("odomNoise2", 0.05);
-                this->declare_parameter<double>("odomNoise3", 0.8);
-                this->declare_parameter<double>("odomNoise4", 0.01);
+                this->declare_parameter<double>("odomNoise2", 1.0);
+                this->declare_parameter<double>("odomNoise3", 2.0);
+                this->declare_parameter<double>("odomNoise4", 2.0);
                 this->declare_parameter<double>("resampleThreshold", 0.9);
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
@@ -382,15 +382,15 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    // if (std::abs(z_map - 0.00) <= 0.03 ||
-                    //     std::abs(z_map - 0.20) <= 0.03 ||
-                    //     std::abs(z_map - 0.40) <= 0.03) {
-                    //     continue;
-                    // }
-
-                    if (std::abs(z_map - 0.00) <= 0.03){
+                    if (std::abs(z_map - 0.00) <= 0.03 ||
+                        std::abs(z_map - 0.20) <= 0.03 ||
+                        std::abs(z_map - 0.40) <= 0.03) {
                         continue;
                     }
+
+                    // if (std::abs(z_map - 0.00) <= 0.03){
+                    //     continue;
+                    // }
 
                     Point3D pt;
                     pt.x = x;
