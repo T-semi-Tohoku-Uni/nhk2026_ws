@@ -199,7 +199,7 @@ def generate_launch_description():
         SetEnvironmentVariable(name='WITH_lidar', value='2'),
         node_robot_state_publisher,
         static_from_map_to_odom,
-        joy_node,
+        # joy_node,
         joy2Vel_node,
         mcl_3d_node,
         map_publisher,
