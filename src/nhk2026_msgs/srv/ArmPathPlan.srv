@@ -1,7 +1,7 @@
 geometry_msgs/PoseStamped now_pos
 geometry_msgs/PoseStamped goal_pos
 
-geometry_msgs/PoseStamped[] waypoints
+int32 control_frequency
 
 std_msgs/String urdf
 ---
