@@ -659,7 +659,8 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
 void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata)
 {
-    this->robot_description_flag_ = true;
+    // Reset flag until we successfully parse and validate the URDF and joint limits
+    this->robot_description_flag_ = false;
 
     KDL::Tree tree;
 
@@ -678,19 +679,37 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
 
     this->urdf_ = rxdata->data;
     urdf::Model model;
-    model.initString(rxdata->data);
+    if (!model.initString(rxdata->data))
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into urdf::Model.");
+        return;
+    }
 
     auto joint1 = model.getJoint(this->joint1_name_);
     auto joint2 = model.getJoint(this->joint2_name_);
     auto joint3 = model.getJoint(this->joint3_name_);
 
-    this->j1_limit_up_ = joint1->limits->upper;
-    this->j2_limit_up_ = joint2->limits->upper;
-    this->j3_limit_up_ = joint3->limits->upper;
+    if (!joint1 || !joint2 || !joint3)
+    {
+        RCLCPP_ERROR(this->get_logger(), "URDF is missing one or more configured joints.");
+        return;
+    }
+
+    if (!joint1->limits || !joint2->limits || !joint3->limits)
+    {
+        RCLCPP_ERROR(this->get_logger(), "URDF joints are missing limits; cannot read joint limits.");
+        return;
+    }
+
+    this->j1_limit_up_   = joint1->limits->upper;
+    this->j2_limit_up_   = joint2->limits->upper;
+    this->j3_limit_up_   = joint3->limits->upper;
 
     this->j1_limit_down_ = joint1->limits->lower;
     this->j2_limit_down_ = joint2->limits->lower;
     this->j3_limit_down_ = joint3->limits->lower;
+
+    this->robot_description_flag_ = true;
 
     RCLCPP_INFO(
         this->get_logger(),
