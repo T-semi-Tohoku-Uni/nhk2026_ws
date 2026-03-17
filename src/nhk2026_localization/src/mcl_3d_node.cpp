@@ -220,14 +220,13 @@ namespace mcl {
 
                 sensor_msgs::msg::PointCloud2 cloud_out;
 
+                // 1. 座標変換 (LiDAR座標系 -> base_footprint)
                 try {
                     geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
                         "base_footprint", 
                         msg->header.frame_id, 
                         tf2::TimePointZero
                     );
-
-                    
                     tf2::doTransform(*msg, cloud_out, transform);
 
                 } catch (const tf2::TransformException & ex) {
@@ -237,15 +236,19 @@ namespace mcl {
                     return;
                 }
 
-                
                 sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
 
-            
                 int step = 1; 
                 int count = 0;
 
+                // --- 動的床面フィルタのための準備 ---
+                std::unordered_map<int, int> z_histogram;
+                std::vector<Point3D> valid_range_points;
+                const double BIN_SIZE = 0.05; // 5cm刻みで高さを評価
+
+                // --- 第1パス: 範囲内の点群抽出とヒストグラムの作成 ---
                 for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
                     count++;
                     if (count % step != 0) continue;
@@ -254,38 +257,56 @@ namespace mcl {
                     float y = *iter_y;
                     float z = *iter_z;
 
-                    
                     if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
                     
+                    // 距離と高さの基本フィルタ (0.45m〜3.0mの範囲、高さ1.5m以下)
                     double dist_sq = x*x + y*y + z*z;
-                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
+                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; 
+                    if (z > 1.5) continue;
 
-                    if ( z > 1.5) continue;
-
+                    // マップ上の絶対的なZ座標を計算
                     double z_map = z + mclPose_.position.z;
-
-                    // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    if (std::abs(z_map - 0.00) <= 0.03 ||
-                        std::abs(z_map - 0.20) <= 0.03 ||
-                        std::abs(z_map - 0.40) <= 0.03) {
-                        continue;
-                    }
 
                     Point3D pt;
                     pt.x = x;
                     pt.y = y;
                     pt.z = z;
+                    valid_range_points.push_back(pt);
+
+                    // ヒストグラムのカウントを増やす
+                    int z_bin = static_cast<int>(std::floor(z_map / BIN_SIZE));
+                    z_histogram[z_bin]++;
+                }
+
+                // --- 閾値の計算 ---
+                // 有効な点群全体の5%が同じ高さに集中していれば「床」とみなす (最低でも50点は必要とする)
+                int floor_threshold = std::max(50, static_cast<int>(valid_range_points.size() * 0.05));
+
+                // --- 第2パス: 床面と判定された高さの点群を除外 ---
+                for (const auto& pt : valid_range_points) {
+                    double z_map = pt.z + mclPose_.position.z;
+                    int z_bin = static_cast<int>(std::floor(z_map / BIN_SIZE));
+
+                    // その点の高さの集中度が閾値を超えている場合（床）はスキップ
+                    // ※少し傾斜がある環境で弾き残しが出る場合は、隣のビンも確認すると強力になります：
+                    // if (z_histogram[z_bin] > floor_threshold || z_histogram[z_bin - 1] > floor_threshold || z_histogram[z_bin + 1] > floor_threshold)
+                    if (z_histogram[z_bin] > floor_threshold) {
+                        continue;
+                    }
+
                     local_points_.push_back(pt);
                 }
 
-                // デバッグ用: 何点抽出されたか表示
+                // デバッグ用: 抽出結果の確認
                 // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
-                //    "Extracted %zu points for MCL.", local_points_.size());
+                //    "Total valid points: %zu, Extracted non-floor points: %zu", 
+                //    valid_range_points.size(), local_points_.size());
 
+                // --- 抽出した点群のパブリッシュ ---
                 if (!local_points_.empty()) {
                     sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
-                    filtered_cloud_msg.header.stamp = msg->header.stamp; // 元のLiDARのタイムスタンプを使用
-                    filtered_cloud_msg.header.frame_id = "base_footprint"; // 変換済みの座標系
+                    filtered_cloud_msg.header.stamp = msg->header.stamp; 
+                    filtered_cloud_msg.header.frame_id = "base_footprint"; 
                     filtered_cloud_msg.height = 1;
                     filtered_cloud_msg.width = local_points_.size();
                     filtered_cloud_msg.is_dense = true;
