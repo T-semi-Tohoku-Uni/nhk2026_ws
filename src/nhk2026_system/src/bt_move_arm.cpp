@@ -9,7 +9,7 @@ BT::PortsList MoveArmAction::providedPorts()
     BT::InputPort<double>("y"),
     BT::InputPort<double>("z"),
     BT::InputPort<double>("roll", 0.0, "Target roll in radians"),
-    BT::InputPort<std::string>("frame_id", "base_link", "Target frame"),
+    BT::InputPort<std::string>("frame_id", "arm_base", "Target frame"),
     BT::InputPort<double>("max_speed", 0.2, "Max speed"),
     BT::InputPort<double>("max_acc", 0.2, "Max acceleration")
   });
