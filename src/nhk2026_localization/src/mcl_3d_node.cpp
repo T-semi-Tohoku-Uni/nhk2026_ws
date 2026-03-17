@@ -382,9 +382,13 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    if (std::abs(z_map - 0.00) <= 0.03 ||
-                        std::abs(z_map - 0.20) <= 0.03 ||
-                        std::abs(z_map - 0.40) <= 0.03) {
+                    // if (std::abs(z_map - 0.00) <= 0.03 ||
+                    //     std::abs(z_map - 0.20) <= 0.03 ||
+                    //     std::abs(z_map - 0.40) <= 0.03) {
+                    //     continue;
+                    // }
+
+                    if (std::abs(z_map - 0.00) <= 0.03){
                         continue;
                     }
 
@@ -464,7 +468,7 @@ namespace mcl {
                     external_quat_.y = msg->data[2];
                     external_quat_.z = msg->data[3];
                     external_quat_.w = msg->data[0];
-                    has_external_quat_ = true;
+                    //has_external_quat_ = true;
                 }
             }
             
