@@ -161,19 +161,19 @@ namespace mcl {
                 rclcpp::QoS qos_default(10);
                 pubPose_ = this->create_publisher<geometry_msgs::msg::Pose>("pose", qos_default);
                 pubPath_ = this->create_publisher<nav_msgs::msg::Path>("trajectory", qos_default);
-                particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", qos_default);
+                particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
-                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scan_cloud", qos_default);
+                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", qos_default);
 
                 // サブスクライバの処理
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
-                    "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
+                    "cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
                 );
 
                 auto lidarQos = rclcpp::SensorDataQoS();
                 subCloud_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-                    "/livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
+                    "livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
                 );
 
                 subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
@@ -181,7 +181,7 @@ namespace mcl {
                 );
 
                 subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
-                    "/quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
+                    "quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
                 );
 
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
