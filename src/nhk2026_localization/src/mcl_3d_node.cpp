@@ -280,7 +280,7 @@ namespace mcl {
 
                 // --- 閾値の計算 ---
                 // 有効な点群全体の5%が同じ高さに集中していれば「床」とみなす (最低でも50点は必要とする)
-                int floor_threshold = std::max(50, static_cast<int>(valid_range_points.size() * 0.05));
+                int floor_threshold = std::max(50, static_cast<int>(valid_range_points.size() * 0.03));
 
                 // --- 第2パス: 床面と判定された高さの点群を除外 ---
                 for (const auto& pt : valid_range_points) {
