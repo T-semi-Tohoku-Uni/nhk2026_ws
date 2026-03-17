@@ -17,21 +17,15 @@ def _require_can0(context, *args, **kwargs):
     # can0 が存在するか確認
     try:
         subprocess.check_output(["/usr/sbin/ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
-        return []  # OK: 何もしない（続行）
+        return []
     except subprocess.CalledProcessError as e:
-        # ip は実行できたが can0 が無い等
         msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
         launch.logging.get_logger(__name__).error(msg)
-        return [
-            Shutdown(reason="can0 not found"),
-        ]
+        return [Shutdown(reason="can0 not found")]
     except FileNotFoundError:
-        # ip コマンド自体が無いケース（レアだが）
         msg = "ip コマンドが見つかりません。launch を停止します。"
         launch.logging.get_logger(__name__).error(msg)
-        return [
-            Shutdown(reason="ip command not found"),
-        ]
+        return [Shutdown(reason="ip command not found")]
 
 def _run_cmd(cmd):
     try:
@@ -41,19 +35,15 @@ def _run_cmd(cmd):
         return False, e.output
     
 def _ensure_can0_up(context, *args, **kwargs):
-    # can0 があるかチェック
     try:
         out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
     except Exception:
-        # can0 が無い/読めないなら何もしない
         return []
 
-    # すでに UP かつ FD 設定済みなら何もしない
     desired_ok = all(token in out for token in ("bitrate 1000000", "dbitrate 2000000", "fd on"))
     if "UP" in out and desired_ok:
         return []
 
-    # DOWN または FD 未設定なら sudo -n で再設定（launch 内で直列実行）
     cmds = [
         ["sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "down"],
         [
@@ -76,19 +66,18 @@ def _ensure_can0_up(context, *args, **kwargs):
     
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')
-    canid_file = os.path.join(pkg_share, 'config', 'nhk2026_canbridge_r2.yml')
+    # namespaceを外したため、必要に応じて設定ファイルのパス等も確認してください
+    canid_file = os.path.join(pkg_share, 'config', 'nhk206_canbridge_r2.yml')
 
-    name_space = 'r2'
     ld = LaunchDescription()
     ld.add_action(OpaqueFunction(function=_require_can0))
     ld.add_action(OpaqueFunction(function=_ensure_can0_up))
 
-    # canbridge node
+    # canbridge node (namespace引数を削除)
     canbridgenode = LifecycleNode(
         package='nhk2026_bridge',
         executable='nhk2026_canbridge',
         name='nhk2026_canbridge',
-        namespace=name_space,
         parameters=[canid_file],
         output='screen',
         emulate_tty=True, 
