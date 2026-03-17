@@ -1,4 +1,8 @@
 #include "ide_arm_action_server.hpp"
+
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+
 #include <cmath>
 #include <functional>
 #include <future>
@@ -330,6 +334,7 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
     const std::shared_ptr<GoalHandleArmMove> goal_handle
 )
 {
+    (void)goal_handle;
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     return rclcpp_action::CancelResponse::ACCEPT;
 }

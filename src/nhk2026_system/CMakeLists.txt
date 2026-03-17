@@ -69,6 +69,7 @@ ament_target_dependencies(ide_arm_action_server
   geometry_msgs
   sensor_msgs
   nhk2026_msgs
+  orocos_kdl
   kdl_parser
   ament_index_cpp
   urdf

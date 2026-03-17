@@ -1,4 +1,4 @@
-#include "arm_path_plan_server.hpp"
+#include "nhk2026_control/arm_path_plan_server.hpp"
 
 #include <kdl/chainiksolverpos_nr_jl.hpp>
 #include <kdl/chainiksolvervel_pinv.hpp>
