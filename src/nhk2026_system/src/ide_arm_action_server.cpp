@@ -627,7 +627,10 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
     if (flag < 3) return;
 
-    this->joint_positions_ = next_joint_positions;
+    // Copy joint positions element-wise to avoid std::vector reallocation
+    this->joint_positions_[0] = next_joint_positions[0];
+    this->joint_positions_[1] = next_joint_positions[1];
+    this->joint_positions_[2] = next_joint_positions[2];
     
     this->joint_subscribe_flag_ = true;
     this->now_joint_ = *rxdata;
