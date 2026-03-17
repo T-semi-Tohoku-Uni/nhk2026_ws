@@ -14,7 +14,6 @@ find_package(sensor_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(urdf REQUIRED)
 
@@ -63,7 +62,6 @@ ament_target_dependencies(arm_path_plan
   std_msgs
   orocos_kdl
   kdl_parser
-  ament_index_cpp
   tf2
   urdf
 )
