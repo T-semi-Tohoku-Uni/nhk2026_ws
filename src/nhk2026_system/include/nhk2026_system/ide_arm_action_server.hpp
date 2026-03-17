@@ -67,6 +67,7 @@ private:
     float kPosTolerance_;
     bool joint_subscribe_flag_{false};
     bool robot_description_flag_{false};
+    int control_frequency_{20};
     geometry_msgs::msg::PoseStamped goal_pos_;
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;

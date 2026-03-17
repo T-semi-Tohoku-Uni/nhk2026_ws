@@ -44,6 +44,8 @@ IdeArmActionServer::IdeArmActionServer()
 
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
+    this->declare_parameter<int>("control_frequency", 20);
+    this->control_frequency_ = this->get_parameter("control_frequency").as_int();
 
     this->declare_parameter<std::string>("joint1_name", "joint1");
     this->declare_parameter<std::string>("joint2_name", "joint2");
@@ -74,8 +76,25 @@ rcl_interfaces::msg::SetParametersResult IdeArmActionServer::parameters_callback
     for (const auto &param : parameters) {
         if (param.get_name() == "kPosTolerance" && param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
         {
+            if (param.as_double() <= 0.0)
+            {
+                result.successful = false;
+                result.reason = "kPosTolerance must be positive";
+                return result;
+            }
             this->kPosTolerance_ = param.as_double();
             RCLCPP_INFO(this->get_logger(), "kPosTolerance changed!");
+        }
+        else if (param.get_name() == "control_frequency" && param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER)
+        {
+            if (param.as_int() <= 0)
+            {
+                result.successful = false;
+                result.reason = "control_frequency must be positive";
+                return result;
+            }
+            this->control_frequency_ = static_cast<int>(param.as_int());
+            RCLCPP_INFO(this->get_logger(), "control_frequency changed!");
         }
     }
 
@@ -107,6 +126,16 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     if (this->joint_positions_.size() < chain.getNrOfJoints())
     {
         RCLCPP_ERROR(this->get_logger(), "joint positions are not ready");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (goal->max_speed <= 0.0f || goal->max_acc <= 0.0f)
+    {
+        RCLCPP_ERROR(this->get_logger(), "max_speed and max_acc must be positive");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (this->control_frequency_ <= 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "control_frequency must be positive");
         return rclcpp_action::GoalResponse::REJECT;
     }
 
@@ -227,9 +256,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         return rclcpp_action::GoalResponse::REJECT;
     }
 
-    nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
-    request->goal_pos = goal->goal_pos;
-    request->now_pos = this->now_pos_;
     this->goal_pos_ = goal->goal_pos;
 
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
@@ -282,7 +308,11 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
+    request->now_joint = this->now_joint_;
     request->waypoints = goal->waypoints;
+    request->max_speed = goal->max_speed;
+    request->max_acc = goal->max_acc;
+    request->control_frequency = this->control_frequency_;
     request->urdf.data = this->urdf_;
 
     auto future = this->path_client_->async_send_request(request);
@@ -316,7 +346,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     j2_msg.data.resize(1);
     j3_msg.data.resize(1);
 
-    rclcpp::Rate loop_rate(10.0);
+    rclcpp::Rate loop_rate(static_cast<double>(this->control_frequency_));
     size_t i = 0;
     const auto response = future.get();
     if (!response || response->route.empty())
@@ -333,12 +363,7 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     {
         if (i >= response->route.size())
         {
-            result->success = true;
-            result->msg = "success";
-            goal_handle->succeed(result);
-            this->goal_active_ = false;
-            this->active_goal_handle_.reset();
-            return;
+            i = response->route.size() - 1;
         }
 
         const auto &target_joint_state = response->route[i];
@@ -398,19 +423,32 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         this->j2_motor_publisher_->publish(j2_msg);
         this->j3_motor_publisher_->publish(j3_msg);
 
-        bool reached = true;
-        for (size_t joint_index = 0; joint_index < 3; ++joint_index)
-        {
-            if (std::abs(this->joint_positions_[joint_index] - target_positions[joint_index]) > this->kPosTolerance_)
-            {
-                reached = false;
-                break;
-            }
-        }
-
-        if (reached)
+        const bool is_last_sample = (i + 1 >= response->route.size());
+        if (!is_last_sample)
         {
             ++i;
+        }
+        else
+        {
+            bool reached = true;
+            for (size_t joint_index = 0; joint_index < 3; ++joint_index)
+            {
+                if (std::abs(this->joint_positions_[joint_index] - target_positions[joint_index]) > this->kPosTolerance_)
+                {
+                    reached = false;
+                    break;
+                }
+            }
+
+            if (reached)
+            {
+                result->success = true;
+                result->msg = "success";
+                goal_handle->succeed(result);
+                this->goal_active_ = false;
+                this->active_goal_handle_.reset();
+                return;
+            }
         }
 
         if (goal_handle->is_canceling())
