@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <limits>
 
 #include <urdf/model.h>
@@ -71,6 +72,124 @@ geometry_msgs::msg::PoseStamped interpolate_pose(
     interpolated.pose.orientation.z = q.z();
     interpolated.pose.orientation.w = q.w();
     return interpolated;
+}
+
+std::vector<double> build_seed_values(const double lower, const double upper)
+{
+    if (!std::isfinite(lower) || !std::isfinite(upper) || lower >= upper)
+    {
+        return {0.0};
+    }
+
+    const double range = upper - lower;
+    const double margin = range * 0.05;
+    const double safe_lower = lower + margin;
+    const double safe_upper = upper - margin;
+    const double midpoint = (safe_lower + safe_upper) * 0.5;
+
+    if (safe_lower >= safe_upper)
+    {
+        return {0.5 * (lower + upper)};
+    }
+
+    return {
+        midpoint,
+        0.5 * (safe_lower + midpoint),
+        0.5 * (midpoint + safe_upper),
+        safe_lower,
+        safe_upper
+    };
+}
+
+std::vector<KDL::JntArray> build_seed_candidates(
+    const unsigned int joint_count,
+    const KDL::JntArray & q_min,
+    const KDL::JntArray & q_max)
+{
+    std::vector<std::vector<double>> per_joint_values;
+    per_joint_values.reserve(joint_count);
+    for (unsigned int i = 0; i < joint_count; ++i)
+    {
+        per_joint_values.push_back(build_seed_values(q_min(i), q_max(i)));
+    }
+
+    std::vector<KDL::JntArray> seeds;
+    KDL::JntArray current_seed(joint_count);
+
+    std::function<void(unsigned int)> expand =
+        [&](const unsigned int joint_index)
+        {
+            if (joint_index >= joint_count)
+            {
+                seeds.push_back(current_seed);
+                return;
+            }
+
+            for (const double value : per_joint_values[joint_index])
+            {
+                current_seed(joint_index) = value;
+                expand(joint_index + 1);
+            }
+        };
+
+    expand(0);
+    return seeds;
+}
+
+double squared_position_error(const KDL::Frame & reached_frame, const KDL::Frame & target_frame)
+{
+    const double dx = reached_frame.p.x() - target_frame.p.x();
+    const double dy = reached_frame.p.y() - target_frame.p.y();
+    const double dz = reached_frame.p.z() - target_frame.p.z();
+    return dx * dx + dy * dy + dz * dz;
+}
+
+bool solve_ik_with_fallback(
+    KDL::ChainIkSolverPos_NR_JL & ik_solver,
+    KDL::ChainFkSolverPos_recursive & fk_solver,
+    const KDL::Frame & target_frame,
+    const std::vector<KDL::JntArray> & seed_candidates,
+    const KDL::JntArray * preferred_seed,
+    KDL::JntArray & solution)
+{
+    bool solved = false;
+    double best_error = std::numeric_limits<double>::max();
+
+    auto try_seed =
+        [&](const KDL::JntArray & seed)
+        {
+            KDL::JntArray candidate(solution.rows());
+            if (ik_solver.CartToJnt(seed, target_frame, candidate) < 0)
+            {
+                return;
+            }
+
+            KDL::Frame reached_frame;
+            if (fk_solver.JntToCart(candidate, reached_frame) < 0)
+            {
+                return;
+            }
+
+            const double error = squared_position_error(reached_frame, target_frame);
+            if (!solved || error < best_error)
+            {
+                best_error = error;
+                solution = candidate;
+                solved = true;
+            }
+        };
+
+    if (preferred_seed != nullptr)
+    {
+        try_seed(*preferred_seed);
+    }
+
+    for (const auto & seed : seed_candidates)
+    {
+        try_seed(seed);
+    }
+
+    return solved;
 }
 
 std::vector<double> sample_path_distance(
@@ -145,59 +264,6 @@ std::vector<double> sample_path_distance(
     }
 
     return samples;
-}
-
-geometry_msgs::msg::PoseStamped sample_pose_on_path(
-    const std::vector<geometry_msgs::msg::PoseStamped> & control_points,
-    const std::vector<double> & cumulative_lengths,
-    const double distance,
-    const std_msgs::msg::Header & header)
-{
-    if (control_points.empty())
-    {
-        geometry_msgs::msg::PoseStamped pose;
-        pose.header = header;
-        return pose;
-    }
-
-    if (distance <= kEpsilon)
-    {
-        geometry_msgs::msg::PoseStamped pose = control_points.front();
-        pose.header = header;
-        return pose;
-    }
-
-    const double total_length = cumulative_lengths.back();
-    if ((total_length - distance) <= kEpsilon)
-    {
-        geometry_msgs::msg::PoseStamped pose = control_points.back();
-        pose.header = header;
-        return pose;
-    }
-
-    const auto upper = std::upper_bound(
-        cumulative_lengths.begin(),
-        cumulative_lengths.end(),
-        distance);
-    size_t segment_index = static_cast<size_t>(std::distance(cumulative_lengths.begin(), upper));
-    segment_index = std::max<size_t>(1, segment_index) - 1;
-
-    const double segment_start = cumulative_lengths[segment_index];
-    const double segment_end = cumulative_lengths[segment_index + 1];
-    const double segment_length = segment_end - segment_start;
-    if (segment_length <= kEpsilon)
-    {
-        geometry_msgs::msg::PoseStamped pose = control_points[segment_index + 1];
-        pose.header = header;
-        return pose;
-    }
-
-    const double ratio = (distance - segment_start) / segment_length;
-    return interpolate_pose(
-        control_points[segment_index],
-        control_points[segment_index + 1],
-        ratio,
-        header);
 }
 
 }  // namespace
@@ -279,7 +345,6 @@ void ArmPathPlan::path_gen_callback(
     }
 
     KDL::JntArray now_joints(joint_count);
-    KDL::JntArray sampled_joints(joint_count);
 
     std::vector<std::string> joint_names;
     joint_names.reserve(joint_count);
@@ -313,6 +378,8 @@ void ArmPathPlan::path_gen_callback(
         100,
         1e-6);
 
+    const auto seed_candidates = build_seed_candidates(joint_count, q_min, q_max);
+
     bool have_current_joint_seed = false;
     if (request->now_joint.name.size() == request->now_joint.position.size())
     {
@@ -340,8 +407,13 @@ void ArmPathPlan::path_gen_callback(
 
     if (!have_current_joint_seed)
     {
-        KDL::JntArray seed(joint_count);
-        if (ik_solver.CartToJnt(seed, pose_to_frame(now_pos), now_joints) < 0)
+        if (!solve_ik_with_fallback(
+                ik_solver,
+                fk_solver,
+                pose_to_frame(now_pos),
+                seed_candidates,
+                nullptr,
+                now_joints))
         {
             RCLCPP_ERROR(this->get_logger(), "Failed to solve IK for now_pos.");
             return;
@@ -359,29 +431,13 @@ void ArmPathPlan::path_gen_callback(
     control_points.insert(control_points.end(), request->waypoints.begin(), request->waypoints.end());
     control_points.push_back(goal_pos);
 
-    std::vector<double> cumulative_lengths;
-    cumulative_lengths.reserve(control_points.size());
-    cumulative_lengths.push_back(0.0);
-    for (size_t i = 1; i < control_points.size(); ++i)
-    {
-        cumulative_lengths.push_back(
-            cumulative_lengths.back() + position_distance(control_points[i - 1], control_points[i]));
-    }
-
-    const double total_distance = cumulative_lengths.back();
-    const std::vector<double> sampled_distances = sample_path_distance(
-        total_distance,
-        max_speed,
-        max_acc,
-        dt);
-
     sensor_msgs::msg::JointState msg;
     msg.header.frame_id = "arm_base";
     msg.header.stamp = this->now();
     msg.name = joint_names;
 
     response->route.clear();
-    response->route.reserve(std::max<size_t>(sampled_distances.size(), control_points.size()));
+    response->route.reserve(256);
     
     nav_msgs::msg::Path path;
     path.header.frame_id = "arm_base";
@@ -420,41 +476,103 @@ void ArmPathPlan::path_gen_callback(
 
     append_joint_sample(now_joints);
 
-    if (total_distance <= kEpsilon)
+    for (size_t control_point_index = 1; control_point_index < control_points.size(); ++control_point_index)
     {
-        for (size_t control_point_index = 1; control_point_index < control_points.size(); ++control_point_index)
+        const auto & segment_start_pose = control_points[control_point_index - 1];
+        const auto & segment_goal_pose = control_points[control_point_index];
+        const KDL::JntArray segment_start_joints = now_joints;
+        const double segment_distance = position_distance(segment_start_pose, segment_goal_pose);
+        const std::vector<double> segment_samples = sample_path_distance(
+            segment_distance,
+            max_speed,
+            max_acc,
+            dt);
+
+        KDL::JntArray segment_goal_joints(joint_count);
+        if (!solve_ik_with_fallback(
+                ik_solver,
+                fk_solver,
+                pose_to_frame(segment_goal_pose),
+                seed_candidates,
+                &segment_start_joints,
+                segment_goal_joints))
         {
-            if (ik_solver.CartToJnt(now_joints, pose_to_frame(control_points[control_point_index]), sampled_joints) < 0)
+            RCLCPP_ERROR(this->get_logger(), "Failed to solve IK for control point %zu.", control_point_index);
+            response->route.clear();
+            return;
+        }
+
+        bool cartesian_success = (segment_distance > kEpsilon);
+        std::vector<KDL::JntArray> cartesian_segment_route;
+        cartesian_segment_route.reserve(segment_samples.size());
+        KDL::JntArray cartesian_seed = segment_start_joints;
+
+        if (cartesian_success)
+        {
+            for (size_t sample_index = 1; sample_index < segment_samples.size(); ++sample_index)
             {
-                RCLCPP_ERROR(this->get_logger(), "Failed to solve IK for low-distance Cartesian sample.");
-                response->route.clear();
-                return;
+                const double ratio = std::clamp(segment_samples[sample_index] / segment_distance, 0.0, 1.0);
+                const auto sampled_pose = interpolate_pose(
+                    segment_start_pose,
+                    segment_goal_pose,
+                    ratio,
+                    path.header);
+
+                KDL::JntArray cartesian_solution(joint_count);
+                if (!solve_ik_with_fallback(
+                        ik_solver,
+                        fk_solver,
+                        pose_to_frame(sampled_pose),
+                        seed_candidates,
+                        &cartesian_seed,
+                        cartesian_solution))
+                {
+                    cartesian_success = false;
+                    break;
+                }
+
+                cartesian_segment_route.push_back(cartesian_solution);
+                cartesian_seed = cartesian_solution;
+            }
+        }
+
+        if (cartesian_success)
+        {
+            for (const auto & cartesian_solution : cartesian_segment_route)
+            {
+                append_joint_sample(cartesian_solution);
+            }
+            now_joints = cartesian_segment_route.empty() ? segment_goal_joints : cartesian_segment_route.back();
+            continue;
+        }
+
+        RCLCPP_WARN(
+            this->get_logger(),
+            "Cartesian interpolation failed on segment %zu. Falling back to joint interpolation.",
+            control_point_index);
+
+        if (segment_distance <= kEpsilon)
+        {
+            append_joint_sample(segment_goal_joints);
+            now_joints = segment_goal_joints;
+            continue;
+        }
+
+        for (size_t sample_index = 1; sample_index < segment_samples.size(); ++sample_index)
+        {
+            const double ratio = std::clamp(segment_samples[sample_index] / segment_distance, 0.0, 1.0);
+            KDL::JntArray interpolated_joints(joint_count);
+            for (unsigned int joint_index = 0; joint_index < joint_count; ++joint_index)
+            {
+                interpolated_joints(joint_index) =
+                    segment_start_joints(joint_index) +
+                    (segment_goal_joints(joint_index) - segment_start_joints(joint_index)) * ratio;
             }
 
-            append_joint_sample(sampled_joints);
-            now_joints = sampled_joints;
+            append_joint_sample(interpolated_joints);
         }
-    }
-    else
-    {
-        for (size_t sample_index = 1; sample_index < sampled_distances.size(); ++sample_index)
-        {
-            const auto sampled_pose = sample_pose_on_path(
-                control_points,
-                cumulative_lengths,
-                sampled_distances[sample_index],
-                path.header);
 
-            if (ik_solver.CartToJnt(now_joints, pose_to_frame(sampled_pose), sampled_joints) < 0)
-            {
-                RCLCPP_ERROR(this->get_logger(), "Failed to solve IK for sampled Cartesian point.");
-                response->route.clear();
-                return;
-            }
-
-            append_joint_sample(sampled_joints);
-            now_joints = sampled_joints;
-        }
+        now_joints = segment_goal_joints;
     }
 
     this->route_publisher_->publish(path);

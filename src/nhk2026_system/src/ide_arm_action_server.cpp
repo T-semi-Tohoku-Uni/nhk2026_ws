@@ -4,10 +4,86 @@
 
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <future>
 #include <limits>
 
 using namespace std::chrono_literals;
+
+namespace
+{
+
+std::vector<double> build_seed_values(const double lower, const double upper)
+{
+    if (!std::isfinite(lower) || !std::isfinite(upper) || lower >= upper)
+    {
+        return {0.0};
+    }
+
+    const double range = upper - lower;
+    const double margin = range * 0.05;
+    const double safe_lower = lower + margin;
+    const double safe_upper = upper - margin;
+    const double midpoint = (safe_lower + safe_upper) * 0.5;
+
+    if (safe_lower >= safe_upper)
+    {
+        return {0.5 * (lower + upper)};
+    }
+
+    return {
+        midpoint,
+        0.5 * (safe_lower + midpoint),
+        0.5 * (midpoint + safe_upper),
+        safe_lower,
+        safe_upper
+    };
+}
+
+std::vector<KDL::JntArray> build_seed_candidates(
+    const unsigned int joint_count,
+    const KDL::JntArray & q_min,
+    const KDL::JntArray & q_max)
+{
+    std::vector<std::vector<double>> per_joint_values;
+    per_joint_values.reserve(joint_count);
+    for (unsigned int i = 0; i < joint_count; ++i)
+    {
+        per_joint_values.push_back(build_seed_values(q_min(i), q_max(i)));
+    }
+
+    std::vector<KDL::JntArray> seeds;
+    KDL::JntArray current_seed(joint_count);
+
+    std::function<void(unsigned int)> expand =
+        [&](const unsigned int joint_index)
+        {
+            if (joint_index >= joint_count)
+            {
+                seeds.push_back(current_seed);
+                return;
+            }
+
+            for (const double value : per_joint_values[joint_index])
+            {
+                current_seed(joint_index) = value;
+                expand(joint_index + 1);
+            }
+        };
+
+    expand(0);
+    return seeds;
+}
+
+double squared_position_error(const KDL::Frame & reached_frame, const KDL::Frame & target_frame)
+{
+    const double dx = reached_frame.p.x() - target_frame.p.x();
+    const double dy = reached_frame.p.y() - target_frame.p.y();
+    const double dz = reached_frame.p.z() - target_frame.p.z();
+    return dx * dx + dy * dy + dz * dz;
+}
+
+}  // namespace
 
 IdeArmActionServer::IdeArmActionServer()
 : rclcpp::Node("ide_arm_action_server")
@@ -165,7 +241,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::JntArray q_min(chain.getNrOfJoints());
     KDL::JntArray q_max(chain.getNrOfJoints());
-    KDL::JntArray q_init(chain.getNrOfJoints());
     KDL::JntArray q_out(chain.getNrOfJoints());
     for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
     {
@@ -189,11 +264,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         q_max(2) = this->j3_limit_up_;
     }
 
-    for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
-    {
-        q_init(i) = this->joint_positions_[i];
-    }
-
     KDL::ChainIkSolverVel_pinv ik_vel_solver(chain);
     KDL::ChainIkSolverPos_NR_JL ik_solver(
         chain,
@@ -205,48 +275,45 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         1e-6
     );
 
-    if (ik_solver.CartToJnt(q_init, target_frame, q_out) < 0)
-    {
-        RCLCPP_ERROR(
-            this->get_logger(),
-            "IK seed: [%.6f, %.6f, %.6f]",
-            q_init(0), q_init(1), q_init(2)
-        );
-        RCLCPP_ERROR(this->get_logger(), "goal pose is out of reach");
-        return rclcpp_action::GoalResponse::REJECT;
-    }
+    const auto seed_candidates = build_seed_candidates(chain.getNrOfJoints(), q_min, q_max);
+    bool found_reachable_solution = false;
+    double best_position_error = std::numeric_limits<double>::max();
 
-    const double lower_limits[] = {this->j1_limit_down_, this->j2_limit_down_, this->j3_limit_down_};
-    const double upper_limits[] = {this->j1_limit_up_, this->j2_limit_up_, this->j3_limit_up_};
-    const unsigned int limit_joint_count = std::min<unsigned int>(3, chain.getNrOfJoints());
-    for (unsigned int i = 0; i < limit_joint_count; ++i)
+    for (const auto & seed : seed_candidates)
     {
-        if (q_out(i) < lower_limits[i] || q_out(i) > upper_limits[i])
+        KDL::JntArray candidate(chain.getNrOfJoints());
+        if (ik_solver.CartToJnt(seed, target_frame, candidate) < 0)
         {
-            RCLCPP_ERROR(
-                this->get_logger(),
-                "IK seed: [%.6f, %.6f, %.6f]",
-                q_init(0), q_init(1), q_init(2)
-            );
-            RCLCPP_ERROR(this->get_logger(), "q_out[%u]: %f", i, q_out(i));
-            RCLCPP_ERROR(this->get_logger(), "goal pose exceeds joint limits");
-            return rclcpp_action::GoalResponse::REJECT;
+            continue;
+        }
+
+        KDL::Frame reached_frame;
+        if (fk_solver.JntToCart(candidate, reached_frame) < 0)
+        {
+            continue;
+        }
+
+        const double position_error = squared_position_error(reached_frame, target_frame);
+        if (position_error < best_position_error)
+        {
+            best_position_error = position_error;
+            q_out = candidate;
+        }
+
+        if (position_error <= (this->kPosTolerance_ * this->kPosTolerance_))
+        {
+            found_reachable_solution = true;
+            break;
         }
     }
 
-    KDL::Frame reached_frame;
-    if (fk_solver.JntToCart(q_out, reached_frame) < 0)
+    if (!found_reachable_solution)
     {
-        RCLCPP_ERROR(this->get_logger(), "FK failed for goal pose");
-        return rclcpp_action::GoalResponse::REJECT;
-    }
-
-    const double dx = reached_frame.p.x() - target_pose.position.x;
-    const double dy = reached_frame.p.y() - target_pose.position.y;
-    const double dz = reached_frame.p.z() - target_pose.position.z;
-    if ((dx * dx + dy * dy + dz * dz) > (this->kPosTolerance_ * this->kPosTolerance_))
-    {
-        RCLCPP_ERROR(this->get_logger(), "goal pose is not reachable within tolerance");
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "goal pose is out of reach from the configured joint limits; best squared error = %.6f",
+            best_position_error
+        );
         return rclcpp_action::GoalResponse::REJECT;
     }
 

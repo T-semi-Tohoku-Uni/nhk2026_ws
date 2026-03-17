@@ -8,6 +8,7 @@ from launch_ros.substitutions import FindPackageShare
 def generate_launch_description():
     bt_xml_file = LaunchConfiguration("bt_xml_file")
     bt_start_delay = LaunchConfiguration("bt_start_delay")
+    wait_for_server_timeout_ms = LaunchConfiguration("wait_for_server_timeout_ms")
     k_pos_tolerance = LaunchConfiguration("k_pos_tolerance")
 
     arm_path_plan_node = Node(
@@ -30,7 +31,10 @@ def generate_launch_description():
         executable="ide_arm_bt_node",
         name="ide_arm_bt_node",
         output="screen",
-        parameters=[{"bt_xml_file": bt_xml_file}],
+        parameters=[
+            {"bt_xml_file": bt_xml_file},
+            {"wait_for_server_timeout_ms": wait_for_server_timeout_ms},
+        ],
     )
 
     return LaunchDescription([
@@ -47,6 +51,11 @@ def generate_launch_description():
             "bt_start_delay",
             default_value="4.0",
             description="Delay in seconds before starting ide_arm_bt_node.",
+        ),
+        DeclareLaunchArgument(
+            "wait_for_server_timeout_ms",
+            default_value="5000",
+            description="Timeout in ms to wait for the ide_arm action server.",
         ),
         DeclareLaunchArgument(
             "k_pos_tolerance",
