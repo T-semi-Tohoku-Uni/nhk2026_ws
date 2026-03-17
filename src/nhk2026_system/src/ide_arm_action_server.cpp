@@ -1,8 +1,4 @@
 #include "ide_arm_action_server.hpp"
-#include <kdl/chainiksolverpos_nr_jl.hpp>
-#include <kdl/chainiksolvervel_pinv.hpp>
-
-#include <algorithm>
 #include <cmath>
 #include <functional>
 #include <future>
