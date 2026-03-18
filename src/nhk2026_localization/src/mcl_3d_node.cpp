@@ -21,6 +21,7 @@
 #include <fstream> 
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include "std_msgs/msg/float32_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp" 
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -182,6 +183,10 @@ namespace mcl {
 
                 subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
                     "quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
+                );
+
+                zaxissub_= create_subscription<std_msgs::msg::Int32MultiArray>(
+                    "mcl_select",10,std::bind(&MCL::lidarSelectCallback, this,std::placeholders::_1)
                 );
 
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -479,6 +484,9 @@ namespace mcl {
                     RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
                 }
             }
+            void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
+                zaxics_ = msg;
+            }
             
             double randNormal(double sigma) {
                 if (sigma <= 0.0) return 0.0;
@@ -507,6 +515,9 @@ namespace mcl {
 
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
+                if (zaxics_ && !zaxics_->data.empty()) {
+                    if (zaxics_->data[0] == 0) return; // 0以外ならMCLを停止
+                }
                 
                 if (!cmdVel_) return;
 
@@ -928,116 +939,93 @@ namespace mcl {
             }
 
             void caculateMeasurementModel() {
-                // local_points_ が空の場合は尤度計算をスキップ
                 if (local_points_.empty()) return;
 
-                totalLikelihood_ = 0.0;
-                std::double_t maxLikelihood = 0.0;
-
-                std::vector<std::vector<double>> likelihood_table;
-                likelihood_table.reserve(particleNum_);
-                
-                for (std::size_t i = 0; i < particles_.size(); i++ ) {
-                    std::double_t likelihood = 0.0;
-                    
-                    if (measurementModel_ == MeasurementModel::LikelihoodFieldModel) {
-                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), local_points_)));
-                    }
-                    if (i == 0) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = 0;
-                    } else if (maxLikelihood < likelihood) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = i;
-                    }
-                }
-
-                std::vector<double> log_weights(particles_.size(),0.0);
+                // 各パーティクルの合計対数尤度を格納する配列 (サイズはパーティクル数のみ)
+                std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
-                for (std::size_t i = 0; i < likelihood_table.size(); i++) {
-                    for (std::size_t k = 0; k < likelihood_table[i].size(); k++) {
-                        log_weights[i] += std::log(likelihood_table[i][k]); 
-                    }
+                // 1. 各パーティクルの対数尤度を直接計算
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    // ここで vector を返さず、double を受け取る
+                    log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
                     }
-                } 
-
-                
-                std::double_t w_sum = 0.0;
-                std::vector<double> linear_weights(particles_.size(), 0.0);
-
-                for (std::size_t j = 0; j < particles_.size(); j++) { // 変数名を j に変更
-                    linear_weights[j] = std::exp(log_weights[j] - max_log_weight);
-                    w_sum += linear_weights[j];
                 }
 
-                std::double_t w_sq_sum = 0.0;
-                for (std::size_t j = 0; j < particles_.size(); j++) {
-                    double normalized_w = linear_weights[j] / w_sum;
-                    particles_[j].setW(normalized_w);
+                // 2. 正規化処理 (Log-Sum-Expトリック)
+                double w_sum = 0.0;
+                std::vector<double> linear_weights(particleNum_);
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
+                    w_sum += linear_weights[i];
+                }
+
+                double w_sq_sum = 0.0;
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    double normalized_w = linear_weights[i] / w_sum;
+                    particles_[i].setW(normalized_w);
                     w_sq_sum += normalized_w * normalized_w;
                 }
+
+                // 有効サンプルサイズの更新
                 effectiveSampleSize_ = 1.0 / w_sq_sum;
-                
-                
             }
 
-            std::vector<double> caculateLikelihoodFieldModel(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
-                std::vector<double> p_vector;
-                p_vector.reserve(local_points.size());
-
+            double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
+                double total_log_p = 0.0;
                 double var = lfmSigma_ * lfmSigma_;
                 double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
                 
-                double scan_range_max = 30.0; 
-                double pRand = 1.0 / scan_range_max * mapResolution_;
+                // パラメータ
+                const double scan_range_max = 30.0; 
+                const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
-                // 修正: パーティクルごとのYawで回転させる処理 (事前回転を行わない場合)
+                // パーティクルの姿勢から回転行列の要素を計算 (ループ外で1回だけ)
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
-                double roll, pitch, yaw;
-                m.getRPY(roll, pitch, yaw);
+                double r, p, yaw;
+                m.getRPY(r, p, yaw);
                 double cos_theta = std::cos(yaw);
                 double sin_theta = std::sin(yaw);
 
                 for (const auto& pt : local_points) {
-                    double map_x, map_y, map_z;
-                    // ロボット座標系の点(pt)をパーティクルのYawで回転させ、マップ上の位置(pose)を足す
-                    map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
-                    map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
-                    map_z = pt.z + pose.position.z; 
+                    // ロボット座標系からマップ座標系への変換
+                    double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
+                    double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
+                    double map_z = pt.z + pose.position.z; 
 
                     int u, v, w;
                     xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
 
-                    if (u >= 0 && u < static_cast<int>(dim_x_) && v >= 0 && v < static_cast<int>(dim_y_) && w >= 0 && w < static_cast<int>(dim_z_)) {
+                    double prob = zRand_ * pRand_const; 
+
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
-                        double d = 0.0;
-
-                        double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
-                        if (sdf_val > dynamic_obstacle_threshold) {
-                            p_vector.push_back(zRand_*pRand);
-                            continue; // 尤度計算の対象から外し、ペナルティを与えない
-                        }
-                        if (sdf_val >= 0.0) {
-                            d = sdf_val;
-                        } else {
-                            double penetration_penalty = 1.0; 
-                            d = std::abs(sdf_val) + penetration_penalty;
+                        // 動的障害物除外 (壁から遠すぎる点は無視)
+                        if (sdf_val > 0.5) {
+                            total_log_p += std::log(prob);
+                            continue;
                         }
 
+                        // 壁の中(マイナス)ならペナルティを付与
+                        double d = (sdf_val >= 0.0) ? sdf_val : (std::abs(sdf_val) + 1.0);
+                        
                         double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
-                        double p = zHit_ * pHit + zRand_ * pRand;
-                        p_vector.push_back(std::min(p, 1.0)); 
-                    } else {
-                        p_vector.push_back(zRand_ * pRand);
+                        prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
                     }
+                    
+                    // 対数尤度を加算 (log(0) 回避のために微小値を std::max で保証)
+                    total_log_p += std::log(std::max(prob, 1e-10));
                 }
 
-                return p_vector;
+                return total_log_p;
             }
 
             void publishSDFCloud() {
@@ -1161,14 +1149,17 @@ namespace mcl {
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
             rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
-             rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
-
+            rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
+            rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
+             
             // 状態変数
             geometry_msgs::msg::Pose mclPose_;
             geometry_msgs::msg::Twist::SharedPtr cmdVel_;
             nav_msgs::msg::Path path_;
             std::vector<Point3D> local_points_;
             std::mt19937 gen_; 
+            std_msgs::msg::Int32MultiArray::SharedPtr zaxics_ = nullptr; 
+
 
            
             geometry_msgs::msg::Quaternion external_quat_;
