@@ -1,8 +1,89 @@
-#include "nhk2026_system/ide_arm_action_server.hpp"
+#include "ide_arm_action_server.hpp"
+
+#include <kdl/chainiksolverpos_nr_jl.hpp>
+#include <kdl/chainiksolvervel_pinv.hpp>
+
 #include <cmath>
+#include <functional>
 #include <future>
+#include <limits>
 
 using namespace std::chrono_literals;
+
+namespace
+{
+
+std::vector<double> build_seed_values(const double lower, const double upper)
+{
+    if (!std::isfinite(lower) || !std::isfinite(upper) || lower >= upper)
+    {
+        return {0.0};
+    }
+
+    const double range = upper - lower;
+    const double margin = range * 0.05;
+    const double safe_lower = lower + margin;
+    const double safe_upper = upper - margin;
+    const double midpoint = (safe_lower + safe_upper) * 0.5;
+
+    if (safe_lower >= safe_upper)
+    {
+        return {0.5 * (lower + upper)};
+    }
+
+    return {
+        midpoint,
+        0.5 * (safe_lower + midpoint),
+        0.5 * (midpoint + safe_upper),
+        safe_lower,
+        safe_upper
+    };
+}
+
+std::vector<KDL::JntArray> build_seed_candidates(
+    const unsigned int joint_count,
+    const KDL::JntArray & q_min,
+    const KDL::JntArray & q_max)
+{
+    std::vector<std::vector<double>> per_joint_values;
+    per_joint_values.reserve(joint_count);
+    for (unsigned int i = 0; i < joint_count; ++i)
+    {
+        per_joint_values.push_back(build_seed_values(q_min(i), q_max(i)));
+    }
+
+    std::vector<KDL::JntArray> seeds;
+    KDL::JntArray current_seed(joint_count);
+
+    std::function<void(unsigned int)> expand =
+        [&](const unsigned int joint_index)
+        {
+            if (joint_index >= joint_count)
+            {
+                seeds.push_back(current_seed);
+                return;
+            }
+
+            for (const double value : per_joint_values[joint_index])
+            {
+                current_seed(joint_index) = value;
+                expand(joint_index + 1);
+            }
+        };
+
+    expand(0);
+    return seeds;
+}
+
+double squared_position_error(const KDL::Frame & reached_frame, const KDL::Frame & target_frame)
+{
+    const double dx = reached_frame.p.x() - target_frame.p.x();
+    const double dy = reached_frame.p.y() - target_frame.p.y();
+    const double dz = reached_frame.p.z() - target_frame.p.z();
+    return dx * dx + dy * dy + dz * dz;
+}
+
+}  // namespace
 
 IdeArmActionServer::IdeArmActionServer()
 : rclcpp::Node("ide_arm_action_server")
@@ -39,6 +120,16 @@ IdeArmActionServer::IdeArmActionServer()
 
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
+    this->declare_parameter<int>("control_frequency", 20);
+    this->control_frequency_ = this->get_parameter("control_frequency").as_int();
+
+    this->declare_parameter<std::string>("joint1_name", "joint1");
+    this->declare_parameter<std::string>("joint2_name", "joint2");
+    this->declare_parameter<std::string>("joint3_name", "joint3");
+
+    this->joint1_name_ = this->get_parameter("joint1_name").as_string();
+    this->joint2_name_ = this->get_parameter("joint2_name").as_string();
+    this->joint3_name_ = this->get_parameter("joint3_name").as_string();
 
     this->parameter_callback_handle_ = this->add_on_set_parameters_callback(
         std::bind(&IdeArmActionServer::parameters_callback, this, _1)
@@ -61,8 +152,25 @@ rcl_interfaces::msg::SetParametersResult IdeArmActionServer::parameters_callback
     for (const auto &param : parameters) {
         if (param.get_name() == "kPosTolerance" && param.get_type() == rclcpp::ParameterType::PARAMETER_DOUBLE)
         {
+            if (param.as_double() <= 0.0)
+            {
+                result.successful = false;
+                result.reason = "kPosTolerance must be positive";
+                return result;
+            }
             this->kPosTolerance_ = param.as_double();
             RCLCPP_INFO(this->get_logger(), "kPosTolerance changed!");
+        }
+        else if (param.get_name() == "control_frequency" && param.get_type() == rclcpp::ParameterType::PARAMETER_INTEGER)
+        {
+            if (param.as_int() <= 0)
+            {
+                result.successful = false;
+                result.reason = "control_frequency must be positive";
+                return result;
+            }
+            this->control_frequency_ = static_cast<int>(param.as_int());
+            RCLCPP_INFO(this->get_logger(), "control_frequency changed!");
         }
     }
 
@@ -76,8 +184,6 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
     std::shared_ptr<const ArmMove::Goal> goal
 )
 {
-    // todo アームの到達範囲をチェック
-
     if (!this->joint_subscribe_flag_)
     {
         RCLCPP_ERROR(this->get_logger(), "please start joint state publisher");
@@ -93,15 +199,130 @@ rclcpp_action::GoalResponse IdeArmActionServer::handle_goal(
         RCLCPP_ERROR(this->get_logger(), "arm_path service is not available");
         return rclcpp_action::GoalResponse::REJECT;
     }
+    if (this->joint_positions_.size() < chain.getNrOfJoints())
+    {
+        RCLCPP_ERROR(this->get_logger(), "joint positions are not ready");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (goal->max_speed <= 0.0f || goal->max_acc <= 0.0f)
+    {
+        RCLCPP_ERROR(this->get_logger(), "max_speed and max_acc must be positive");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    if (this->control_frequency_ <= 0)
+    {
+        RCLCPP_ERROR(this->get_logger(), "control_frequency must be positive");
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
+    const auto &target_pose = goal->goal_pos.pose;
+    const double q_norm =
+        std::abs(target_pose.orientation.x) +
+        std::abs(target_pose.orientation.y) +
+        std::abs(target_pose.orientation.z) +
+        std::abs(target_pose.orientation.w);
+    const KDL::Rotation target_rotation = (q_norm > 1e-6)
+        ? KDL::Rotation::Quaternion(
+            target_pose.orientation.x,
+            target_pose.orientation.y,
+            target_pose.orientation.z,
+            target_pose.orientation.w
+        )
+        : KDL::Rotation::Identity();
+    const KDL::Frame target_frame(
+        target_rotation,
+        KDL::Vector(
+            target_pose.position.x,
+            target_pose.position.y,
+            target_pose.position.z
+        )
+    );
+
+    KDL::ChainFkSolverPos_recursive fk_solver(chain);
+    KDL::JntArray q_min(chain.getNrOfJoints());
+    KDL::JntArray q_max(chain.getNrOfJoints());
+    KDL::JntArray q_out(chain.getNrOfJoints());
+    for (unsigned int i = 0; i < chain.getNrOfJoints(); ++i)
+    {
+        q_min(i) = -std::numeric_limits<double>::max();
+        q_max(i) = std::numeric_limits<double>::max();
+    }
+
+    if (chain.getNrOfJoints() > 0)
+    {
+        q_min(0) = this->j1_limit_down_;
+        q_max(0) = this->j1_limit_up_;
+    }
+    if (chain.getNrOfJoints() > 1)
+    {
+        q_min(1) = this->j2_limit_down_;
+        q_max(1) = this->j2_limit_up_;
+    }
+    if (chain.getNrOfJoints() > 2)
+    {
+        q_min(2) = this->j3_limit_down_;
+        q_max(2) = this->j3_limit_up_;
+    }
+
+    KDL::ChainIkSolverVel_pinv ik_vel_solver(chain);
+    KDL::ChainIkSolverPos_NR_JL ik_solver(
+        chain,
+        q_min,
+        q_max,
+        fk_solver,
+        ik_vel_solver,
+        100,
+        1e-6
+    );
+
+    const auto seed_candidates = build_seed_candidates(chain.getNrOfJoints(), q_min, q_max);
+    bool found_reachable_solution = false;
+    double best_position_error = std::numeric_limits<double>::max();
+
+    for (const auto & seed : seed_candidates)
+    {
+        KDL::JntArray candidate(chain.getNrOfJoints());
+        if (ik_solver.CartToJnt(seed, target_frame, candidate) < 0)
+        {
+            continue;
+        }
+
+        KDL::Frame reached_frame;
+        if (fk_solver.JntToCart(candidate, reached_frame) < 0)
+        {
+            continue;
+        }
+
+        const double position_error = squared_position_error(reached_frame, target_frame);
+        if (position_error < best_position_error)
+        {
+            best_position_error = position_error;
+            q_out = candidate;
+        }
+
+        if (position_error <= (this->kPosTolerance_ * this->kPosTolerance_))
+        {
+            found_reachable_solution = true;
+            break;
+        }
+    }
+
+    if (!found_reachable_solution)
+    {
+        RCLCPP_ERROR(
+            this->get_logger(),
+            "goal pose is out of reach from the configured joint limits; best squared error = %.6f",
+            best_position_error
+        );
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+
     bool expected = false;
     if (!this->goal_active_.compare_exchange_strong(expected, true)) {
         RCLCPP_ERROR(this->get_logger(), "action server is active");
         return rclcpp_action::GoalResponse::REJECT;
     }
 
-    nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
-    request->goal_pos = goal->goal_pos;
-    request->now_pos = this->now_pos_;
     this->goal_pos_ = goal->goal_pos;
 
     RCLCPP_INFO(this->get_logger(), "arm start to move!");
@@ -113,7 +334,7 @@ rclcpp_action::CancelResponse IdeArmActionServer::handle_cancel(
     const std::shared_ptr<GoalHandleArmMove> goal_handle
 )
 {
-    // todo 位置を元に戻す
+    (void)goal_handle;
     RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
     return rclcpp_action::CancelResponse::ACCEPT;
 }
@@ -155,7 +376,12 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     nhk2026_msgs::srv::ArmPathPlan::Request::SharedPtr request = std::make_shared<nhk2026_msgs::srv::ArmPathPlan::Request>();
     request->goal_pos = goal->goal_pos;
     request->now_pos = this->now_pos_;
+    request->now_joint = this->now_joint_;
     request->waypoints = goal->waypoints;
+    request->max_speed = goal->max_speed;
+    request->max_acc = goal->max_acc;
+    request->control_frequency = this->control_frequency_;
+    request->urdf.data = this->urdf_;
 
     auto future = this->path_client_->async_send_request(request);
     while (rclcpp::ok() && future.wait_for(10ms) != std::future_status::ready)
@@ -181,20 +407,6 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         return;
     }
 
-    this->path_ = future.get()->route;
-    if (this->path_.poses.empty())
-    {
-        result->success = false;
-        result->msg = "planned path is empty";
-        goal_handle->abort(result);
-        this->goal_active_ = false;
-        this->active_goal_handle_.reset();
-        return;
-    }
-
-    KDL::ChainIkSolverPos_LMA ik_solver(this->chain);
-    KDL::JntArray q_init(this->chain.getNrOfJoints());
-    KDL::JntArray q_out(this->chain.getNrOfJoints());
     std_msgs::msg::Float32MultiArray j1_msg;
     std_msgs::msg::Float32MultiArray j2_msg;
     std_msgs::msg::Float32MultiArray j3_msg;
@@ -202,74 +414,109 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
     j2_msg.data.resize(1);
     j3_msg.data.resize(1);
 
-    rclcpp::Rate loop_rate(100.0);
+    rclcpp::Rate loop_rate(static_cast<double>(this->control_frequency_));
     size_t i = 0;
+    const auto response = future.get();
+    if (!response || response->route.empty())
+    {
+        result->success = false;
+        result->msg = "path plan failed";
+        goal_handle->abort(result);
+        this->goal_active_ = false;
+        this->active_goal_handle_.reset();
+        return;
+    }
+
     while (rclcpp::ok())
     {
-        if (i >= this->path_.poses.size())
+        if (i >= response->route.size())
         {
-            result->success = true;
-            result->msg = "goal reached";
-            goal_handle->succeed(result);
-            this->goal_active_ = false;
-            this->active_goal_handle_.reset();
-            return;
+            i = response->route.size() - 1;
         }
 
-        const auto &target_pose = this->path_.poses[i].pose;
-        const double q_norm =
-            std::abs(target_pose.orientation.x) +
-            std::abs(target_pose.orientation.y) +
-            std::abs(target_pose.orientation.z) +
-            std::abs(target_pose.orientation.w);
-        const KDL::Rotation target_rotation = (q_norm > 1e-6)
-            ? KDL::Rotation::Quaternion(
-                target_pose.orientation.x,
-                target_pose.orientation.y,
-                target_pose.orientation.z,
-                target_pose.orientation.w
-            )
-            : KDL::Rotation::Identity();
-        const KDL::Frame target_frame(
-            target_rotation,
-            KDL::Vector(
-                target_pose.position.x,
-                target_pose.position.y,
-                target_pose.position.z
-            )
-        );
-
-        q_init(0) = this->now_joint_.position[0];
-        q_init(1) = this->now_joint_.position[1];
-        q_init(2) = this->now_joint_.position[2];
-
-        if (ik_solver.CartToJnt(q_init, target_frame, q_out) >= 0)
-        {
-            j1_msg.data[0] = static_cast<float>(q_out(0));
-            j2_msg.data[0] = static_cast<float>(q_out(1));
-            j3_msg.data[0] = static_cast<float>(q_out(2));
-            this->j1_motor_publisher_->publish(j1_msg);
-            this->j2_motor_publisher_->publish(j2_msg);
-            this->j3_motor_publisher_->publish(j3_msg);
-        }
-        else
+        const auto &target_joint_state = response->route[i];
+        if (
+            target_joint_state.position.size() < 3 ||
+            target_joint_state.name.size() != target_joint_state.position.size() ||
+            this->joint_positions_.size() < 3
+        )
         {
             result->success = false;
-            result->msg = "ik failed";
+            result->msg = "joint state is invalid";
             goal_handle->abort(result);
             this->goal_active_ = false;
             this->active_goal_handle_.reset();
             return;
         }
 
-        const double distance = std::sqrt(
-            std::pow(this->now_pos_.pose.position.x - target_pose.position.x, 2) +
-            std::pow(this->now_pos_.pose.position.y - target_pose.position.y, 2) +
-            std::pow(this->now_pos_.pose.position.z - target_pose.position.z, 2)
-        );
-        if (distance <= this->kPosTolerance_)
+        bool found_joint1 = false;
+        bool found_joint2 = false;
+        bool found_joint3 = false;
+        std::vector<double> target_positions(3, 0.0);
+        for (size_t joint_index = 0; joint_index < target_joint_state.name.size(); ++joint_index)
+        {
+            const auto &joint_name = target_joint_state.name[joint_index];
+            const auto joint_position = static_cast<float>(target_joint_state.position[joint_index]);
+            if (joint_name == this->joint1_name_)
+            {
+                j1_msg.data[0] = joint_position;
+                target_positions[0] = target_joint_state.position[joint_index];
+                found_joint1 = true;
+            }
+            else if (joint_name == this->joint2_name_)
+            {
+                j2_msg.data[0] = joint_position;
+                target_positions[1] = target_joint_state.position[joint_index];
+                found_joint2 = true;
+            }
+            else if (joint_name == this->joint3_name_)
+            {
+                j3_msg.data[0] = joint_position;
+                target_positions[2] = target_joint_state.position[joint_index];
+                found_joint3 = true;
+            }
+        }
+
+        if (!found_joint1 || !found_joint2 || !found_joint3)
+        {
+            result->success = false;
+            result->msg = "planned joint names are invalid";
+            goal_handle->abort(result);
+            this->goal_active_ = false;
+            this->active_goal_handle_.reset();
+            return;
+        }
+
+        this->j1_motor_publisher_->publish(j1_msg);
+        this->j2_motor_publisher_->publish(j2_msg);
+        this->j3_motor_publisher_->publish(j3_msg);
+
+        const bool is_last_sample = (i + 1 >= response->route.size());
+        if (!is_last_sample)
         {
             ++i;
+        }
+        else
+        {
+            bool reached = true;
+            for (size_t joint_index = 0; joint_index < 3; ++joint_index)
+            {
+                if (std::abs(this->joint_positions_[joint_index] - target_positions[joint_index]) > this->kPosTolerance_)
+                {
+                    reached = false;
+                    break;
+                }
+            }
+
+            if (reached)
+            {
+                result->success = true;
+                result->msg = "success";
+                goal_handle->succeed(result);
+                this->goal_active_ = false;
+                this->active_goal_handle_.reset();
+                return;
+            }
         }
 
         if (goal_handle->is_canceling())
@@ -298,9 +545,9 @@ void IdeArmActionServer::feedback_timer_callback()
     ArmMove::Feedback::SharedPtr feedback = std::make_shared<ArmMove::Feedback>();
     KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::JntArray q_current(chain.getNrOfJoints());
-    q_current(0) = this->now_joint_.position[0];
-    q_current(1) = this->now_joint_.position[1];
-    q_current(2) = this->now_joint_.position[2];
+    q_current(0) = this->joint_positions_[0];
+    q_current(1) = this->joint_positions_[1];
+    q_current(2) = this->joint_positions_[2];
 
     KDL::Frame current_pose;
     int fk_status = fk_solver.JntToCart(q_current, current_pose);
@@ -341,8 +588,6 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
         RCLCPP_WARN(this->get_logger(), "joint size is invalid");
         return;
     }
-    this->joint_subscribe_flag_ = true;
-    this->now_joint_ = *rxdata;
 
     if (!this->robot_description_flag_ || chain.getNrOfJoints() < 3)
     {
@@ -351,9 +596,49 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
     KDL::ChainFkSolverPos_recursive fk_solver(chain);
     KDL::JntArray q_current(chain.getNrOfJoints());
-    q_current(0) = rxdata->position[0];
-    q_current(1) = rxdata->position[1];
-    q_current(2) = rxdata->position[2];
+
+    if (this->joint_positions_.size() < 3)
+    {
+        this->joint_positions_.resize(3);
+    }
+
+    std::vector<double> next_joint_positions(3);
+    int flag = 0;
+
+    const size_t joint_count = std::min(rxdata->name.size(), rxdata->position.size());
+    for (size_t i = 0; i < joint_count; ++i)
+    {
+        const auto &joint_name = rxdata->name[i];
+        if (joint_name == this->joint1_name_)
+        {
+            next_joint_positions[0] = rxdata->position[i];
+            flag += 1;
+        }
+        else if (joint_name == this->joint2_name_)
+        {
+            next_joint_positions[1] = rxdata->position[i];
+            flag += 1;
+        }
+        else if (joint_name == this->joint3_name_)
+        {
+            next_joint_positions[2] = rxdata->position[i];
+            flag += 1;
+        }
+    }
+
+    if (flag < 3) return;
+
+    // Copy joint positions element-wise to avoid std::vector reallocation
+    this->joint_positions_[0] = next_joint_positions[0];
+    this->joint_positions_[1] = next_joint_positions[1];
+    this->joint_positions_[2] = next_joint_positions[2];
+    
+    this->joint_subscribe_flag_ = true;
+    this->now_joint_ = *rxdata;
+
+    q_current(0) = this->joint_positions_[0];
+    q_current(1) = this->joint_positions_[1];
+    q_current(2) = this->joint_positions_[2];
 
     KDL::Frame current_pose;
     if (fk_solver.JntToCart(q_current, current_pose) < 0)
@@ -378,12 +663,14 @@ void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState
 
 void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String::SharedPtr rxdata)
 {
-    this->robot_description_flag_ = true;
+    // Reset flag until we successfully parse and validate the URDF and joint limits
+    this->robot_description_flag_ = false;
 
     KDL::Tree tree;
 
     if (!kdl_parser::treeFromString(rxdata->data, tree)) {
         RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into KDL tree.");
+        return;
     }
 
     const std::string base_link = "arm_base";
@@ -391,7 +678,49 @@ void IdeArmActionServer::robot_description_callback(const std_msgs::msg::String:
 
     if (!tree.getChain(base_link, end_link, chain)) {
         RCLCPP_ERROR(this->get_logger(), ("Failed to extract KDL chain from " + base_link + " to " + end_link).c_str());
+        return;
     }
+
+    this->urdf_ = rxdata->data;
+    urdf::Model model;
+    if (!model.initString(rxdata->data))
+    {
+        RCLCPP_ERROR(this->get_logger(), "Failed to parse URDF into urdf::Model.");
+        return;
+    }
+
+    auto joint1 = model.getJoint(this->joint1_name_);
+    auto joint2 = model.getJoint(this->joint2_name_);
+    auto joint3 = model.getJoint(this->joint3_name_);
+
+    if (!joint1 || !joint2 || !joint3)
+    {
+        RCLCPP_ERROR(this->get_logger(), "URDF is missing one or more configured joints.");
+        return;
+    }
+
+    if (!joint1->limits || !joint2->limits || !joint3->limits)
+    {
+        RCLCPP_ERROR(this->get_logger(), "URDF joints are missing limits; cannot read joint limits.");
+        return;
+    }
+
+    this->j1_limit_up_   = joint1->limits->upper;
+    this->j2_limit_up_   = joint2->limits->upper;
+    this->j3_limit_up_   = joint3->limits->upper;
+
+    this->j1_limit_down_ = joint1->limits->lower;
+    this->j2_limit_down_ = joint2->limits->lower;
+    this->j3_limit_down_ = joint3->limits->lower;
+
+    this->robot_description_flag_ = true;
+
+    RCLCPP_INFO(
+        this->get_logger(),
+        "joint limits: j1[%.6f, %.6f], j2[%.6f, %.6f], j3[%.6f, %.6f]",
+        this->j1_limit_down_, this->j1_limit_up_,
+        this->j2_limit_down_, this->j2_limit_up_,
+        this->j3_limit_down_, this->j3_limit_up_);
 }
 
 int main(int argc, char *argv[])

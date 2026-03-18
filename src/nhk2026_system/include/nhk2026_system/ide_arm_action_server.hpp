@@ -20,6 +20,8 @@
 
 #include <kdl_parser/kdl_parser.hpp>
 
+#include <urdf/model.h>
+
 #include <atomic>
 
 using namespace std::placeholders;
@@ -65,9 +67,22 @@ private:
     float kPosTolerance_;
     bool joint_subscribe_flag_{false};
     bool robot_description_flag_{false};
+    int control_frequency_{20};
     geometry_msgs::msg::PoseStamped goal_pos_;
     geometry_msgs::msg::PoseStamped now_pos_;
     sensor_msgs::msg::JointState now_joint_;
     KDL::Chain chain;
-    nav_msgs::msg::Path path_;
+    std::string joint1_name_;
+    std::string joint2_name_;
+    std::string joint3_name_;
+    double j1_limit_up_;
+    double j2_limit_up_;
+    double j3_limit_up_;
+    double j1_limit_down_;
+    double j2_limit_down_;
+    double j3_limit_down_;
+
+    std::vector<double> joint_positions_;
+
+    std::string urdf_;
 };

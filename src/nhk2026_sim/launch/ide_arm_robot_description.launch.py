@@ -13,7 +13,7 @@ def generate_launch_description():
     package_share = get_package_share_directory("nhk2026_sim")
     world = os.path.join(package_share, "worlds", "arm_plane.world")
     xacro_file = os.path.join(package_share, "urdf", "ide_arm.xacro")
-    spawn_pose = (0.0, 0.0, 0.0, 0.0)
+    spawn_pose = (0.0, 0.0, 0.2, 0.0)
 
     doc = xacro.process_file(xacro_file, mappings={"use_sim": "true"})
     robot_desc = doc.toprettyxml(indent="  ")

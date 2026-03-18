@@ -33,7 +33,7 @@ find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(trac_ik_lib QUIET)
+find_package(urdf REQUIRED)
 
 include_directories(
   include
@@ -72,6 +72,7 @@ ament_target_dependencies(ide_arm_action_server
   orocos_kdl
   kdl_parser
   ament_index_cpp
+  urdf
 )
 install(TARGETS ide_arm_action_server DESTINATION lib/${PROJECT_NAME})
 
