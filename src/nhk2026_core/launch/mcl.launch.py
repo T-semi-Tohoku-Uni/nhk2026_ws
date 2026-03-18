@@ -48,8 +48,8 @@ livox_ros2_params = [
 ]
 
 def generate_launch_description():
-    x = -3.0
-    y = 6.2
+    x = -1.25
+    y = 0.45
     z = 0.40
     theata = 0.0
     frequency = 25.0
