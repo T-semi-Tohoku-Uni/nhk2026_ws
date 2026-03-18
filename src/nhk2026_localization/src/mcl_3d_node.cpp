@@ -186,7 +186,7 @@ namespace mcl {
                 );
 
                 zaxissub_= create_subscription<std_msgs::msg::Int32MultiArray>(
-                    "mcl_select",10,std::bind(&MCL::lidarSelectCallback, this,std::placeholders::_1)
+                    "mcl_select",10,std::bind(&MCL_3D::lidarSelectCallback, this,std::placeholders::_1)
                 );
 
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -515,8 +515,13 @@ namespace mcl {
 
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
-                if (zaxics_ && !zaxics_->data.empty()) {
-                    if (zaxics_->data[0] == 0) return; // 0以外ならMCLを停止
+                if (!zaxics_) {
+                } 
+                else if (!zaxics_->data.empty()) {
+                    if (zaxics_->data[0] == 0) { 
+                        // RCLCPP_INFO(this->get_logger(), "MCL is disabled by mcl_select");
+                        return;
+                    }
                 }
                 
                 if (!cmdVel_) return;
