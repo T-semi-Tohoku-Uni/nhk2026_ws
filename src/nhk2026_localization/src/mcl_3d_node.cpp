@@ -468,7 +468,7 @@ namespace mcl {
                     external_quat_.x = msg->data[1];
                     external_quat_.y = msg->data[2];
                     external_quat_.z = msg->data[3];
-                    has_external_quat_ = true;
+                    //has_external_quat_ = true;
 
                     
                     double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
