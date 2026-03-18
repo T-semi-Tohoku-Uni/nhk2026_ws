@@ -195,7 +195,7 @@ namespace mcl {
                 //     subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
                 // }
 
-                subScan_ = create_subscription<nhk2026_msgs::msg::MultiLaserScan>("/multi_scan",laserScanQos,std::bind(&MCL::laserScanCallback,this,std::placeholders::_1));
+                subScan_ = create_subscription<nhk2026_msgs::msg::MultiLaserScan>("multi_scan",laserScanQos,std::bind(&MCL::laserScanCallback,this,std::placeholders::_1));
                 
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
                 // subOdom_ = create_subscription<nav_msgs::msg::Odometry>(
