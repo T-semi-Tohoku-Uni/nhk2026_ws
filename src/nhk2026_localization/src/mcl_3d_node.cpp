@@ -464,11 +464,19 @@ namespace mcl {
 
             void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
                 if (msg->data.size() >= 4) {
+                    external_quat_.w = msg->data[0];
                     external_quat_.x = msg->data[1];
                     external_quat_.y = msg->data[2];
                     external_quat_.z = msg->data[3];
-                    external_quat_.w = msg->data[0];
-                    //has_external_quat_ = true;
+                    has_external_quat_ = true;
+
+                    
+                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
+                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
+                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
+                    double yaw_deg = yaw_rad * (180.0 / M_PI);
+
+                    RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
                 }
             }
             
@@ -600,7 +608,7 @@ namespace mcl {
 
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
-                RCLCPP_INFO(this->get_logger(), "%.4f %.4f  %.4f %.4f", x, y,z, theta);
+                //RCLCPP_INFO(this->get_logger(), "%.4f %.4f  %.4f %.4f", x, y,z, theta);
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
