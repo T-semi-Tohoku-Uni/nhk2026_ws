@@ -84,13 +84,12 @@ private:
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, -1.57}, goal_handle)) return;
             
-            if (!publish_cmd_vel_until_lidar(0.5,0.0,1,0,10.0, goal_handle)) return;
+            if (!publish_combined_until_lidar(0.3,0.5,0.0,1,0,10.0,goal_handle)) return;
            
             
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
-            if (!publish_cmd_vel_for_duration(0.5, 0.0, 1.0, goal_handle)) return;
-            if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.5, goal_handle)) return;
-            if (!publish_robomas_for_duration(0.0, 0.5, goal_handle)) return;
+            if (!publish_combined_move_for_duration(0.0,0.5,0.0,0.5,goal_handle)) return;
+            if (!publish_combined_move_for_duration(0.0,0.0, 0.0, 0.5, goal_handle)) return;
             count++; 
             result->success = true;
             result->msg = "Step up Completed!";
@@ -343,6 +342,114 @@ private:
         }
 
         return true;
+    }
+
+    bool publish_combined_move_for_duration(
+        float robomas_val, 
+        double linear_y, 
+        double angular_z, 
+        double duration_sec, 
+        const std::shared_ptr<GoalHandleStepMove>& goal_handle) 
+    {
+        auto start_time = this->now();
+        rclcpp::Rate loop_rate(20);
+
+        // 停止用メッセージの準備
+        std_msgs::msg::Float32MultiArray stop_robomas;
+        stop_robomas.data = {0.0f};
+        geometry_msgs::msg::Twist stop_cmd;
+
+        while (rclcpp::ok() && (this->now() - start_time).seconds() < duration_sec) {
+            if (goal_handle->is_canceling()) {
+                // 中断時：両方停止
+                robomas_pub_->publish(stop_robomas);
+                cmd_vel_pub_->publish(stop_cmd);
+                cancel_action(goal_handle, "Canceled during combined movement");
+                return false;
+            }
+
+            // --- Robomas メッセージ作成と送信 ---
+            std_msgs::msg::Float32MultiArray rb_msg;
+            rb_msg.data = {robomas_val};
+            robomas_pub_->publish(rb_msg);
+
+            // --- cmd_vel メッセージ作成と送信 ---
+            geometry_msgs::msg::Twist tw_msg;
+            tw_msg.linear.y = linear_y;
+            tw_msg.angular.z = angular_z;
+            cmd_vel_pub_->publish(tw_msg);
+
+            loop_rate.sleep();
+        }
+
+        // 正常終了時：両方停止
+        robomas_pub_->publish(stop_robomas);
+        cmd_vel_pub_->publish(stop_cmd);
+
+        return true;
+    }
+
+    bool publish_combined_until_lidar(
+        float robomas_val, double linear_y, double angular_z,
+        size_t target_index, int target_value, double timeout_sec,
+        const std::shared_ptr<GoalHandleStepMove>& goal_handle)
+    {
+        auto start_time = this->now();
+        rclcpp::Rate loop_rate(20);
+
+        // 停止用メッセージの準備
+        std_msgs::msg::Float32MultiArray stop_robomas;
+        stop_robomas.data = {0.0f};
+        geometry_msgs::msg::Twist stop_cmd;
+
+        while (rclcpp::ok() && (this->now() - start_time).seconds() < timeout_sec) {
+            // 1. キャンセル監視
+            if (goal_handle->is_canceling()) {
+                robomas_pub_->publish(stop_robomas);
+                cmd_vel_pub_->publish(stop_cmd);
+                cancel_action(goal_handle, "Canceled during combined lidar wait");
+                return false;
+            }
+
+            // 2. LiDAR条件チェック
+            bool condition_met = false;
+            {
+                std::lock_guard<std::mutex> lock(lidar_mutex_);
+                if (target_index < lidar_data_.size()) {
+                    if (lidar_data_[target_index] == target_value) {
+                        condition_met = true;
+                    }
+                }
+            }
+
+            if (condition_met) break; // 条件を満たしたらループ脱出
+
+            // 3. 両方のメッセージをパブリッシュ
+            // Robomas
+            std_msgs::msg::Float32MultiArray rb_msg;
+            rb_msg.data = {robomas_val};
+            robomas_pub_->publish(rb_msg);
+
+            // cmd_vel
+            geometry_msgs::msg::Twist tw_msg;
+            tw_msg.linear.y = linear_y;
+            tw_msg.angular.z = angular_z;
+            cmd_vel_pub_->publish(tw_msg);
+
+            loop_rate.sleep();
+        }
+
+        // 4. 終了処理（必ず停止させる）
+        robomas_pub_->publish(stop_robomas);
+        cmd_vel_pub_->publish(stop_cmd);
+
+        // 5. タイムアウト判定
+        if ((this->now() - start_time).seconds() >= timeout_sec) {
+            abort_action(goal_handle, "Timeout: lidar condition not met (combined)");
+            return false;
+        }
+
+        return true; 
     }
 
     rclcpp::CallbackGroup::SharedPtr callback_group_;
