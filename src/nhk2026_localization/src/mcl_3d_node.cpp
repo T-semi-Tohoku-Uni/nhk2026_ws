@@ -110,7 +110,7 @@ namespace mcl {
                 this->declare_parameter<double>("odomNoise1", 1.5);
                 this->declare_parameter<double>("odomNoise2", 1.0);
                 this->declare_parameter<double>("odomNoise3", 2.0);
-                this->declare_parameter<double>("odomNoise4", 2.0);
+                this->declare_parameter<double>("odomNoise4", 1.0);
                 this->declare_parameter<double>("resampleThreshold", 0.9);
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
