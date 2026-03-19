@@ -38,6 +38,7 @@ public:
         this->leg_client_ = rclcpp_action::create_client<LegMove>(
             this, "step_leg", callback_group_
         );
+        zaxis_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("/zaxis", 10);
 
         rclcpp::QoS reliable_qos = rclcpp::QoS(10) // キューサイズ（履歴）を10に設定
             .reliability(rclcpp::ReliabilityPolicy::Reliable) // 確実に届ける（欠損時は再送）
@@ -74,10 +75,11 @@ private:
 
         if(goal->msg == "step up" && count < 2) {
             RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
-            
+            zaxics_count++;
             // 各関数が false を返した場合は、内部ですでに中断処理(canceled/abort)が呼ばれているのでそのまま抜ける
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
+            publish_zaxis(zaxics_count);
             
             if (!publish_robomas_until_lidar(0.3,0,0,10.0, goal_handle)) return;
            
@@ -100,6 +102,7 @@ private:
         } else if(goal->msg == "step down" && count > -2) {
             RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             count--;
+            zaxics_count--;
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
             if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0, goal_handle)) return;
             
@@ -111,6 +114,7 @@ private:
             if (!publish_robomas_for_duration(-0.3, 1.0, goal_handle)) return;
             
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
+            publish_zaxis(zaxics_count);
             
             if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.2, goal_handle)) return;
             if (!publish_robomas_for_duration(0.0, 0.5, goal_handle)) return;
@@ -454,16 +458,24 @@ private:
         return true; 
     }
 
+    void publish_zaxis(int level) {
+        std_msgs::msg::Int32MultiArray msg;
+        msg.data.push_back(level);
+        zaxis_pub_->publish(msg);
+    }
+
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp_action::Server<StepMove>::SharedPtr action_server_;
     rclcpp_action::Client<LegMove>::SharedPtr leg_client_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     int count; 
+    int zaxics_count = 0;
 
     rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr lidar_sub_;
     std::vector<int> lidar_data_;
     std::mutex lidar_mutex_; // 非同期で配列にアクセスするための鍵
+    rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr zaxis_pub_;
     
 };
 
