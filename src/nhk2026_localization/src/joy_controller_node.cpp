@@ -30,37 +30,40 @@ public:
     }
 
 private:
+    
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        // 1. 段差昇降アクションのトリガーチェック (○ボタン: index 1, ×ボタン: index 0)
+        // 1. ボタン入力の取得
         bool circle_pressed = msg->buttons[1];
         bool cross_pressed = msg->buttons[0];
 
-        if (!is_action_busy_) {
-            if (circle_pressed && !prev_circle_) {
-                send_step_goal("step up");
-            } else if (cross_pressed && !prev_cross_) {
-                send_step_goal("step down");
-            }
+        // --- アクション実行中の場合 ---
+        if (is_action_busy_) {
+            // ボタン状態の更新だけ行い、パブリッシュせずに終了
+            prev_circle_ = circle_pressed;
+            prev_cross_ = cross_pressed;
+            return; 
         }
 
-        // 2. 速度(vel)の計算と出力
-        // アクション実行中(is_action_busy_ == true)は強制的に速度を0にする
+        // --- アクション開始判定 ---
+        if (circle_pressed && !prev_circle_) {
+            // アクション開始前に一度だけ停止信号を送り、手動操作を止める
+            vel_pub_->publish(geometry_msgs::msg::Twist());
+            send_step_goal("step up");
+            return; // send_step_goal内でis_action_busy_がtrueになるため、ここで終了
+        } else if (cross_pressed && !prev_cross_) {
+            vel_pub_->publish(geometry_msgs::msg::Twist());
+            send_step_goal("step down");
+            return;
+        }
+
+        // --- 通常時の速度出力 ---
         geometry_msgs::msg::Twist twist;
-        if (!is_action_busy_) {
-            // joy2Vel のロジックを参考
-            twist.linear.x = msg->axes[1] * 2.0;  // 前後
-            twist.linear.y = msg->axes[0] * 2.0;  // 左右
-            twist.angular.z = msg->axes[3] * 1.0; // 旋回
-            vel_pub_->publish(twist);
-        } else {
-            // アクション中は全項目 0.0 (停止)
-            twist.linear.x = 0.0;
-            twist.linear.y = 0.0;
-            twist.angular.z = 0.0;
-        }
-        
+        twist.linear.x = msg->axes[1] * 2.0;  // 前後
+        twist.linear.y = msg->axes[0] * 2.0;  // 左右
+        twist.angular.z = msg->axes[3] * 1.0; // 旋回
+        vel_pub_->publish(twist);
 
-        // ボタン状態の保存（チャタリング防止）
+        // ボタン状態の保存
         prev_circle_ = circle_pressed;
         prev_cross_ = cross_pressed;
     }
