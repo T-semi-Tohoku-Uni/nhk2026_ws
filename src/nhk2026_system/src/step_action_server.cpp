@@ -353,8 +353,8 @@ private:
     bool joint_subscribe_flag_ = false;
     double kPosTolerance_;
     std::vector<double> target_leg_pos_ = {0.0, 0.0, 0.0};
-    float leg_max_speed_ = 10.0f;
-    float leg_max_acc_ = 10.0f;
+    float leg_max_speed_ = 50.0f;
+    float leg_max_acc_ = 20.0f;
 };
 
 int main(int argc, char **argv) {
