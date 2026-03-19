@@ -51,13 +51,14 @@ private:
             twist.linear.x = msg->axes[1] * 2.0;  // 前後
             twist.linear.y = msg->axes[0] * 2.0;  // 左右
             twist.angular.z = msg->axes[3] * 1.0; // 旋回
+            vel_pub_->publish(twist);
         } else {
             // アクション中は全項目 0.0 (停止)
             twist.linear.x = 0.0;
             twist.linear.y = 0.0;
             twist.angular.z = 0.0;
         }
-        vel_pub_->publish(twist);
+        
 
         // ボタン状態の保存（チャタリング防止）
         prev_circle_ = circle_pressed;
