@@ -41,9 +41,7 @@ public:
         zaxis_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("zaxis", 10);
         robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_robomas", reliable_qos);
         cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", reliable_qos);
-        right_leg_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("right_leg", reliable_qos);
-        left_leg_pub_  = this->create_publisher<std_msgs::msg::Float32MultiArray>("left_leg", reliable_qos);
-        back_leg_pub_  = this->create_publisher<std_msgs::msg::Float32MultiArray>("back_leg", reliable_qos);
+        legs_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("step_legs", reliable_qos);
 
         count = 0;
         
@@ -93,7 +91,7 @@ private:
         const auto goal = goal_handle->get_goal();
         auto result = std::make_shared<StepMove::Result>();
 
-        rclcpp::Rate loop_rate(10.0); // 50Hzで全体を回す
+        rclcpp::Rate loop_rate(10.0); // 10Hzで全体を回す
 
         int step = 0;
         auto state_start_time = this->now();
@@ -115,7 +113,6 @@ private:
                 switch (step) {
                     case 0:
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
-                         
                         if (leg_reached()) { zaxics_count++; next_step(step, state_start_time); }
                         break;
                     case 1:
@@ -159,7 +156,6 @@ private:
                         return;
                 }
 
-               
                 publish_all(target_robomas, target_cmd_vel);
                 loop_rate.sleep();
                 RCLCPP_INFO(this->get_logger(), "step: %d", step);
@@ -230,7 +226,6 @@ private:
     }
 
  
-    // 全トピックを一斉にパブリッシュする
     void publish_all(float target_robomas, geometry_msgs::msg::Twist target_cmd_vel) {
         std_msgs::msg::Float32MultiArray rb_msg;
         rb_msg.data = {target_robomas};
@@ -238,25 +233,16 @@ private:
         cmd_vel_pub_->publish(target_cmd_vel);
 
         if (joint_subscribe_flag_) {
-            bool right_reached = std::fabs(now_joint_.position[0] - target_leg_pos_[0]) <= kPosTolerance_;
-            bool left_reached  = std::fabs(now_joint_.position[1] - target_leg_pos_[1]) <= kPosTolerance_;
-            bool back_reached  = std::fabs(now_joint_.position[2] - target_leg_pos_[2]) <= kPosTolerance_;
-
-            if (!right_reached) {
-                std_msgs::msg::Float32MultiArray cmd;
-                cmd.data = {static_cast<float>(target_leg_pos_[0]), leg_max_speed_, leg_max_acc_};
-                right_leg_pub_->publish(cmd);
-            }
-            if (!left_reached) {
-                std_msgs::msg::Float32MultiArray cmd;
-                cmd.data = {static_cast<float>(target_leg_pos_[1]), leg_max_speed_, leg_max_acc_};
-                left_leg_pub_->publish(cmd);
-            }
-            if (!back_reached) {
-                std_msgs::msg::Float32MultiArray cmd;
-                cmd.data = {static_cast<float>(target_leg_pos_[2]), leg_max_speed_, leg_max_acc_};
-                back_leg_pub_->publish(cmd);
-            }
+            std_msgs::msg::Float32MultiArray legs_cmd;
+            // [速度, 加速度, 右, 左, 後ろ] の順番にデータを詰める
+            legs_cmd.data = {
+                leg_max_speed_,
+                leg_max_acc_,
+                static_cast<float>(target_leg_pos_[0]),
+                static_cast<float>(target_leg_pos_[1]),
+                static_cast<float>(target_leg_pos_[2])
+            };
+            legs_pub_->publish(legs_cmd);
         }
     }
 
@@ -314,10 +300,9 @@ private:
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr zaxis_pub_;
     rclcpp::TimerBase::SharedPtr zaxis_timer_;
 
-    // 脚用トピック
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr right_leg_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr left_leg_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr back_leg_pub_;
+    // ★ 脚用の統合トピック
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr legs_pub_;
+
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr lidar_sub_;
     
