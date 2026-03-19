@@ -52,6 +52,10 @@ public:
         lidar_sub_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
             "/onedlidar", 10, std::bind(&StepActionServer::lidar_callback, this, _1), sub_opt
         );
+
+        // コンストラクタ内に追加
+        zaxis_timer_ = this->create_wall_timer(
+            10ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
     }
 
 private:
@@ -68,6 +72,10 @@ private:
     void handle_accepted(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         std::thread{std::bind(&StepActionServer::execute, this, _1), goal_handle}.detach();
     }
+    void publish_zaxis_periodic() {
+        // 現在の段数（count）を常に配信
+        publish_zaxis(this->count);
+    }
 
     void execute(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         const auto goal = goal_handle->get_goal();
@@ -75,11 +83,12 @@ private:
 
         if(goal->msg == "step up" && count < 2) {
             RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
-            zaxics_count++;
+            
             // 各関数が false を返した場合は、内部ですでに中断処理(canceled/abort)が呼ばれているのでそのまま抜ける
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
+            zaxics_count++;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
-            publish_zaxis(zaxics_count);
+            
             
             if (!publish_robomas_until_lidar(0.3,0,0,10.0, goal_handle)) return;
            
@@ -102,7 +111,7 @@ private:
         } else if(goal->msg == "step down" && count > -2) {
             RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス開始 (count: %d) ===", count);
             count--;
-            zaxics_count--;
+           
             if (!send_leg_goal_sync({6.1 + count * 6.28, 6.1 + count * 6.28, 0.0}, goal_handle)) return;
             if (!publish_cmd_vel_until_lidar(-0.5,0.0,1,1,10.0, goal_handle)) return;
             
@@ -112,9 +121,9 @@ private:
             //if (!publish_robomas_until_lidar(-0.3,0,1,10.0, goal_handle)) return;
             if (!send_leg_goal_sync({4.57 + count * 6.28, 4.57 + count * 6.28, -1.57}, goal_handle)) return;
             if (!publish_robomas_for_duration(-0.3, 1.0, goal_handle)) return;
-            
+            zaxics_count--;
             if (!send_leg_goal_sync({3.14 + count * 6.28, 3.14 + count * 6.28, 0.0}, goal_handle)) return;
-            publish_zaxis(zaxics_count);
+            
             
             if (!publish_cmd_vel_for_duration(0.0, 0.0, 0.2, goal_handle)) return;
             if (!publish_robomas_for_duration(0.0, 0.5, goal_handle)) return;
@@ -476,6 +485,9 @@ private:
     std::vector<int> lidar_data_;
     std::mutex lidar_mutex_; // 非同期で配列にアクセスするための鍵
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr zaxis_pub_;
+
+    // メンバ変数に追加
+    rclcpp::TimerBase::SharedPtr zaxis_timer_;
     
 };
 
