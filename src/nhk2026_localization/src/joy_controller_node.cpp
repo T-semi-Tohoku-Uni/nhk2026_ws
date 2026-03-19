@@ -20,7 +20,7 @@ public:
 
         // --- アクションクライアントの設定 ---
         // step_action_server.cpp で定義されたサーバーを呼び出す
-        this->action_client_ = rclcpp_action::create_client<StepMove>(this, "step_leg_sequence");
+        this->action_client_ = rclcpp_action::create_client<StepMove>(this, "/step_leg_sequence");
 
         // --- サブスクライバーの設定 ---
         this->joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
