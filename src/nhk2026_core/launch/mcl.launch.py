@@ -184,6 +184,13 @@ def generate_launch_description():
         ],
     )
 
+    mcl_manage = Node(
+        package="nhk2026_localization",
+        executable="mcl_manage",
+        name="mcl_manage",
+        output="screen",
+    )
+
     map_publisher = Node(
         package="nhk2026_localization",
         executable="map_mesh_publisher",
@@ -236,4 +243,5 @@ def generate_launch_description():
         step_leg_worker,
         step_leg_sequencer,
         jsp_node,
+        mcl_manage,
     ])
