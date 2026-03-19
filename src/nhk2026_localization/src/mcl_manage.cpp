@@ -11,50 +11,49 @@ class MclManage : public rclcpp::Node {
         : Node("mcl_manage_node", options), current_zaxis_level_(0), has_pose_(false) {
             
             pub_mcl_select_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("mcl_select", 10);
-            
-     
             pub_initial_pose_ = this->create_publisher<geometry_msgs::msg::Pose>("initial_pose", 10);
             
-            // Subscribers
             sub_zaxis_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
                 "zaxis", 10, std::bind(&MclManage::zaxisCallback, this, std::placeholders::_1)
             );
             
-            // 現在の推定位置を保存するために購読
             sub_pose_ = this->create_subscription<geometry_msgs::msg::Pose>(
                 "pose", 10, std::bind(&MclManage::poseCallback, this, std::placeholders::_1)
+            );
+
+            // 1. タイマーの初期化 (例: 100ms = 10Hz でパブリッシュ)
+            timer_ = this->create_wall_timer(
+                std::chrono::milliseconds(100),
+                std::bind(&MclManage::timerCallback, this)
             );
 
             RCLCPP_INFO(this->get_logger(), "MCL Manage Node initialized. Default Z-axis level: 0");
         }
 
     private:
-        // 現在の推定姿勢を常に保持する
+        // 2. タイマーから呼ばれるコールバック関数
+        void timerCallback() {
+            publishMclSelect(current_zaxis_level_);
+        }
+
         void poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
             current_pose_ = *msg;
             has_pose_ = true;
         }
 
-       
         void zaxisCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg) {
             if (msg->data.empty()) {
-                RCLCPP_WARN(this->get_logger(), "Received empty array on /zacis topic.");
-
+                RCLCPP_WARN(this->get_logger(), "Received empty array on /zaxis topic.");
                 return;
             }
             int new_level = msg->data[0];
-            publishMclSelect(new_level);
             
+            // 3. 値が変化した時だけリセット処理（initial_pose発行）を行う
             if (new_level != current_zaxis_level_) {
                 RCLCPP_INFO(this->get_logger(), "Z-axis level changed: %d -> %d", current_zaxis_level_, new_level);
                 
-                
-               
-
-             
                 if (has_pose_) {
                     geometry_msgs::msg::Pose new_initial_pose = current_pose_;
-                    
                     
                     if (new_level == 0) {
                         new_initial_pose.position.z = 0.0;
@@ -91,6 +90,9 @@ class MclManage : public rclcpp::Node {
         
         rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr sub_zaxis_;
         rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr sub_pose_;
+
+        // 4. タイマー用変数
+        rclcpp::TimerBase::SharedPtr timer_;
     };
 
 } 
