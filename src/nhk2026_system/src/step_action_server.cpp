@@ -162,6 +162,7 @@ private:
                
                 publish_all(target_robomas, target_cmd_vel);
                 loop_rate.sleep();
+                RCLCPP_INFO(this->get_logger(), "step: %d", step);
             }
 
         } else if (goal->msg == "step down" && count > -2) {
