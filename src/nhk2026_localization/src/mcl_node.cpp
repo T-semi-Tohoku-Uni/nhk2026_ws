@@ -722,7 +722,7 @@ namespace mcl {
                 } 
                 else if (!zaxics_->data.empty()) {
                     if (zaxics_->data[0] != 0) { 
-                        RCLCPP_INFO(this->get_logger(), "MCL is disabled by mcl_select");
+                        //RCLCPP_INFO(this->get_logger(), "MCL is disabled by mcl_select");
                         return;
                     }
                 }
