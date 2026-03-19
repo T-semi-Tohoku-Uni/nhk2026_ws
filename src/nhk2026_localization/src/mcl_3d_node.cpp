@@ -164,7 +164,7 @@ namespace mcl {
                 pubPath_ = this->create_publisher<nav_msgs::msg::Path>("trajectory", qos_default);
                 particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
-                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", qos_default);
+                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan3d_cloud", qos_default);
 
                 // サブスクライバの処理
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
@@ -481,7 +481,7 @@ namespace mcl {
                     double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
                     double yaw_deg = yaw_rad * (180.0 / M_PI);
 
-                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+                    RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
                 }
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
