@@ -43,12 +43,13 @@ class MclManage : public rclcpp::Node {
                 return;
             }
             int new_level = msg->data[0];
+            publishMclSelect(new_level);
             
             if (new_level != current_zaxis_level_) {
                 RCLCPP_INFO(this->get_logger(), "Z-axis level changed: %d -> %d", current_zaxis_level_, new_level);
                 
                 
-                publishMclSelect(new_level);
+               
 
              
                 if (has_pose_) {
