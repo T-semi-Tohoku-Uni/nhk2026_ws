@@ -17,7 +17,7 @@ class MclManage : public rclcpp::Node {
             
             // Subscribers
             sub_zaxis_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
-                "zacis", 10, std::bind(&MclManage::zaxisCallback, this, std::placeholders::_1)
+                "zaxis", 10, std::bind(&MclManage::zaxisCallback, this, std::placeholders::_1)
             );
             
             // 現在の推定位置を保存するために購読
