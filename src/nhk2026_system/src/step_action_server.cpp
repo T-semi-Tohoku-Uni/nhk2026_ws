@@ -74,7 +74,7 @@ private:
     }
     void publish_zaxis_periodic() {
         // 現在の段数（count）を常に配信
-        publish_zaxis(this->count);
+        publish_zaxis(this->zaxics_count);
     }
 
     void execute(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
