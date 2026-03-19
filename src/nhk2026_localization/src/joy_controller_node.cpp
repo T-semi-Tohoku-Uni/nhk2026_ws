@@ -69,7 +69,7 @@ private:
     }
 
     void send_step_goal(const std::string & command) {
-        if (!this->action_client_->wait_for_action_server(std::chrono::seconds(2))) {
+        if (!this->action_client_->wait_for_action_server(std::chrono::seconds(5))) {
             RCLCPP_ERROR(this->get_logger(), "Step Action Server not available");
             return;
         }
