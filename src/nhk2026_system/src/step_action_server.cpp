@@ -182,54 +182,33 @@ private:
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_robomas = 0.0f; target_cmd_vel.linear.y = -0.5;
+                        target_robomas = -0.3f; 
+                        target_cmd_vel.linear.y = -0.5;
                         if (check_lidar(1, 1)) next_step(step, state_start_time);
                         break;
                     case 2:
-                        target_cmd_vel.linear.y = 0.0;
-                        if (elapsed_sec(state_start_time) > 0.2) next_step(step, state_start_time);
-                        break;
-                    case 3:
                         target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, -1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
-                    case 4:
+                    case 3:
                         target_robomas = -0.3f; target_cmd_vel.linear.y = -0.5;
                         if (check_lidar(0, 1)) next_step(step, state_start_time);
                         break;
-                    case 5:
-                        target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
-                        if (elapsed_sec(state_start_time) > 0.2) next_step(step, state_start_time);
-                        break;
-                    case 6:
+                    case 4:
                         target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
-                    case 7:
-                        target_robomas = -0.3f; target_cmd_vel.linear.y = 0.0;
+                    case 5:
+                        target_robomas = -0.3f; 
+                        target_cmd_vel.linear.y = 0.0;
                         if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
                         break;
-                    case 8:
+                    case 6:
                         target_robomas = 0.0f;
-                        if (elapsed_sec(state_start_time) > 0.2) next_step(step, state_start_time);
-                        break;
-                    case 9:
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
-                    case 10:
-                        target_cmd_vel.linear.y = 0.0;
-                        if (elapsed_sec(state_start_time) > 0.2) next_step(step, state_start_time);
-                        break;
-                    case 11:
-                        target_robomas = 0.0f; // 元コードが publish_robomas_for_duration(0.0, 0.5) だったので0でキープ
-                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
-                        break;
-                    case 12:
-                        target_cmd_vel.linear.y = 0.0;
-                        if (elapsed_sec(state_start_time) > 0.2) next_step(step, state_start_time);
-                        break;
-                    case 13:
+                    case 7:
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
@@ -240,7 +219,7 @@ private:
                         RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス正常終了 ===");
                         return;
                 }
-
+                RCLCPP_INFO(this->get_logger(), "step: %d", step);
                 publish_all(target_robomas, target_cmd_vel);
                 loop_rate.sleep();
             }
