@@ -76,6 +76,7 @@ ros_node_executable(mcl_3d_node src/mcl_3d_node.cpp)
 ros_node_executable(map_mesh_publisher src/map_mesh_publisher.cpp)
 ros_node_executable(mcl_manage src/mcl_manage.cpp)
 ros_node_executable(joy_controller_node src/joy_controller_node.cpp)
+ros_node_executable(intergrated_mcl_node src/intergrated_mcl_node.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)
