@@ -51,7 +51,7 @@ def _ensure_can0_up(context, *args, **kwargs):
             "type", "can",
             "bitrate", "1000000",
             "dbitrate", "2000000",
-            "fd", "on",
+            "fd", "on", "restart-ms" , "100"
         ],
     ]
     for cmd in cmds:
