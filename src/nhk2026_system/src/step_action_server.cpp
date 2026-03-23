@@ -205,7 +205,7 @@ private:
                         break;
                     case 6:
                         target_robomas = 0.0f;
-                        target_leg_pos_ = {3.5 + count * 6.28, 3.5 + count * 6.28, 0.5};
+                        target_leg_pos_ = {3.5 + count * 6.28, 3.5 + count * 6.28, -0.5};
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
                     case 7:
