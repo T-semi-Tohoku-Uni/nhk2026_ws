@@ -215,6 +215,7 @@ private:
                         break;
                     case 8:
                          if (elapsed_sec(state_start_time) > 0.3) next_step(step, state_start_time);
+                         break;
                     case 9:
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
