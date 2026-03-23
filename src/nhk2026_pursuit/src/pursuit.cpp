@@ -380,7 +380,7 @@ class FollowNode: public rclcpp::Node {
 
             reset_pose_client_->async_send_request(
                 request,
-                [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                [this, request, index](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
                 {
                     auto response = future.get();
                     RCLCPP_INFO(this->get_logger(),
@@ -388,7 +388,8 @@ class FollowNode: public rclcpp::Node {
                                 response->success ? "true" : "false");
                     if (response->success){
                         is_jump_ = false;
-                        resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                        current_waypoint_index_ = index; // ジャンプ後のインデックスに直接設定
+                        // resetWaypointIndex(request->pose.position.x, request->pose.position.y);
                     }
                 }
             );
