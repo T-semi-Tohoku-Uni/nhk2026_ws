@@ -343,7 +343,7 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_jump_){
-                publishZero();
+                // publishZero();
                 jumpZ();
                 return;
             }
