@@ -143,7 +143,7 @@ private:
                         break;
                     case 7:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.5;
-                        if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
+                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                         break;
                     case 8:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
@@ -205,7 +205,7 @@ private:
                         break;
                     case 6:
                         target_robomas = 0.0f;
-                        target_leg_pos_ = {3.5 + count * 6.28, 3.5 + count * 6.28, 0.36};
+                        target_leg_pos_ = {3.5 + count * 6.28, 3.5 + count * 6.28, 0.5};
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
                     case 7:
