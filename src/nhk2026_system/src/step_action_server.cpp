@@ -201,21 +201,21 @@ private:
                     case 5:
                         target_robomas = -0.3f; 
                         target_cmd_vel.linear.y = 0.0;
-                        if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
+                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                         break;
                     case 6:
                         target_robomas = 0.0f;
-                        target_leg_pos_ = {3.4 + count * 6.28, 3.4 + count * 6.28, 0.26};
+                        target_leg_pos_ = {3.5 + count * 6.28, 3.5 + count * 6.28, 0.36};
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
                     case 7:
+                        if (elapsed_sec(state_start_time) > 0.6) next_step(step, state_start_time);
+                        break;
+                    case 8:
                         target_robomas = 0.0f;
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
-                    case 8:
-                         if (elapsed_sec(state_start_time) > 0.3) next_step(step, state_start_time);
-                         break;
                     case 9:
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
