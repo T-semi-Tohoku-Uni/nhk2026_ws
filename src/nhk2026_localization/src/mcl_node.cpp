@@ -266,6 +266,7 @@ namespace mcl {
                 pose.set__x(request->pose.position.x);
                 pose.set__y(request->pose.position.y);
                 pose.set__theta(yaw);
+                current_z_ = request->pose.position.z;
 
                 // initalize mclPose
                 setMCLPose(pose);
@@ -1139,7 +1140,7 @@ namespace mcl {
                 geometry_msgs::msg::Pose pose_msg;
                 pose_msg.position.x = x;
                 pose_msg.position.y = y;
-                pose_msg.position.z = 0.0;
+                pose_msg.position.z = current_z_;
 
                 tf2::Quaternion q_pose;
                 q_pose.setRPY(0.0, 0.0, theta);
@@ -1596,6 +1597,9 @@ namespace mcl {
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
+
+            //z
+            double current_z_ = 0.0;
 
     };
 }

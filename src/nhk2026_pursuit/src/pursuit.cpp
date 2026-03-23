@@ -411,9 +411,7 @@ class FollowNode: public rclcpp::Node {
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
             //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            double current_path_z = path_[current_waypoint_index_].pose.position.z;
-            if (current_path_z > 0 && current_path_z != last_teleport_z_) {
-                last_teleport_z_ = current_path_z; 
+            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0) {
                 ignition::msgs::Pose req;
                 ignition::msgs::Boolean rep;
                 bool result;
