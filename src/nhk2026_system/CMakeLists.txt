@@ -156,6 +156,20 @@ install(
   DESTINATION share/${PROJECT_NAME}
 )
 
+add_executable(takano_hand_server src/takano_hand_server.cpp)
+ament_target_dependencies(takano_hand_server
+  rclcpp 
+  rclcpp_action 
+  std_msgs 
+  nhk2026_msgs
+)
+
+install(TARGETS
+  takano_hand_server
+  # (ここには他のノード名も並んでいるはずです)
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 # -----------------------------------------------------------------------------
 # Testing
 # -----------------------------------------------------------------------------

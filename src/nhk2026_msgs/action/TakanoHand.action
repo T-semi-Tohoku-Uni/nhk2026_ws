@@ -1,0 +1,6 @@
+int32 count
+---
+bool success
+string msg
+---
+string msg
