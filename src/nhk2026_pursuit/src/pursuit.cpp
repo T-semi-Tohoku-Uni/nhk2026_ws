@@ -272,7 +272,8 @@ class FollowNode: public rclcpp::Node {
             ignition::transport::Node node;
             //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
             //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0) {
+            // current_waypoint_index_+1がpathのサイズを超える場合は、最後のwaypointに合わせる。
+            // if (path_[current_waypoint_index_+1].pose.position.z - pose_.position.z > 0) {
                 ignition::msgs::Pose req;
                 ignition::msgs::Boolean rep;
                 bool result;
@@ -324,7 +325,7 @@ class FollowNode: public rclcpp::Node {
                         
                     }
                 );
-            }
+            //}
         }
 
         void controlLoop() {
@@ -343,7 +344,7 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_jump_){
-                // publishZero();
+                publishZero();
                 jumpZ();
                 return;
             }
@@ -469,15 +470,15 @@ class FollowNode: public rclcpp::Node {
                 );        
             }
 
-            while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
-                double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
-                double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
-                if (tx == 0 && ty == 0) {
-                    current_waypoint_index_++;
-                } else {
-                    break;
-                }
-            }
+            // while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
+            //     double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
+            //     double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
+            //     if (tx == 0 && ty == 0) {
+            //         current_waypoint_index_++;
+            //     } else {
+            //         break;
+            //     }
+            // }
 
             // ignition::transport::Node node;
             // //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
