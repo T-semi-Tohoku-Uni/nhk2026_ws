@@ -318,8 +318,7 @@ class FollowNode: public rclcpp::Node {
                                     response->success ? "true" : "false");
                         if (response->success){
                             is_jump_ = false;
-                            current_waypoint_index_++;
-                            // resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                            resetWaypointIndex(request->pose.position.x, request->pose.position.y);
                         }
         
                         
