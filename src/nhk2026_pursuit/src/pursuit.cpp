@@ -268,63 +268,130 @@ class FollowNode: public rclcpp::Node {
             return a - M_PI;
         }
 
-        void jumpZ(){
-            ignition::transport::Node node;
-            //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
-            //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            // current_waypoint_index_+1がpathのサイズを超える場合は、最後のwaypointに合わせる。
-            if (path_[current_waypoint_index_+1].pose.position.z - pose_.position.z > 0) {
-                ignition::msgs::Pose req;
-                ignition::msgs::Boolean rep;
-                bool result;
-                req.set_name("robot");
-                ignition::msgs::Vector3d* position = req.mutable_position();
-                ignition::msgs::Quaternion* orientation = req.mutable_orientation();
-                orientation->set_x(0.0);
-                orientation->set_y(0.0);
-                orientation->set_z(0.0);
-                orientation->set_w(1.0);
-                position->set_x(-1.825);
-                position->set_y(3.3);
-                position->set_z(0.21);
+        // void jumpZ(){
+        //     ignition::transport::Node node;
+        //     //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
+        //     //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
+        //     // current_waypoint_index_+1がpathのサイズを超える場合は、最後のwaypointに合わせる。
+
+        //     int index = current_waypoint_index_ + 1;
+        //     while (index + 1 < static_cast<int>(path_.size()) &&
+        //         path_[index].pose.position.z != path_[index+1].pose.position.z) {
+        //         index++;
+        //     }
+
+        //     if (path_[current_waypoint_index_+1].pose.position.z != pose_.position.z) {
+        //         ignition::msgs::Pose req;
+        //         ignition::msgs::Boolean rep;
+        //         bool result;
+        //         req.set_name("robot");
+        //         ignition::msgs::Vector3d* position = req.mutable_position();
+        //         ignition::msgs::Quaternion* orientation = req.mutable_orientation();
+        //         orientation->set_x(0.0);
+        //         orientation->set_y(0.0);
+        //         orientation->set_z(0.0);
+        //         orientation->set_w(1.0);
+        //         position->set_x(-1.825);
+        //         position->set_y(3.3);
+        //         position->set_z(0.21);
 
                 
-                bool executed = node.Request(
-                    "/world/nhk2026/set_pose",
-                    req,
-                    1000,
-                    rep,
-                    result
-                );
+        //         bool executed = node.Request(
+        //             "/world/nhk2026/set_pose",
+        //             req,
+        //             1000,
+        //             rep,
+        //             result
+        //         );
 
-                std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
-                    std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
-                request->pose.position.x = -1.825;
-                request->pose.position.y = 3.3;
-                request->pose.position.z = 0.21;
-                request->pose.orientation.x = 0.0;
-                request->pose.orientation.y = 0.0;
-                request->pose.orientation.z = 0.0;
-                request->pose.orientation.w = 1.0;
+        //         std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
+        //             std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
+        //         request->pose.position.x = -1.825;
+        //         request->pose.position.y = 3.3;
+        //         request->pose.position.z = 0.21;
+        //         request->pose.orientation.x = 0.0;
+        //         request->pose.orientation.y = 0.0;
+        //         request->pose.orientation.z = 0.0;
+        //         request->pose.orientation.w = 1.0;
 
 
-                reset_pose_client_->async_send_request(
-                    request,
-                    [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
-                    {
-                        auto response = future.get();
-                        RCLCPP_INFO(this->get_logger(),
-                                    "Service call succeeded: %s",
-                                    response->success ? "true" : "false");
-                        if (response->success){
-                            is_jump_ = false;
-                            resetWaypointIndex(request->pose.position.x, request->pose.position.y);
-                        }
+        //         reset_pose_client_->async_send_request(
+        //             request,
+        //             [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+        //             {
+        //                 auto response = future.get();
+        //                 RCLCPP_INFO(this->get_logger(),
+        //                             "Service call succeeded: %s",
+        //                             response->success ? "true" : "false");
+        //                 if (response->success){
+        //                     is_jump_ = false;
+        //                     resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+        //                 }
         
                         
-                    }
-                );
+        //             }
+        //         );
+        //     }
+        // }
+
+        void jumpZ(){
+            ignition::transport::Node node;
+
+            // zが変化しなくなるまでインデックスを進める
+            int index = current_waypoint_index_ + 1;
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                path_[index].pose.position.z != path_[index+1].pose.position.z) {
+                index++;
             }
+
+            // zが変化しなくなったindexの座標をteleport先に設定
+            double target_x = path_[index].pose.position.x;
+            double target_y = path_[index].pose.position.y;
+            double target_z = path_[index].pose.position.z;
+
+            ignition::msgs::Pose req;
+            ignition::msgs::Boolean rep;
+            bool result;
+            req.set_name("robot");
+            ignition::msgs::Vector3d* position = req.mutable_position();
+            ignition::msgs::Quaternion* orientation = req.mutable_orientation();
+            orientation->set_x(0.0);
+            orientation->set_y(0.0);
+            orientation->set_z(0.0);
+            orientation->set_w(1.0);
+            position->set_x(target_x);
+            position->set_y(target_y);
+            position->set_z(target_z);
+
+            bool executed = node.Request(
+                "/world/nhk2026/set_pose",
+                req, 1000, rep, result
+            );
+
+            std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
+                std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
+            request->pose.position.x = target_x;
+            request->pose.position.y = target_y;
+            request->pose.position.z = target_z;
+            request->pose.orientation.x = 0.0;
+            request->pose.orientation.y = 0.0;
+            request->pose.orientation.z = 0.0;
+            request->pose.orientation.w = 1.0;
+
+            reset_pose_client_->async_send_request(
+                request,
+                [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                {
+                    auto response = future.get();
+                    RCLCPP_INFO(this->get_logger(),
+                                "Service call succeeded: %s",
+                                response->success ? "true" : "false");
+                    if (response->success){
+                        is_jump_ = false;
+                        resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                    }
+                }
+            );
         }
 
         void controlLoop() {
