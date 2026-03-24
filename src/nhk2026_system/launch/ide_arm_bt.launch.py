@@ -34,4 +34,10 @@ def generate_launch_description():
                 {"wait_for_server_timeout_ms": wait_for_server_timeout_ms},
             ],
         ),
+        Node(
+            package="nhk2026_system",
+            executable="ide_arm_bt_action_server",
+            name="ide_arm_action_server",
+            output="screen",
+        )
     ])
