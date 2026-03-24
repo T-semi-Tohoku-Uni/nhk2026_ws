@@ -100,11 +100,23 @@ private:
             if (step < goal->count) {
                 switch (step) {
                     case 0:
-                        target_hand_pos_ = {-4.77, 0.0, 0.0}; // 手を初期位置へ
+                        target_hand_pos_ = {-4.77, 0.0, 1.0}; // 手を初期位置へ
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_hand_pos_ = {-3.18, 1.57, 1.0}; // 手を次の位置へ
+                        target_hand_pos_ = {-4.77, -1.57, -1.0}; // 手を次の位置へ
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 2:
+                        target_hand_pos_ = {-4.77, -1.57,1.0}; // 手を次の位置へ
+                        if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
+                        break;
+                    case 3:
+                        target_hand_pos_ = {-4.77, -3.18, 1.0}; // 手を次の位置へ
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 4:
+                        target_hand_pos_ = {-0.5, -3.18, 1.0}; // 手を次の位置へ
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
@@ -159,6 +171,10 @@ private:
     void next_step(int& step, rclcpp::Time& start_time) {
         step++;
         start_time = this->now();
+    }
+
+    double elapsed_sec(const rclcpp::Time& start_time) {
+        return (this->now() - start_time).seconds();
     }
 
     void stop_all() {
