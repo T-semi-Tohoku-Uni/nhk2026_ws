@@ -84,6 +84,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("slow_rotate_speed_", 0.4);
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
+            this->declare_parameter<double>("offset_z_", 0.2);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -105,6 +106,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("slow_rotate_speed_", slow_rotate_speed_);
             this->get_parameter("accel_angle_", accel_angle_);
             this->get_parameter("stop_angle_", stop_angle_);
+            this->get_parameter("offset_z_", offset_z_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -361,7 +363,7 @@ class FollowNode: public rclcpp::Node {
             orientation->set_w(1.0);
             position->set_x(target_x);
             position->set_y(target_y);
-            position->set_z(target_z);
+            position->set_z(target_z + offset_z_); // 少し上にオフセットしてテレポート
 
             bool executed = node.Request(
                 "/world/nhk2026/set_pose",
@@ -372,7 +374,7 @@ class FollowNode: public rclcpp::Node {
                 std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
             request->pose.position.x = target_x;
             request->pose.position.y = target_y;
-            request->pose.position.z = target_z;
+            request->pose.position.z = target_z + offset_z_; // 少し上にオフセットしてテレポート
             request->pose.orientation.x = 0.0;
             request->pose.orientation.y = 0.0;
             request->pose.orientation.z = 0.0;
@@ -866,6 +868,7 @@ class FollowNode: public rclcpp::Node {
 
         //teleport 
         bool is_jump_ = false;
+        double offset_z_ = 0.02; 
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
