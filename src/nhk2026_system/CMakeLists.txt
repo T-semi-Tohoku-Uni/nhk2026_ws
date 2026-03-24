@@ -134,6 +134,7 @@ install(TARGETS kaneko_arm_action_server DESTINATION lib/${PROJECT_NAME})
 # -----------------------------------------------------------------------------
 add_library(bt_library
   src/bt/bt_move_arm.cpp
+  src/bt/bt_vacuum.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
