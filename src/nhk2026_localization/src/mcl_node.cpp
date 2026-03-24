@@ -26,6 +26,7 @@
 #include <tf2/LinearMath/Matrix3x3.h>
 #include "nhk2026_msgs/msg/multi_laser_scan.hpp"
 #include <geometry_msgs/msg/pose.hpp> 
+#include "std_msgs/msg/int32_multi_array.hpp" 
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -114,6 +115,8 @@ namespace mcl {
                 this->mapZIndex_ = this->get_parameter("mapZIndex").as_int();
                 this->get_parameter("lidar_threshold", LIDAR_THTRSHOLD_);
 
+               
+
                 particles_.resize(particleNum_);
                 pro_.resize(particleNum_);
                 mapOrigin_.resize(3, 0.0);
@@ -145,6 +148,10 @@ namespace mcl {
                 // set mesurementModel
                 measurementModel_ = MeasurementModel::LikelihoodFieldModel;
 
+                subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
+                    "initial_pose", 10, std::bind(&MCL::initialPoseCallback, this, std::placeholders::_1)
+                );
+
                 //  mapの読み込みパブリッシュ
                 rclcpp::QoS map_qos(rclcpp::KeepLast(1));
                 map_qos.transient_local().reliable();
@@ -155,7 +162,11 @@ namespace mcl {
                 // setup subscriper
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
-                    "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL::cmdVelCallback, this, std::placeholders::_1)
+                    "cmd_vel_feedback", cmdVelQos, std::bind(&MCL::cmdVelCallback, this, std::placeholders::_1)
+                );
+
+                zaxissub_= create_subscription<std_msgs::msg::Int32MultiArray>(
+                    "mcl_select",10,std::bind(&MCL::lidarSelectCallback, this,std::placeholders::_1)
                 );
 
                
@@ -181,7 +192,7 @@ namespace mcl {
                 //     subScanBack_ = create_subscription<sensor_msgs::msg::LaserScan>("/scan_back", laserScanQos,[this](const sensor_msgs::msg::LaserScan::SharedPtr msg) {this->laserScanCallback(msg, 2);});
                 // }
 
-                subScan_ = create_subscription<nhk2026_msgs::msg::MultiLaserScan>("/multi_scan",laserScanQos,std::bind(&MCL::laserScanCallback,this,std::placeholders::_1));
+                subScan_ = create_subscription<nhk2026_msgs::msg::MultiLaserScan>("multi_scan",laserScanQos,std::bind(&MCL::laserScanCallback,this,std::placeholders::_1));
                 
                 // rclcpp::QoS callbackQos(rclcpp::KeepLast(10));
                 // subOdom_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -280,6 +291,9 @@ namespace mcl {
             }
             void odomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
                 odom_=msg;
+            }
+            void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
+                zaxics_ = msg;
             }
             
             
@@ -545,6 +559,37 @@ namespace mcl {
                 cv::imwrite("debug_pose_on_map.png", debug_pose_img);
             }
 
+            void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
+                // 1. 推定位置を更新
+                geometry_msgs::msg::Pose2D new_pose;
+                new_pose.x = msg->position.x;
+                new_pose.y = msg->position.y;
+
+                // クォータニオンからYaw角へ変換
+                tf2::Quaternion q(
+                    msg->orientation.x,
+                    msg->orientation.y,
+                    msg->orientation.z,
+                    msg->orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+                new_pose.theta = yaw;
+
+                setMCLPose(new_pose);
+
+                // 2. パーティクルを再散布 (ノイズ量は適宜調整)
+                geometry_msgs::msg::Pose2D resetNoise;
+                resetNoise.set__x(0.1);      // xの標準偏差 [m]
+                resetNoise.set__y(0.1);      // yの標準偏差 [m]
+                resetNoise.set__theta(M_PI / 36.0); // thetaの標準偏差 (5度)
+
+                resetParticlesDistribution(resetNoise);
+
+                RCLCPP_INFO(this->get_logger(), "Pose reset: x=%.2f, y=%.2f, theta=%.2f", 
+                            mclPose_.x, mclPose_.y, mclPose_.theta);
+            }
+
             void publishVoxelMap(const std::vector<uint8_t>& map_data, hsize_t dim_x, hsize_t dim_y, hsize_t dim_z) {
                 // インデックスの範囲チェック
                 if (this->mapZIndex_ < 0 || this->mapZIndex_ >= (int)dim_z) {
@@ -553,7 +598,7 @@ namespace mcl {
                 }
 
                 int target_z = this->mapZIndex_;
-  // 実距離(メートル)へ変換して格納 (CV_64F)
+                // 実距離(メートル)へ変換して格納 (CV_64F)
                 // 1. 指定されたZ面にある障害物(値が0以外)の数をカウントする
                 size_t num_points = 0;
                 
@@ -626,6 +671,15 @@ namespace mcl {
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
                 // 並進速度・回転速度を取得
+
+                if (!zaxics_) {
+                } 
+                else if (!zaxics_->data.empty()) {
+                    if (zaxics_->data[0] != 0) { 
+                        //RCLCPP_INFO(this->get_logger(), "MCL is disabled by mcl_select");
+                        return;
+                    }
+                }
                 if (!cmdVel_) {
                     return;
                 }
@@ -686,7 +740,7 @@ namespace mcl {
 
                 updateParticles(delta_);
                 printParticlesMakerOnRviz2();
-                caculateMeasurementModel(*scan_);
+                caculateMeasurementModel(scan_);
                 estimatePose();
                 resampleParticles();
                 printTrajectoryOnRviz2();
@@ -785,165 +839,76 @@ namespace mcl {
                 return cloud_out;
             }
 
-            void caculateMeasurementModel(nhk2026_msgs::msg::MultiLaserScan multi_scan) {
-                totalLikelihood_ = 0.0;
-                std::double_t maxLikelihood = 0.0;
-
-                std::vector<std::vector<double>> likelihood_table;
-                likelihood_table.reserve(particleNum_);
-                
-                for (std::size_t i = 0; i < particles_.size(); i++ ) {
-                    std::double_t likelihood = 0.0;
-                    // 尤度場モデル
-                    if (measurementModel_ == MeasurementModel::LikelihoodFieldModel) {
-                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), scan_)));
-                    }
-                    if (i == 0) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = 0;
-                    } else if (maxLikelihood < likelihood) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = i;
-                    }
-                    // RCLCPP_INFO(this->get_logger(), "%lf", maxLikelihood);
-                }
-                // RCLCPP_INFO(this->get_logger(), "%lf", maxLikelihood);
-                //昔の計算方法
-                // std::double_t w_sum = 0;
-                // for(std::size_t i=0; i<likelihood_table.size(); i++ ) {
-                //     std::double_t w = 0;
-                //     for (std::size_t j=0; j<likelihood_table.size(); j++ ) {
-                //         std::double_t loglikefood_sum=0;
-                //         for (std::size_t k=0; k<likelihood_table[i].size(); k++ ) {
-                //             // if (std::isnan(likelihood_table[j][k]) || std::isnan(likelihood_table[i][k])) continue;
-                //             // if (likelihood_table[j][k]<1e-12 || likelihood_table[i][k]<1e-12) continue;
-                //             loglikefood_sum += std::log(likelihood_table[j][k]/likelihood_table[i][k]);
-                //             // RCLCPP_INFO(this->get_logger(), "j=%d k=%d %.4f", j, k, likelihood_table[j][k]);
-                //         }
-                //         w += std::exp(loglikefood_sum);
-                //     }
-                //     w = 1/w;
-                //     particles_[i].setW(w);
-                //     w_sum += w*w;
-                // }
-                // effectiveSampleSize_ = 1.0 / w_sum;
-
-                std::vector<double> log_weights(particles_.size(),0.0);
+            void caculateMeasurementModel(const nhk2026_msgs::msg::MultiLaserScan::SharedPtr& multi_scan) {
+                std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
-                for (std::size_t i = 0; i < likelihood_table.size(); i++) {
-                    for (std::size_t k = 0; k < likelihood_table[i].size(); k++) {
-                        log_weights[i] += std::log(likelihood_table[i][k]); 
-                    }
-                    
-                    if (log_weights[i] > max_log_weight) {
-                        max_log_weight = log_weights[i];
-                    }
-
-                    std::double_t w_sum = 0.0;
-                    std::vector<double> linear_weights(particles_.size(), 0.0);
-
-                    for (std::size_t i = 0; i < particles_.size(); i++) {
-                       
-                        linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
-                        w_sum += linear_weights[i];
-                    }
-
-                    
-                    std::double_t w_sq_sum = 0.0;
-                    for (std::size_t i = 0; i < particles_.size(); i++) {
-                        double normalized_w = linear_weights[i] / w_sum;
-                        particles_[i].setW(normalized_w);
-                        w_sq_sum += normalized_w * normalized_w;
-                    }
-
-                    effectiveSampleSize_ = 1.0 / w_sq_sum;
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), multi_scan);
+                    if (log_weights[i] > max_log_weight) max_log_weight = log_weights[i];
                 }
+
                 
+                double w_sum = 0.0;
+                std::vector<double> linear_weights(particleNum_);
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
+                    w_sum += linear_weights[i];
+                }
+
+                double w_sq_sum = 0.0;
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    double normalized_w = linear_weights[i] / w_sum;
+                    particles_[i].setW(normalized_w);
+                    w_sq_sum += normalized_w * normalized_w;
+                }
+                effectiveSampleSize_ = 1.0 / w_sq_sum;
             }
 
-            std::vector<std::double_t> caculateLikelihoodFieldModel (geometry_msgs::msg::Pose2D pose, const nhk2026_msgs::msg::MultiLaserScan::SharedPtr multi_scan) {
-
-                //
-                scan_endpoints_.clear();
-                //
-
-                std::double_t var = lfmSigma_*lfmSigma_;
-                std::double_t normConst = 1.0 / (sqrt(2.0*M_PI*var));
-                std::vector<double> p_vector;
-
-                std::double_t pMax = 1.0 / mapResolution_; // <- mapResolution_で割る必要なくない？
-                std::double_t w = 0.0;
-
-                // sensor_msgs::msg::PointCloud2 pointCloud = layerScan2PointCloud(scan);
-                // sensor_msgs::PointCloud2ConstIterator<float> it_x(pointCloud, "x");
-                // sensor_msgs::PointCloud2ConstIterator<float> it_y(pointCloud, "y");
-                // sensor_msgs::PointCloud2ConstIterator<float> it_z(pointCloud, "z");
+            // 戻り値を vector<double> から double (合計対数尤度) に変更
+            double caculateLogLikelihood(geometry_msgs::msg::Pose2D pose, const nhk2026_msgs::msg::MultiLaserScan::SharedPtr multi_scan) {
+                double total_log_p = 0.0;
+                double var = lfmSigma_ * lfmSigma_;
+                double normConst = 1.0 / (sqrt(2.0 * M_PI * var));
 
                 for (const auto& scan : multi_scan->scans) {
-                    std::double_t pRand = 1.0 / scan.range_max * mapResolution_;
-                    std::string frame_id = scan.header.frame_id;
-                    // ★追加: frame_idからどのLiDARのデータかを判定 (0:LD, 1:Front, 2:Back)
-                    // RCLCPP_INFO(this->get_logger(), "Received frame_id: '%s'", frame_id.c_str());
-                    int current_lidar_pose = 1; // デフォルトはFront
-                    if (scan.header.frame_id.find("lidar_back") != std::string::npos) {
-                        current_lidar_pose = 2;
-                    } else if (scan.header.frame_id.find("ldlidar") != std::string::npos) {
-                        current_lidar_pose = 0;
-                    }
+                    double pRand = 1.0 / scan.range_max * mapResolution_;
+                    int current_lidar_pose = 1; // 判別ロジックは維持
+                    if (scan.header.frame_id.find("lidar_back") != std::string::npos) current_lidar_pose = 2;
+                    else if (scan.header.frame_id.find("ldlidar") != std::string::npos) current_lidar_pose = 0;
 
                     for (std::size_t i = 0; i < scan.ranges.size(); i += scanStep_) {
-                        std::double_t r = scan.ranges[i];
-                        
-                        
-                        if (std::isnan(r)  || r < scan.range_min || scan.range_max < r) {
-                            p_vector.push_back(zRand_*pRand); 
+                        double r = scan.ranges[i];
+                        if (std::isnan(r) || r < scan.range_min || scan.range_max < r) {
+                            total_log_p += std::log(zRand_ * pRand); // 無効なビーム
                             continue;
                         }
 
-                        std::double_t theta_lidar = scan.angle_min + ((std::double_t)(i))*scan.angle_increment;
-                        
-                        // LD-Lidarの場合の角度補正 
-                        if (current_lidar_pose == 0 && !is_sim_) {
-                            theta_lidar -= 3.0*M_PI/2.0;
-                        }
+                        double theta_lidar = scan.angle_min + (double(i) * scan.angle_increment);
+                        if (current_lidar_pose == 0 && !is_sim_) theta_lidar -= 1.5 * M_PI;
 
                         double x_odom, y_odom;
                         int u, v;
-                        // 判定した current_lidar_pose を渡す
                         lidarpose2uv(r, theta_lidar, pose, &x_odom, &y_odom, &u, &v, current_lidar_pose);
 
-                        if (0 <= u && u < mapWidth_ && 0 <= v && v < mapHeight_) {
-                            std::double_t sdf_val = (std::double_t)distField_.at<std::double_t>(v, u);
-                            std::double_t d = 0.0;
-
-                            double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
-                            if (sdf_val > dynamic_obstacle_threshold) {
-                                p_vector.push_back(zRand_*pRand);
-                                continue; // 尤度計算の対象から外し、ペナルティを与えない
-                            }
-                            if (sdf_val >= 0) {
-                                d = sdf_val;
-                            } else {
-                                std::double_t penetration_penalty = 1; 
-                                d = std::abs(sdf_val) + penetration_penalty;
-                            }
+                        double p = zRand_ * pRand;
+                        if (u >= 0 && u < mapWidth_ && v >= 0 && v < mapHeight_) {
+                            double sdf_val = distField_.at<double>(v, u);
                             
-                            std::double_t pHit = normConst * exp(-(d*d)/(2.0*var))*mapResolution_;
-                            std::double_t p = zHit_*pHit + zRand_*pRand;
+                            // 動的障害物除外ロジック
+                            if (sdf_val > 0.5) { // dynamic_obstacle_threshold
+                                total_log_p += std::log(p);
+                                continue;
+                            }
 
-                            if (p > 1.0) p = 1.0;
-                            p_vector.push_back(p);
-                        } else {
-                            p_vector.push_back(zRand_*pRand);
+                            double d = (sdf_val >= 0) ? sdf_val : (std::abs(sdf_val) + 1.0); // penetration_penalty=1.0
+                            double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
+                            p = std::min(1.0, zHit_ * pHit + zRand_ * pRand);
                         }
+                        total_log_p += std::log(std::max(p, 1e-10)); // log(0) 回避
                     }
                 }
-                return p_vector;
-
-
-               
-              
+                return total_log_p;
             }
 
             void lidarpose2uv(double range, double theta, geometry_msgs::msg::Pose2D pose, double *x_odom, double *y_odom, int *u, int *v,int lidar_pose) {
@@ -953,15 +918,15 @@ namespace mcl {
                     x_lidar = range*cos(theta) + 0.084;
                     y_lidar = range*sin(theta) + 0.013 - 0.013;
                 } else if(lidar_pose == 1){
-                    x_lidar = range * cos(-1 * theta + M_PI/2) - 0.094036;
-                    y_lidar = range * sin(-1 * theta + M_PI/2) + 0.2255;
+                    x_lidar = range * cos(-1 * theta + M_PI/2) - 0.157;
+                    y_lidar = range * sin(-1 * theta + M_PI/2) + 0.2885;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }else if(lidar_pose == 2){
                     
                     //x_lidar = range * cos(theta );
                     //y_lidar = range * sin(theta );
-                    x_lidar = range * cos(theta ) + 0.2084;
-                    y_lidar = range * sin(theta ) - 0.2999;
+                    x_lidar = range * cos(theta ) + 0.27;
+                    y_lidar = range * sin(-1 * theta ) - 0.3615;
                     //RCLCPP_INFO(this->get_logger(), "fpeafreafkoera");
                 }
 
@@ -1499,6 +1464,8 @@ namespace mcl {
             rclcpp::Subscription<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr subScan_;
             nhk2026_msgs::msg::MultiLaserScan::SharedPtr scan_;
 
+           
+
             bool is_sim_;
             int lidar_select;
             double LIDAR_THTRSHOLD_;
@@ -1537,13 +1504,19 @@ namespace mcl {
             rclcpp::TimerBase::SharedPtr timer_;
             rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
 
+            rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
+
             std::vector<SensorTransform> lidar_transforms_ = std::vector<SensorTransform>(3);
+            rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
+            std_msgs::msg::Int32MultiArray::SharedPtr zaxics_;
 
             // private 変数として定義
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; // LaserScanから変更
             void timer_callback() {
                 RCLCPP_INFO(this->get_logger(), "In timer loop");
             }
+
+           
     };
 }
 

@@ -37,13 +37,13 @@
   <link name="lidar_back"/>
 
   <joint name="base_link_to_lidar_front" type="fixed">
-    <origin xyz="-0.094036 0.2255 0.0755" rpy="3.14159 0 1.5707"/>
+    <origin xyz="-0.157 0.2885 0.0755" rpy="3.14159 0 1.5707"/>
     <parent link="base_link"/>
     <child link="lidar_front"/>
   </joint>
 
   <joint name="base_link_to_lidar_back" type="fixed">
-    <origin xyz="0.2084 -0.2999 0.0755" rpy="0 0 0"/>
+    <origin xyz="0.270 -0.3615 0.0755" rpy="3.14159 0 0"/>
     <parent link="base_link"/>
     <child link="lidar_back"/>
   </joint>
@@ -139,7 +139,7 @@
   <link name="livox_frame"/>
 
   <joint name="base_link_to_livox" type="fixed">
-    <origin xyz="-0.25 0.30 0.80" rpy="3.14159 0 0"/>
+    <origin xyz="-0.325 -0.03 0.423" rpy="3.14159 0 -1.57"/>
     <parent link="base_link"/>
     <child link="livox_frame"/>
   </joint>

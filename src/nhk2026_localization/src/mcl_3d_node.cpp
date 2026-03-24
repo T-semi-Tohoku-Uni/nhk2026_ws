@@ -20,6 +20,8 @@
 #include <tf2_sensor_msgs/tf2_sensor_msgs.hpp>
 #include <fstream> 
 #include <geometry_msgs/msg/pose2_d.hpp>
+#include "std_msgs/msg/float32_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp" 
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -107,9 +109,9 @@ namespace mcl {
                 this->declare_parameter<std::double_t>("zHit", 0.9);
                 this->declare_parameter<std::double_t>("zRand", 0.1);
                 this->declare_parameter<double>("odomNoise1", 1.5);
-                this->declare_parameter<double>("odomNoise2", 0.05);
-                this->declare_parameter<double>("odomNoise3", 0.8);
-                this->declare_parameter<double>("odomNoise4", 0.01);
+                this->declare_parameter<double>("odomNoise2", 1.0);
+                this->declare_parameter<double>("odomNoise3", 2.0);
+                this->declare_parameter<double>("odomNoise4", 1.0);
                 this->declare_parameter<double>("resampleThreshold", 0.9);
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
@@ -160,19 +162,31 @@ namespace mcl {
                 rclcpp::QoS qos_default(10);
                 pubPose_ = this->create_publisher<geometry_msgs::msg::Pose>("pose", qos_default);
                 pubPath_ = this->create_publisher<nav_msgs::msg::Path>("trajectory", qos_default);
-                particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud", qos_default);
+                particleMarker_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("cloud", qos_default);
                 vel_marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("velocity_marker", qos_default);
-                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/scan_cloud", qos_default);
+                filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan3d_cloud", qos_default);
 
                 // サブスクライバの処理
                 rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
-                    "/cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
+                    "cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
                 );
 
                 auto lidarQos = rclcpp::SensorDataQoS();
                 subCloud_ = create_subscription<sensor_msgs::msg::PointCloud2>(
-                    "/livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
+                    "livox/lidar", lidarQos, std::bind(&MCL_3D::pointCloudCallback, this, std::placeholders::_1)
+                );
+
+                subInitialPose_ = create_subscription<geometry_msgs::msg::Pose>(
+                    "initial_pose", 10, std::bind(&MCL_3D::initialPoseCallback, this, std::placeholders::_1)
+                );
+
+                subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
+                    "quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
+                );
+
+                zaxissub_= create_subscription<std_msgs::msg::Int32MultiArray>(
+                    "mcl_select",10,std::bind(&MCL_3D::lidarSelectCallback, this,std::placeholders::_1)
                 );
 
                 tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(*this);
@@ -205,6 +219,123 @@ namespace mcl {
                 cmdVel_ = msg;
             }
 
+            // void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+            //     // 古い点群データをクリア
+            //     local_points_.clear();
+
+            //     sensor_msgs::msg::PointCloud2 cloud_out;
+
+            //     // 1. 座標変換 (LiDAR座標系 -> base_footprint)
+            //     try {
+            //         geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
+            //             "base_footprint", 
+            //             msg->header.frame_id, 
+            //             tf2::TimePointZero
+            //         );
+            //         tf2::doTransform(*msg, cloud_out, transform);
+
+            //     } catch (const tf2::TransformException & ex) {
+            //         RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+            //             "Could not transform %s to base_footprint: %s", 
+            //             msg->header.frame_id.c_str(), ex.what());
+            //         return;
+            //     }
+
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
+
+            //     int step = 1; 
+            //     int count = 0;
+
+            //     // --- 動的床面フィルタのための準備 ---
+            //     std::unordered_map<int, int> z_histogram;
+            //     std::vector<Point3D> valid_range_points;
+            //     const double BIN_SIZE = 0.05; // 5cm刻みで高さを評価
+
+            //     // --- 第1パス: 範囲内の点群抽出とヒストグラムの作成 ---
+            //     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+            //         count++;
+            //         if (count % step != 0) continue;
+
+            //         float x = *iter_x;
+            //         float y = *iter_y;
+            //         float z = *iter_z;
+
+            //         if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
+                    
+            //         // 距離と高さの基本フィルタ (0.45m〜3.0mの範囲、高さ1.5m以下)
+            //         double dist_sq = x*x + y*y + z*z;
+            //         if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; 
+            //         if (z > 1.5) continue;
+
+            //         // マップ上の絶対的なZ座標を計算
+            //         double z_map = z + mclPose_.position.z;
+
+            //         Point3D pt;
+            //         pt.x = x;
+            //         pt.y = y;
+            //         pt.z = z;
+            //         valid_range_points.push_back(pt);
+
+            //         // ヒストグラムのカウントを増やす
+            //         int z_bin = static_cast<int>(std::floor(z_map / BIN_SIZE));
+            //         z_histogram[z_bin]++;
+            //     }
+
+            //     // --- 閾値の計算 ---
+            //     // 有効な点群全体の5%が同じ高さに集中していれば「床」とみなす (最低でも50点は必要とする)
+            //     int floor_threshold = std::max(50, static_cast<int>(valid_range_points.size() * 0.03));
+
+            //     // --- 第2パス: 床面と判定された高さの点群を除外 ---
+            //     for (const auto& pt : valid_range_points) {
+            //         double z_map = pt.z + mclPose_.position.z;
+            //         int z_bin = static_cast<int>(std::floor(z_map / BIN_SIZE));
+
+            //         // その点の高さの集中度が閾値を超えている場合（床）はスキップ
+            //         // ※少し傾斜がある環境で弾き残しが出る場合は、隣のビンも確認すると強力になります：
+            //         // if (z_histogram[z_bin] > floor_threshold || z_histogram[z_bin - 1] > floor_threshold || z_histogram[z_bin + 1] > floor_threshold)
+            //         if (z_histogram[z_bin] > floor_threshold) {
+            //             continue;
+            //         }
+
+            //         local_points_.push_back(pt);
+            //     }
+
+            //     // デバッグ用: 抽出結果の確認
+            //     // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
+            //     //    "Total valid points: %zu, Extracted non-floor points: %zu", 
+            //     //    valid_range_points.size(), local_points_.size());
+
+            //     // --- 抽出した点群のパブリッシュ ---
+            //     if (!local_points_.empty()) {
+            //         sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
+            //         filtered_cloud_msg.header.stamp = msg->header.stamp; 
+            //         filtered_cloud_msg.header.frame_id = "base_footprint"; 
+            //         filtered_cloud_msg.height = 1;
+            //         filtered_cloud_msg.width = local_points_.size();
+            //         filtered_cloud_msg.is_dense = true;
+            //         filtered_cloud_msg.is_bigendian = false;
+
+            //         sensor_msgs::PointCloud2Modifier modifier(filtered_cloud_msg);
+            //         modifier.setPointCloud2FieldsByString(1, "xyz");
+            //         modifier.resize(local_points_.size());
+
+            //         sensor_msgs::PointCloud2Iterator<float> out_x(filtered_cloud_msg, "x");
+            //         sensor_msgs::PointCloud2Iterator<float> out_y(filtered_cloud_msg, "y");
+            //         sensor_msgs::PointCloud2Iterator<float> out_z(filtered_cloud_msg, "z");
+
+            //         for (const auto& pt : local_points_) {
+            //             *out_x = pt.x;
+            //             *out_y = pt.y;
+            //             *out_z = pt.z;
+            //             ++out_x; ++out_y; ++out_z;
+            //         }
+
+            //         filtered_cloud_pub_->publish(filtered_cloud_msg);
+            //     }
+            // }
+            
             void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
                 // 古い点群データをクリア
                 local_points_.clear();
@@ -262,6 +393,10 @@ namespace mcl {
                         continue;
                     }
 
+                    // if (std::abs(z_map - 0.00) <= 0.03){
+                    //     continue;
+                    // }
+
                     Point3D pt;
                     pt.x = x;
                     pt.y = y;
@@ -300,6 +435,58 @@ namespace mcl {
                     filtered_cloud_pub_->publish(filtered_cloud_msg);
                 }
             }
+
+            void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
+                // 1. 推定位置 (mclPose_) を受信したメッセージで更新
+                // msgは Pose型なので、そのまま position と orientation をコピー
+                mclPose_.position = msg->position;
+                mclPose_.orientation = msg->orientation;
+
+                // クォータニオンからYaw角を抽出（パーティクル散布時の計算用）
+                tf2::Quaternion q(
+                    msg->orientation.x,
+                    msg->orientation.y,
+                    msg->orientation.z,
+                    msg->orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+
+                // 2. パーティクルを再散布
+                // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
+                double noise_x = 0.1;           // xの標準偏差 [m]
+                double noise_y = 0.1;           // yの標準偏差 [m]
+                double noise_yaw = 5.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double initial_w = 1.0 / static_cast<double>(particles_.size());
+
+                // 既存の散布関数を呼び出す（引数をシンプルに整理）
+                resetParticlesDistribution(noise_x, noise_y, noise_yaw, initial_w);
+
+                RCLCPP_INFO(this->get_logger(), 
+                            "Pose reset: x=%.2f, y=%.2f, z=%.2f, yaw=%.2f", 
+                            mclPose_.position.x, mclPose_.position.y, mclPose_.position.z, yaw);
+            }
+
+            void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+                if (msg->data.size() >= 4) {
+                    external_quat_.w = msg->data[0];
+                    external_quat_.x = msg->data[1];
+                    external_quat_.y = msg->data[2];
+                    external_quat_.z = msg->data[3];
+                    //has_external_quat_ = true;
+
+                    
+                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
+                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
+                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
+                    double yaw_deg = yaw_rad * (180.0 / M_PI);
+
+                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+                }
+            }
+            void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
+                zaxics_ = msg;
+            }
             
             double randNormal(double sigma) {
                 if (sigma <= 0.0) return 0.0;
@@ -328,6 +515,14 @@ namespace mcl {
 
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
+                if (!zaxics_) {
+                } 
+                else if (!zaxics_->data.empty()) {
+                    if (zaxics_->data[0] == 0) { 
+                        //RCLCPP_INFO(this->get_logger(), "MCL3d is disabled by mcl_select");
+                        return;
+                    }
+                }
                 
                 if (!cmdVel_) return;
 
@@ -429,31 +624,51 @@ namespace mcl {
 
                     tf_broadcaster_->sendTransform(tf_msg);
                 }
-                RCLCPP_INFO(this->get_logger(), "%.4f %.4f  %.4f %.4f", x, y,z, theta);
+                //RCLCPP_INFO(this->get_logger(), "%.4f %.4f  %.4f %.4f", x, y,z, theta);
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
-                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y; 
+                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y;
                 std::double_t dy2 = delta.angular.z * delta.angular.z;
 
-                std::double_t sigma_xy = std::sqrt(odomNoise1_*dd2 + odomNoise2_*dy2);
-                std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                // 位置のノイズ用標準偏差
+                std::double_t sigma_xy = std::sqrt(odomNoise1_ * dd2 + odomNoise2_ * dy2);
+                
+                // 外部クォータニオンからYawを取得（一度だけ計算）
+                double ext_yaw = 0.0;
+                if (has_external_quat_) {
+                    tf2::Quaternion q(external_quat_.x, external_quat_.y, external_quat_.z, external_quat_.w);
+                    tf2::Matrix3x3 m(q);
+                    double r, p;
+                    m.getRPY(r, p, ext_yaw);
+                }
 
-                for (size_t i = 0; i < this->particles_.size(); i++ ) {
+                for (size_t i = 0; i < this->particles_.size(); i++) {
                     std::double_t dx = delta.linear.x + randNormal(sigma_xy);
                     std::double_t dy = delta.linear.y + randNormal(sigma_xy);
-                    std::double_t dtheta = delta.angular.z + randNormal(sigma_theta);
-
-                    std::double_t theta_ = this->particles_[i].getTheta();
-                    std::double_t x_ = this->particles_[i].getX() + std::cos(theta_)*dx - std::sin(theta_)*dy;
-                    std::double_t y_ = this->particles_[i].getY() + std::sin(theta_)*dx + std::cos(theta_)*dy;
-                    std::double_t z_ = this->particles_[i].getZ(); 
                     
-                    theta_ += dtheta;
-                    particles_[i].setPose(x_, y_, z_, theta_);
+                    std::double_t theta_old = this->particles_[i].getTheta();
+                    
+                    // 移動後の位置計算
+                    std::double_t x_ = this->particles_[i].getX() + std::cos(theta_old) * dx - std::sin(theta_old) * dy;
+                    std::double_t y_ = this->particles_[i].getY() + std::sin(theta_old) * dx + std::cos(theta_old) * dy;
+                    std::double_t z_ = this->particles_[i].getZ();
+
+                    // 向きの更新
+                    std::double_t theta_new;
+                    if (has_external_quat_) {
+                        // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
+                        // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
+                        theta_new = ext_yaw + randNormal(0.005); // 0.005rad程度の微小ノイズ
+                    } else {
+                        // 外部姿勢がない場合は従来のオドメトリ
+                        std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                        theta_new = theta_old + delta.angular.z + randNormal(sigma_theta);
+                    }
+
+                    particles_[i].setPose(x_, y_, z_, theta_new);
                 }
             }
-
             void resampleParticles(void) {
                 double threshold = ((double)particles_.size()) * resampleThreshold_;
                 if (effectiveSampleSize_ > threshold) return;
@@ -729,116 +944,93 @@ namespace mcl {
             }
 
             void caculateMeasurementModel() {
-                // local_points_ が空の場合は尤度計算をスキップ
                 if (local_points_.empty()) return;
 
-                totalLikelihood_ = 0.0;
-                std::double_t maxLikelihood = 0.0;
-
-                std::vector<std::vector<double>> likelihood_table;
-                likelihood_table.reserve(particleNum_);
-                
-                for (std::size_t i = 0; i < particles_.size(); i++ ) {
-                    std::double_t likelihood = 0.0;
-                    
-                    if (measurementModel_ == MeasurementModel::LikelihoodFieldModel) {
-                        likelihood_table.push_back(std::move(caculateLikelihoodFieldModel(particles_[i].getPose(), local_points_)));
-                    }
-                    if (i == 0) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = 0;
-                    } else if (maxLikelihood < likelihood) {
-                        maxLikelihood = likelihood;
-                        maxLikelihoodParticleIdx_ = i;
-                    }
-                }
-
-                std::vector<double> log_weights(particles_.size(),0.0);
+                // 各パーティクルの合計対数尤度を格納する配列 (サイズはパーティクル数のみ)
+                std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
-                for (std::size_t i = 0; i < likelihood_table.size(); i++) {
-                    for (std::size_t k = 0; k < likelihood_table[i].size(); k++) {
-                        log_weights[i] += std::log(likelihood_table[i][k]); 
-                    }
+                // 1. 各パーティクルの対数尤度を直接計算
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    // ここで vector を返さず、double を受け取る
+                    log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
                     }
-                } 
-
-                
-                std::double_t w_sum = 0.0;
-                std::vector<double> linear_weights(particles_.size(), 0.0);
-
-                for (std::size_t j = 0; j < particles_.size(); j++) { // 変数名を j に変更
-                    linear_weights[j] = std::exp(log_weights[j] - max_log_weight);
-                    w_sum += linear_weights[j];
                 }
 
-                std::double_t w_sq_sum = 0.0;
-                for (std::size_t j = 0; j < particles_.size(); j++) {
-                    double normalized_w = linear_weights[j] / w_sum;
-                    particles_[j].setW(normalized_w);
+                // 2. 正規化処理 (Log-Sum-Expトリック)
+                double w_sum = 0.0;
+                std::vector<double> linear_weights(particleNum_);
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    linear_weights[i] = std::exp(log_weights[i] - max_log_weight);
+                    w_sum += linear_weights[i];
+                }
+
+                double w_sq_sum = 0.0;
+                for (std::size_t i = 0; i < particles_.size(); i++) {
+                    double normalized_w = linear_weights[i] / w_sum;
+                    particles_[i].setW(normalized_w);
                     w_sq_sum += normalized_w * normalized_w;
                 }
+
+                // 有効サンプルサイズの更新
                 effectiveSampleSize_ = 1.0 / w_sq_sum;
-                
-                
             }
 
-            std::vector<double> caculateLikelihoodFieldModel(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
-                std::vector<double> p_vector;
-                p_vector.reserve(local_points.size());
-
+            double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
+                double total_log_p = 0.0;
                 double var = lfmSigma_ * lfmSigma_;
                 double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
                 
-                double scan_range_max = 30.0; 
-                double pRand = 1.0 / scan_range_max * mapResolution_;
+                // パラメータ
+                const double scan_range_max = 30.0; 
+                const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
-                // 修正: パーティクルごとのYawで回転させる処理 (事前回転を行わない場合)
+                // パーティクルの姿勢から回転行列の要素を計算 (ループ外で1回だけ)
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
-                double roll, pitch, yaw;
-                m.getRPY(roll, pitch, yaw);
+                double r, p, yaw;
+                m.getRPY(r, p, yaw);
                 double cos_theta = std::cos(yaw);
                 double sin_theta = std::sin(yaw);
 
                 for (const auto& pt : local_points) {
-                    double map_x, map_y, map_z;
-                    // ロボット座標系の点(pt)をパーティクルのYawで回転させ、マップ上の位置(pose)を足す
-                    map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
-                    map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
-                    map_z = pt.z + pose.position.z; 
+                    // ロボット座標系からマップ座標系への変換
+                    double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
+                    double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
+                    double map_z = pt.z + pose.position.z; 
 
                     int u, v, w;
                     xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
 
-                    if (u >= 0 && u < static_cast<int>(dim_x_) && v >= 0 && v < static_cast<int>(dim_y_) && w >= 0 && w < static_cast<int>(dim_z_)) {
+                    double prob = zRand_ * pRand_const; 
+
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
-                        double d = 0.0;
-
-                        double dynamic_obstacle_threshold = 0.5; // 例: 壁から0.5m以上離れた点は無視
-                        if (sdf_val > dynamic_obstacle_threshold) {
-                            p_vector.push_back(zRand_*pRand);
-                            continue; // 尤度計算の対象から外し、ペナルティを与えない
-                        }
-                        if (sdf_val >= 0.0) {
-                            d = sdf_val;
-                        } else {
-                            double penetration_penalty = 1.0; 
-                            d = std::abs(sdf_val) + penetration_penalty;
+                        // 動的障害物除外 (壁から遠すぎる点は無視)
+                        if (sdf_val > 0.5) {
+                            total_log_p += std::log(prob);
+                            continue;
                         }
 
+                        // 壁の中(マイナス)ならペナルティを付与
+                        double d = (sdf_val >= 0.0) ? sdf_val : (std::abs(sdf_val) + 1.0);
+                        
                         double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
-                        double p = zHit_ * pHit + zRand_ * pRand;
-                        p_vector.push_back(std::min(p, 1.0)); 
-                    } else {
-                        p_vector.push_back(zRand_ * pRand);
+                        prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
                     }
+                    
+                    // 対数尤度を加算 (log(0) 回避のために微小値を std::max で保証)
+                    total_log_p += std::log(std::max(prob, 1e-10));
                 }
 
-                return p_vector;
+                return total_log_p;
             }
 
             void publishSDFCloud() {
@@ -961,13 +1153,22 @@ namespace mcl {
 
             rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr subCmdVel_;
             rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr subCloud_;
-
+            rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subInitialPose_;
+            rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
+            rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
+             
             // 状態変数
             geometry_msgs::msg::Pose mclPose_;
             geometry_msgs::msg::Twist::SharedPtr cmdVel_;
             nav_msgs::msg::Path path_;
             std::vector<Point3D> local_points_;
             std::mt19937 gen_; 
+            std_msgs::msg::Int32MultiArray::SharedPtr zaxics_ = nullptr; 
+
+
+           
+            geometry_msgs::msg::Quaternion external_quat_;
+            bool has_external_quat_ = false;
 
             // 各種パラメータ
             std::double_t zHit_, zShort_, zMax_, zRand_;

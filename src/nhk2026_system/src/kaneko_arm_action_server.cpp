@@ -35,7 +35,7 @@ public:
 
         // 状態購読
         this->joint_states_subscriber_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
-            "kaneko_arm", // 必要に応じてトピック名を変更
+            "kaneko_arm", 
             device_qos,
             std::bind(&RobstrideRobomasActionServer::joint_state_callback, this, _1)
         );
