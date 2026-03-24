@@ -221,6 +221,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    takano_hand_sequencer = Node(
+        package='nhk2026_system',
+        executable='takano_hand_server',
+        name='takano_hand_sequencer',
+        output='screen'
+    )
+
    
 
  
@@ -244,4 +251,5 @@ def generate_launch_description():
         step_leg_sequencer,
         jsp_node,
         mcl_manage,
+        takano_hand_sequencer,
     ])

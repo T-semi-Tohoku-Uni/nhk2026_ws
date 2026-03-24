@@ -1,106 +1,122 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "nhk2026_msgs/action/step_move.hpp"
+#include "nhk2026_msgs/action/takano_hand.hpp" // TakanoHand用に追加
 
 class JoyControllerNode : public rclcpp::Node {
 public:
     using StepMove = nhk2026_msgs::action::StepMove;
     using GoalHandleStepMove = rclcpp_action::ClientGoalHandle<StepMove>;
+    using TakanoHand = nhk2026_msgs::action::TakanoHand; // 追加
+    using GoalHandleTakanoHand = rclcpp_action::ClientGoalHandle<TakanoHand>; // 追加
 
     JoyControllerNode() : Node("joy_controller_node") {
-        // --- パブリッシャーの設定 ---
-        // cmd_velをパブリッシュして足回りを動かす
         this->vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
 
-        // --- アクションクライアントの設定 ---
-        // step_action_server.cpp で定義されたサーバーを呼び出す
-        this->action_client_ = rclcpp_action::create_client<StepMove>(this, "/step_leg_sequence");
+        // アクションクライアントの設定
+        this->step_client_ = rclcpp_action::create_client<StepMove>(this, "/step_leg_sequence");
+        this->hand_client_ = rclcpp_action::create_client<TakanoHand>(this, "takano_hand_sequence"); //
 
-        // --- サブスクライバーの設定 ---
         this->joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
             "joy", 10, std::bind(&JoyControllerNode::joy_callback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (L-Stick: Move, Circle: Step Up, Cross: Step Down)");
+        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started.");
+        RCLCPP_INFO(this->get_logger(), "L-Stick: Move, Circle: Step Up, Cross: Step Down, Triangle: Takano Hand");
     }
 
 private:
-    
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        // 1. ボタン入力の取得
-        bool circle_pressed = msg->buttons[1];
-        bool cross_pressed = msg->buttons[0];
+        bool circle_pressed = msg->buttons[1];   // 〇
+        bool cross_pressed = msg->buttons[0];    // ×
+        bool triangle_pressed = msg->buttons[2]; // △
 
-        // --- アクション実行中の場合 ---
-        if (is_action_busy_) {
-            // ボタン状態の更新だけ行い、パブリッシュせずに終了
+        // --- TakanoHand アクション開始判定 (非ブロッキング) ---
+        if (triangle_pressed && !prev_triangle_ && !is_hand_busy_) {
+            send_hand_goal(5); // ステップ数5で実行
+        }
+
+        // --- StepMove アクション中（足回り自動制御中）の処理 ---
+        if (is_step_busy_) {
             prev_circle_ = circle_pressed;
             prev_cross_ = cross_pressed;
+            prev_triangle_ = triangle_pressed;
             return; 
         }
 
-        // --- アクション開始判定 ---
+        // --- StepMove 開始判定 ---
         if (circle_pressed && !prev_circle_) {
-            // アクション開始前に一度だけ停止信号を送り、手動操作を止める
             vel_pub_->publish(geometry_msgs::msg::Twist());
             send_step_goal("step up");
-            return; // send_step_goal内でis_action_busy_がtrueになるため、ここで終了
         } else if (cross_pressed && !prev_cross_) {
             vel_pub_->publish(geometry_msgs::msg::Twist());
             send_step_goal("step down");
-            return;
+        } else {
+            // --- 通常時の速度出力 (StepMove中でなければ常にパブリッシュ) ---
+            geometry_msgs::msg::Twist twist;
+            twist.linear.x = msg->axes[1] * 2.0;  
+            twist.linear.y = msg->axes[0] * 2.0;  
+            twist.angular.z = msg->axes[3] * 1.0; 
+            vel_pub_->publish(twist);
         }
 
-        // --- 通常時の速度出力 ---
-        geometry_msgs::msg::Twist twist;
-        twist.linear.x = msg->axes[1] * 2.0;  // 前後
-        twist.linear.y = msg->axes[0] * 2.0;  // 左右
-        twist.angular.z = msg->axes[3] * 1.0; // 旋回
-        vel_pub_->publish(twist);
-
-        // ボタン状態の保存
         prev_circle_ = circle_pressed;
         prev_cross_ = cross_pressed;
+        prev_triangle_ = triangle_pressed;
     }
 
     void send_step_goal(const std::string & command) {
-        if (!this->action_client_->wait_for_action_server(std::chrono::seconds(5))) {
+        if (!this->step_client_->wait_for_action_server(std::chrono::seconds(5))) {
             RCLCPP_ERROR(this->get_logger(), "Step Action Server not available");
             return;
         }
 
-        is_action_busy_ = true; // アクション開始フラグを立てる
+        is_step_busy_ = true;
         auto goal_msg = StepMove::Goal();
         goal_msg.msg = command;
 
         auto send_goal_options = rclcpp_action::Client<StepMove>::SendGoalOptions();
-        
-        // アクション完了時のコールバックを登録
         send_goal_options.result_callback = [this](const GoalHandleStepMove::WrappedResult & result) {
-            is_action_busy_ = false; // アクションが終わったらフラグを下ろす
-            if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
-            } else {
-                RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
-            }
+            is_step_busy_ = false;
+            RCLCPP_INFO(this->get_logger(), "Step sequence finished.");
         };
-
-        this->action_client_->async_send_goal(goal_msg, send_goal_options);
+        this->step_client_->async_send_goal(goal_msg, send_goal_options);
     }
 
-    // メンバ変数
+    void send_hand_goal(int count) {
+        if (!this->hand_client_->wait_for_action_server(std::chrono::seconds(5))) {
+            RCLCPP_ERROR(this->get_logger(), "Takano Hand Server not available");
+            return;
+        }
+
+        is_hand_busy_ = true; //
+        auto goal_msg = TakanoHand::Goal();
+        goal_msg.count = count;
+
+        auto send_goal_options = rclcpp_action::Client<TakanoHand>::SendGoalOptions();
+        send_goal_options.result_callback = [this](const GoalHandleTakanoHand::WrappedResult & result) {
+            is_hand_busy_ = false;
+            RCLCPP_INFO(this->get_logger(), "Takano Hand sequence finished.");
+        };
+        this->hand_client_->async_send_goal(goal_msg, send_goal_options); //
+    }
+
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
-    rclcpp_action::Client<StepMove>::SharedPtr action_client_;
+    rclcpp_action::Client<StepMove>::SharedPtr step_client_;
+    rclcpp_action::Client<TakanoHand>::SharedPtr hand_client_; //
 
-    bool is_action_busy_ = false; // アクション実行中かどうか
+    bool is_step_busy_ = false;
+    bool is_hand_busy_ = false; //
     bool prev_circle_ = false;
     bool prev_cross_ = false;
+    bool prev_triangle_ = false; //
 };
 
 int main(int argc, char ** argv) {
