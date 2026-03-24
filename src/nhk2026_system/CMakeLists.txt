@@ -96,7 +96,7 @@ ament_target_dependencies(step_leg_action_server
 install(TARGETS step_leg_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
-# step_action_server (追加)
+# step_action_server
 # -----------------------------------------------------------------------------
 add_executable(step_action_server
   src/step_action_server.cpp
@@ -112,7 +112,7 @@ ament_target_dependencies(step_action_server
 install(TARGETS step_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
-# kaneko_arm_action_server (追加)
+# kaneko_arm_action_server
 # -----------------------------------------------------------------------------
 add_executable(kaneko_arm_action_server
   src/kaneko_arm_action_server.cpp
@@ -130,11 +130,23 @@ ament_target_dependencies(kaneko_arm_action_server
 install(TARGETS kaneko_arm_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
+# bt_library
+# -----------------------------------------------------------------------------
+add_library(bt_library
+  src/bt/bt_move_arm.cpp
+)
+ament_target_dependencies(bt_library
+  nhk2026_msgs
+  tf2
+  tf2_geometry_msgs
+)
+target_link_libraries(bt_library behaviortree_ros2::behaviortree_ros2)
+
+# -----------------------------------------------------------------------------
 # ide_arm_bt_node
 # -----------------------------------------------------------------------------
 add_executable(ide_arm_bt_node
   src/ide_arm_bt_node.cpp
-  src/bt_move_arm.cpp
 )
 ament_target_dependencies(ide_arm_bt_node
   rclcpp
@@ -145,7 +157,10 @@ ament_target_dependencies(ide_arm_bt_node
   tf2
   tf2_geometry_msgs
 )
-target_link_libraries(ide_arm_bt_node behaviortree_ros2::behaviortree_ros2)
+target_link_libraries(ide_arm_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
 install(TARGETS ide_arm_bt_node DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------

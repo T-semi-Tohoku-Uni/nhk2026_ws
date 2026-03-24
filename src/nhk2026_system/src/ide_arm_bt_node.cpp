@@ -8,7 +8,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "behaviortree_ros2/ros_node_params.hpp"
-#include "nhk2026_system/bt_move_arm.hpp"
+#include "bt/bt_move_arm.hpp"
 
 int main(int argc, char ** argv)
 {
