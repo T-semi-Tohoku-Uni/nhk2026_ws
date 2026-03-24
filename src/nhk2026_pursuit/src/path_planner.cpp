@@ -16,7 +16,7 @@
 
 using namespace H5;
 
-namespace path {
+namespace nhk2026_pursuit::path {
     class PathGenerator: public rclcpp::Node {
         public:
             explicit PathGenerator(const rclcpp::NodeOptions & options = rclcpp::NodeOptions())
@@ -625,7 +625,7 @@ namespace path {
 
 int main(int argc, char *argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::spin(std::make_shared<path::PathGenerator>());
+    rclcpp::spin(std::make_shared<nhk2026_pursuit::path::PathGenerator>());
     rclcpp::shutdown();
     return 0;
 }

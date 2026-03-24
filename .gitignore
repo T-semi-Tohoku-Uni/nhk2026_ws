@@ -3,3 +3,5 @@ log
 build
 .vscode
 *.png
+src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5.bin
+src/nhk2026_localization/map/*.bin

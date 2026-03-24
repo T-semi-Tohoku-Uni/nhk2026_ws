@@ -10,6 +10,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 
 set(msg_files
@@ -20,19 +22,25 @@ set(msg_files
 
 set(action_files
   "action/Follow.action"
+  "action/ArmMove.action"
+  "action/LegMove.action"
+  "action/StepMove.action"
+  "action/KnekoArm.action"
 )
 
 set(srv_files
   "srv/PathPlan.srv"
   "srv/Waypoint.srv"
   "srv/SystemR2.srv"
-  )
+  "srv/ArmPathPlan.srv"
+  "srv/ResetPose.srv"
+)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
   ${action_files}
   ${srv_files}
-  DEPENDENCIES geometry_msgs std_msgs sensor_msgs
+  DEPENDENCIES geometry_msgs std_msgs sensor_msgs nav_msgs
 )
 
 ament_export_dependencies(rosidl_default_runtime)

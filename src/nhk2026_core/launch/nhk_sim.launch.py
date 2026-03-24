@@ -38,7 +38,7 @@ def generate_launch_description():
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([os.path.join(
             get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
-        launch_arguments=[('gz_args', [f' -r  -s {world}'])]
+        launch_arguments=[('gz_args', [f' -r  {world}'])]
     )
 
     xacro_file = os.path.join(package_dir, "urdf", "r2_robot.xacro")
@@ -158,6 +158,20 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
+    blossom_path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="blossom_path_planner",
+        output="screen",
+        parameters=[{
+            "num_points_": 50,
+            "shorten_": 0.15,
+            "theta_offset_": 0.0,
+            "start_shorten_": 0.15,
+            "end_shorten_": 0.15,
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
     path_planner = Node(
         package="nhk2026_pursuit",
         executable="path_planner",
@@ -180,7 +194,7 @@ def generate_launch_description():
         parameters=[{
             "max_linear_speed": 1.75,
             "max_angular_speed": 0.7,
-            "max_linear_tolerance": 0.15,
+            "max_linear_tolerance": 0.75,
             "max_theta_tolerance": 0.10,
             "max_reaching_distance": 0.05,
             "max_reaching_theta": 0.10,
@@ -196,6 +210,10 @@ def generate_launch_description():
             "Ki_theta": 0.00,
             "Kd_theta": 0.00,
             "x": 10,
+            "max_rotate_speed_": 0.7,
+            "slow_rotate_speed_": 0.4,
+            "accel_angle_": math.pi / 10,
+            "stop_angle_": math.pi / 90,
         },
         ],
         remappings=[('clock', '/world/nhk2026/clock')],
@@ -223,6 +241,7 @@ def generate_launch_description():
         # joy_node,
         # joy2Vel_node,
         vel_feedback_node,
+        blossom_path_planner,
         path_planner,
         pursuit,
         bt_node,
