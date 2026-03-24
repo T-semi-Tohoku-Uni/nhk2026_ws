@@ -116,7 +116,7 @@ private:
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 4:
-                        target_hand_pos_ = {-0.5, -3.18, 1.0}; // 手を次の位置へ
+                        target_hand_pos_ = {-0.0, -3.18, 1.0}; // 手を次の位置へ
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
