@@ -74,6 +74,7 @@ jobs:
 
       - name: rosdep
         run: |
+            sudo apt-get update
             rosdep update
             rosdep install --from-paths src -y --ignore-src 
 

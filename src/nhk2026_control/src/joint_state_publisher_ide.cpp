@@ -1,4 +1,4 @@
-#include "joint_state_publisher_ide.hpp"
+#include "nhk2026_control/joint_state_publisher_ide.hpp"
 
 using std::placeholders::_1;
 
