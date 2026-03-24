@@ -22,37 +22,6 @@ set(ALL_DEPENDENCIES
   rclcpp
   std_msgs
   sensor_msgs
-<<<<<<< HEAD
-)
-
-function(configure_nhk_target target_name)
-  target_include_directories(${target_name} PUBLIC
-    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-    "$<INSTALL_INTERFACE:include>"
-  )
-  install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
-endfunction()
-
-add_executable(ide_arm_sim_bridge
-  src/ide_arm_sim_bridge.cpp
-)
-
-ament_target_dependencies(ide_arm_sim_bridge
-  rclcpp
-  std_msgs
-)
-
-configure_nhk_target(ide_arm_sim_bridge)
-
-add_executable(arm_path_plan
-  src/arm_path_plan_server.cpp
-)
-
-ament_target_dependencies(arm_path_plan
-  rclcpp
-  geometry_msgs
-=======
->>>>>>> 99ae55b (fix)
   nav_msgs
   nhk2026_msgs
   std_msgs
@@ -62,14 +31,6 @@ ament_target_dependencies(arm_path_plan
   urdf
 )
 
-<<<<<<< HEAD
-configure_nhk_target(arm_path_plan)
-
-function(add_nhk_node target_name source_file)
-  add_executable(${target_name} ${source_file})
-  ament_target_dependencies(${target_name} ${ALL_DEPENDENCIES})
-  configure_nhk_target(${target_name})
-=======
 # 共通ビルド関数
 function(add_nhk_node target_name source_file)
   add_executable(${target_name} ${source_file})
@@ -80,7 +41,6 @@ function(add_nhk_node target_name source_file)
   )
   # ここで install も行う（ターゲット作成後なので安全）
   install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
->>>>>>> 99ae55b (fix)
 endfunction()
 
 # --- 実行ファイルの登録（ここですべて一括管理） ---

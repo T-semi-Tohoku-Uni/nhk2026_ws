@@ -1,5 +1,13 @@
 geometry_msgs/PoseStamped now_pos
+sensor_msgs/JointState now_joint
 geometry_msgs/PoseStamped goal_pos
 geometry_msgs/PoseStamped[] waypoints
+
+float32 max_speed
+float32 max_acc
+
+int32 control_frequency
+
+std_msgs/String urdf
 ---
 sensor_msgs/JointState[] route
