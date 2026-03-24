@@ -9,6 +9,7 @@
 
 #include "behaviortree_ros2/ros_node_params.hpp"
 #include "bt/bt_move_arm.hpp"
+#include "bt/bt_vacuum.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -27,12 +28,16 @@ int main(int argc, char ** argv)
 
   BT::BehaviorTreeFactory factory;
 
-  BT::RosNodeParams params;
-  params.nh = node;
-  params.default_port_value = "ide_arm";
-  params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+  BT::RosNodeParams action_params;
+  action_params.nh = node;
+  action_params.default_port_value = "ide_arm";
+  action_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+  
+  BT::RosNodeParams topic_params;
+  topic_params.nh = node;
 
-  factory.registerNodeType<MoveArmAction>("MoveArm", params);
+  factory.registerNodeType<MoveArmAction>("MoveArm", action_params);
+  factory.registerNodeType<PublisherVacuum>("PublisherVacuum", topic_params);
 
   auto tree = factory.createTreeFromFile(bt_xml_file);
   tree.tickWhileRunning();
