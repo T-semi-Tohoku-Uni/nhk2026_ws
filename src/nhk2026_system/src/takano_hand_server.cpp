@@ -108,14 +108,21 @@ private:
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 2:
+                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        break;
+                    case 3:
                         target_hand_pos_ = {-4.77, -1.57,1.0}; // 手を次の位置へ
                         if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
                         break;
-                    case 3:
-                        target_hand_pos_ = {-4.77, -3.18, 1.0}; // 手を次の位置へ
+                    case 4:
+                        target_hand_pos_ = {-3.18, -1.57, 1.0}; // 手を次の位置へ
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
-                    case 4:
+                    case 5:
+                        target_hand_pos_ = {-3.18, -3.18, 1.0}; // 手を次の位置へ
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 6:
                         target_hand_pos_ = {-0.1, -3.18, 1.0}; // 手を次の位置へ
                         if (hand_reached()) next_step(step, state_start_time);
                         break;

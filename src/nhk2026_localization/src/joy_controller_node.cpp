@@ -39,7 +39,7 @@ private:
 
         // --- TakanoHand アクション開始判定 (非ブロッキング) ---
         if (triangle_pressed && !prev_triangle_ && !is_hand_busy_) {
-            send_hand_goal(5); // ステップ数5で実行
+            send_hand_goal(7); // ステップ数5で実行
         }
 
         // --- StepMove アクション中（足回り自動制御中）の処理 ---
