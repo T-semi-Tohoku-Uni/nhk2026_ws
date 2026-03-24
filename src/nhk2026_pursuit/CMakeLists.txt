@@ -25,6 +25,7 @@ find_package(nlohmann_json REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(ignition-transport8 REQUIRED)
 find_package(ignition-msgs8 REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
 
 
 add_executable(pursuit src/pursuit.cpp)
