@@ -39,7 +39,7 @@ private:
         // --- TakanoHand 1ステップ実行 ---
         if (triangle_pressed && !prev_triangle_ && !is_hand_busy_) {
             // 現在のステップのみを実行し、pos（例として1.0）を渡す
-            send_hand_goal(current_hand_step_, current_hand_step_, 1.0f);
+            send_hand_goal(current_hand_step_, current_hand_step_, 5.0f);
         }
 
         if (is_step_busy_) {
