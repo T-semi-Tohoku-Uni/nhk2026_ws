@@ -3,7 +3,7 @@
 BT::PortsList PublisherVacuum::providedPorts()
 {
     return providedBasicPorts({
-        BT::InputPort<double>("value")
+        BT::InputPort<bool>("value")
     });
 }
 
