@@ -208,7 +208,7 @@ private:
                         leg_max_speed_  =1.0;
                         leg_max_acc_  = 1.0;
                         target_leg_pos_ = {3.66 + count * 6.28, 3.66 + count * 6.28, -0.52};
-                        if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
+                        if (leg_reached()) {next_step(step, state_start_time); }
                         break;
                     case 7:
                         if (elapsed_sec(state_start_time) > 0.6) next_step(step, state_start_time);
