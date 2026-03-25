@@ -226,7 +226,7 @@ class FollowNode: public rclcpp::Node {
             //実機でしっかりとwaypointが先に進むように
             int index = current_waypoint_index_ + 1;
             while (index + 1 < static_cast<int>(path_.size()) &&
-                path_[index].pose.position.z != path_[index+1].pose.position.z) {
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
             current_waypoint_index_ = index;
@@ -310,7 +310,7 @@ class FollowNode: public rclcpp::Node {
             // zが変化しなくなるまでインデックスを進める
             int index = current_waypoint_index_ + 1;
             while (index + 1 < static_cast<int>(path_.size()) &&
-                path_[index].pose.position.z != path_[index+1].pose.position.z) {
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
 
