@@ -26,6 +26,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -138,6 +139,7 @@ add_library(bt_library
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
+  std_srvs
   tf2
   tf2_geometry_msgs
 )

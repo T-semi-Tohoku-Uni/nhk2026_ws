@@ -33,11 +33,11 @@ int main(int argc, char ** argv)
   action_params.default_port_value = "ide_arm";
   action_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
   
-  BT::RosNodeParams topic_params;
-  topic_params.nh = node;
+  BT::RosNodeParams service_params;
+  service_params.nh = node;
 
   factory.registerNodeType<MoveArmAction>("MoveArm", action_params);
-  factory.registerNodeType<PublisherVacuum>("PublisherVacuum", topic_params);
+  factory.registerNodeType<ServiceVacuum>("ServiceVacuum", service_params);
 
   auto tree = factory.createTreeFromFile(bt_xml_file);
   tree.tickWhileRunning();

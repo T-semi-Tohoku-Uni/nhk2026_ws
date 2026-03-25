@@ -1,17 +1,30 @@
 #include "bt/bt_vacuum.hpp"
 
-BT::PortsList PublisherVacuum::providedPorts()
+BT::PortsList ServiceVacuum::providedPorts()
 {
     return providedBasicPorts({
         BT::InputPort<bool>("value")
     });
 }
 
-bool PublisherVacuum::setMessage(std_msgs::msg::Bool& msg)
+bool ServiceVacuum::setRequest(std_srvs::srv::SetBool::Request::SharedPtr& request)
 {
     auto value = getInput<bool>("value");
     if (!value) return false;
 
-    msg.data = value.value();
+    request->data = value.value();
     return true;
+}
+
+BT::NodeStatus ServiceVacuum::onResponseReceived(const std_srvs::srv::SetBool::Response::SharedPtr& response)
+{
+    if (!response || !response->success)return BT::NodeStatus::FAILURE;
+    
+    return BT::NodeStatus::SUCCESS;
+}
+
+BT::NodeStatus ServiceVacuum::onFailure(BT::ServiceNodeErrorCode error)
+{
+    RCLCPP_ERROR(logger(), "vacuum service error: %s", BT::toStr(error));
+    return BT::NodeStatus::FAILURE;
 }

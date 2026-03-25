@@ -1,21 +1,23 @@
 #pragma once
 
-#include <behaviortree_ros2/bt_topic_pub_node.hpp>
-#include <std_msgs/msg/bool.hpp>
+#include <behaviortree_ros2/bt_service_node.hpp>
+#include <std_srvs/srv/set_bool.hpp>
 
-class PublisherVacuum
-: public BT::RosTopicPubNode<std_msgs::msg::Bool>
+class ServiceVacuum
+: public BT::RosServiceNode<std_srvs::srv::SetBool>
 {
 public:
-    PublisherVacuum(
+    ServiceVacuum(
         const std::string& name,
         const BT::NodeConfig& conf,
         const BT::RosNodeParams& params
-    ) : BT::RosTopicPubNode<std_msgs::msg::Bool>(name, conf, params)
+    ) : BT::RosServiceNode<std_srvs::srv::SetBool>(name, conf, params)
     {
     }
 
     static BT::PortsList providedPorts();
 
-    bool setMessage(std_msgs::msg::Bool& msg) override;
+    bool setRequest(std_srvs::srv::SetBool::Request::SharedPtr& request) override;
+    BT::NodeStatus onResponseReceived(const std_srvs::srv::SetBool::Response::SharedPtr& response) override;
+    BT::NodeStatus onFailure(BT::ServiceNodeErrorCode error) override;
 };
