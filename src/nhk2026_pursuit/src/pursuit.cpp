@@ -481,7 +481,7 @@ class FollowNode: public rclcpp::Node {
 
                 if (std::abs(dz) > 0.0) {  
                     if (linear_error < max_reaching_distance) {
-                        is_jump_ = true;
+                        // is_jump_ = true;
                         send_step_goal(dz > 0.0 ? "step up" : "step down");
                     }
                     break;
