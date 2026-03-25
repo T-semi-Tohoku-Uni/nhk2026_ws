@@ -21,5 +21,8 @@ public:
   }
 
   BT::NodeStatus onTick(const std::shared_ptr<std_msgs::msg::Bool>& msg) override;
-  bool latchLastMessage() const override { return true; }
+  bool latchLastMessage() const override { return false; }
+
+private:
+  bool armed_ = false;
 };
