@@ -172,6 +172,7 @@ namespace nhk2026_pursuit::blossom_path{
                 yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
             }
             
+            //角度再構築
             double z_diff = world_pose.position.z - prev_z;
             if (z_diff < 0.0){
                 yaw += M_PI;
@@ -208,6 +209,8 @@ namespace nhk2026_pursuit::blossom_path{
             waypoints.push_back(mid_start);
             waypoints.push_back(mid_end);
             waypoints.push_back(world_pose);
+
+            prev_z = world_pose.position.z;
         }
 
         return waypoints;
