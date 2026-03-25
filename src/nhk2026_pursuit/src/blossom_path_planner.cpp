@@ -230,15 +230,14 @@ namespace nhk2026_pursuit::blossom_path{
         //後で強化学習の関数からグリッドの配列をもらう
         //仮にグリッドの配列を入れる
         std::vector<GridIndex> grids = {
-            // {0,1},
             {0,0},
             {1,0},
             {1,1},
             {2,1},
-            {3,1},
-            {4,1},
-            {4,0},
-            {5,0},
+            {2,2},
+            {3,2},
+            {4,2},
+            {5,2},
         };
         
         std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);
