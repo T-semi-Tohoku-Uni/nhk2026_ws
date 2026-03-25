@@ -212,7 +212,7 @@ private:
     std::vector<double> target_hand_pos_ = {0.0, 0.0, 0.0};
     double now_holder_value_ = 0.0;
     double target_holder_pos_ = 0.0;
-    double target_holder_pos_target = 0.0;
+    double target_holder_pos_target_ = 0.0;
 
     bool joint_subscribe_flag_ = false;
     bool holder_subscribe_flag_ = false;
