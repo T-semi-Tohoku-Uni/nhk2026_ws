@@ -153,6 +153,8 @@ namespace nhk2026_pursuit::blossom_path{
 
         waypoints.push_back(init_pose);
 
+        double prev_z = init_pose.position.z;
+
         for (int i = 0; i < static_cast<int>(grids.size()); ++i) {
 
             const GridIndex& grid = grids[i];
@@ -170,6 +172,10 @@ namespace nhk2026_pursuit::blossom_path{
                 yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
             }
             
+            double z_diff = world_pose.position.z - prev_z;
+            if (z_diff < 0.0){
+                yaw += M_PI;
+            }
             
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
