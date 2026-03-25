@@ -12,6 +12,7 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(tf2 REQUIRED)
@@ -22,6 +23,7 @@ set(ALL_DEPENDENCIES
   rclcpp
   std_msgs
   sensor_msgs
+  std_srvs
 )
 
 function(configure_nhk_target target_name)
@@ -70,6 +72,7 @@ endfunction()
 # 実行ファイルの登録
 add_nhk_node(joint_state_publisher_ide src/joint_state_publisher_ide.cpp)
 add_nhk_node(joint_state_publisher_step src/joint_state_publisher_step.cpp)
+add_nhk_node(vacuum_server src/vacuum_service.cpp)
 
 install(DIRECTORY include launch config DESTINATION share/${PROJECT_NAME} OPTIONAL)
 

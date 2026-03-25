@@ -15,6 +15,7 @@
   <depend>std_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>nhk2026_msgs</depend>
+  <depend>std_srvs</depend>
   <depend>kdl_parser</depend>
   <depend>ament_index_cpp</depend>
   <depend>tf2</depend>
