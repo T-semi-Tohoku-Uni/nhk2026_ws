@@ -93,7 +93,7 @@ private:
                 
                 // 次のステップへ（最大5まで。5を超えたら0に戻る例）
                 current_hand_step_++;
-                if (current_hand_step_ > 5) {
+                if (current_hand_step_ > 6) {
                     current_hand_step_ = 0;
                     RCLCPP_INFO(this->get_logger(), "Sequence reset to Step 0.");
                 }

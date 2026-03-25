@@ -127,6 +127,10 @@ private:
                         target_holder_pos_ = target_holder_pos_target_;
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
+                    case 6:
+                        target_hand_pos_ = {-0.1, -3.18, -1.0};
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
                     default:
                         RCLCPP_WARN(this->get_logger(), "Step %d is not defined. Terminating.", step);
                         step = goal->finalstep + 1; // ループを抜ける
