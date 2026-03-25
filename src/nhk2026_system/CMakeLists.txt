@@ -26,6 +26,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(inrof2025_ros_type REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
@@ -137,11 +138,13 @@ add_library(bt_library
   src/bt/bt_move_arm.cpp
   src/bt/bt_vacuum.cpp
   src/bt/bt_trigger.cpp
+  src/bt/bt_generate_route.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
   std_srvs
   std_msgs
+  inrof2025_ros_type
   tf2
   tf2_geometry_msgs
 )
