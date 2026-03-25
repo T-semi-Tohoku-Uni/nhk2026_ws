@@ -283,4 +283,5 @@ def generate_launch_description():
         step_leg_sequencer,
         jsp_node,
         # mcl_manage,
+        integrated_mcl_node 
     ])
