@@ -223,6 +223,14 @@ class FollowNode: public rclcpp::Node {
             auto goal_msg = StepMove::Goal();
             goal_msg.msg = command;
 
+            //実機でしっかりとwaypointが先に進むように
+            int index = current_waypoint_index_ + 1;
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                path_[index].pose.position.z != path_[index+1].pose.position.z) {
+                index++;
+            }
+            current_waypoint_index_ = index;
+
             auto send_goal_options = rclcpp_action::Client<StepMove>::SendGoalOptions();
             
             // アクション完了時のコールバックを登録
