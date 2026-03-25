@@ -90,6 +90,28 @@ echo 'LIBGL_ALWAYS_SOFTWARE=1' >> ~/.bashrc
 rosdep install --from-paths src -y --ignore-src
 ```
 
+## 3DLiDAR livox 用のsdkをインストール
+参照 https://github.com/atinfinity/Livox-SDK2
+
+- Dependencies:
+  - CMake 3.0.0+
+  - gcc 4.8.1+
+
+- Install the CMake using apt:
+```bash
+sudo apt install cmake
+```
+- Compile and install the Livox-SDK2:
+```bash
+git clone https://github.com/atinfinity/Livox-SDK2.git
+cd ./Livox-SDK2
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release .. && make -j
+sudo make install
+sudo ldconfig
+```
+
 ## 実行方法
 （初回のみ全てのパッケージをビルド）
 ```bash
