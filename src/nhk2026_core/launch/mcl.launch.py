@@ -271,10 +271,10 @@ def generate_launch_description():
         node_robot_state_publisher,
         static_from_map_to_odom,
         # joy_node,
-        # mcl_3d_node,
+        mcl_3d_node,
         map_publisher,
         livox_driver,
-        # mcl_node,
+        mcl_node,
         urg_node_front,
         urg_node_rear,
         lidar_filter_node,
@@ -282,6 +282,6 @@ def generate_launch_description():
         step_leg_worker,
         step_leg_sequencer,
         jsp_node,
-        # mcl_manage,
-        integrated_mcl_node 
+        mcl_manage,
+        # integrated_mcl_node 
     ])
