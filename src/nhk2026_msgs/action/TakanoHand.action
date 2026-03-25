@@ -1,4 +1,6 @@
-int32 count
+int32 firststep
+int32 finalstep
+float pos
 ---
 bool success
 string msg

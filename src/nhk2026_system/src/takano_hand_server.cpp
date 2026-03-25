@@ -34,14 +34,12 @@ public:
 
         rclcpp::QoS reliable_qos = rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable).durability(rclcpp::DurabilityPolicy::Volatile);
         
-        // パブリッシャー
         robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("takano_hand", reliable_qos);
         holder_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("takano_holder", reliable_qos);
 
         auto sub_opt = rclcpp::SubscriptionOptions();
         sub_opt.callback_group = callback_group_;
         
-        // フィードバックサブスクライバー
         joint_states_sub_ = this->create_subscription<std_msgs::msg::Float32MultiArray>(
             "takano_hand_feedback", reliable_qos, std::bind(&TakanoHandServer::joint_state_callback, this, _1), sub_opt
         );
@@ -56,12 +54,13 @@ public:
 
 private:
     rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID &, std::shared_ptr<const TakanoHand::Goal> goal) {
-        if (!joint_subscribe_flag_ ) {
+        if (!joint_subscribe_flag_) {
             RCLCPP_ERROR(this->get_logger(), "Feedback not received yet.");
             return rclcpp_action::GoalResponse::REJECT;
         }
-        if (goal->count <= 0) {
-            RCLCPP_ERROR(this->get_logger(), "Goal count must be positive.");
+        // ステップの妥当性チェック
+        if (goal->firststep < 0 || goal->firststep > goal->finalstep) {
+            RCLCPP_ERROR(this->get_logger(), "Invalid step range: %d to %d", goal->firststep, goal->finalstep);
             return rclcpp_action::GoalResponse::REJECT;
         }
         return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -81,11 +80,14 @@ private:
         auto feedback = std::make_shared<TakanoHand::Feedback>();
 
         rclcpp::Rate loop_rate(10.0);
-        int step = 0;
+        
+        // 開始ステップを代入
+        int step = goal->firststep;
         auto state_start_time = this->now();
         
         target_hand_pos_ = now_joint_;
-        target_holder_pos_ = now_holder_value_;
+        // 引数のposをホルダーの目標位置に反映
+        target_holder_pos_target_ = goal->pos; 
 
         while (rclcpp::ok()) {
             if (goal_handle->is_canceling()) {
@@ -96,47 +98,45 @@ private:
                 return;
             }
 
-            // --- ステートマシン: step が goal->count に達するまで継続 ---
-            if (step < goal->count) {
+            // --- ステートマシン: finalstep を完了するまで実行 ---
+            if (step <= goal->finalstep) {
                 switch (step) {
                     case 0:
-                        target_hand_pos_ = {-4.77, 0.0, 1.0}; // 手を初期位置へ
+                        target_hand_pos_ = {-3.18, -1.57, -1.0};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_hand_pos_ = {-4.77, -1.57, -1.0}; // 手を次の位置へ
-                        if (hand_reached()) next_step(step, state_start_time);
-                        break;
-                    case 2:
+                        target_hand_pos_ = {-4.90, -1.57, -1.0};
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                         break;
-                    case 3:
-                        target_hand_pos_ = {-4.77, -1.57,1.0}; // 手を次の位置へ
+                    case 2:
+                        target_hand_pos_ = {-4.77, -1.57, 1.0};
                         if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
                         break;
+                    case 3:
+                        target_hand_pos_ = {-3.18, -1.57, 1.0};
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
                     case 4:
-                        target_hand_pos_ = {-3.18, -1.57, 1.0}; // 手を次の位置へ
+                        target_hand_pos_ = {-3.18, -3.18, 1.0};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 5:
-                        target_hand_pos_ = {-3.18, -3.18, 1.0}; // 手を次の位置へ
-                        if (hand_reached()) next_step(step, state_start_time);
-                        break;
-                    case 6:
-                        target_hand_pos_ = {-0.1, -3.18, 1.0}; // 手を次の位置へ
+                        target_hand_pos_ = {-0.1, -3.18, 1.0};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
-                        RCLCPP_WARN(this->get_logger(), "Step %d is not defined. Skipping.", step);
-                        next_step(step, state_start_time);
+                        RCLCPP_WARN(this->get_logger(), "Step %d is not defined. Terminating.", step);
+                        step = goal->finalstep + 1; // ループを抜ける
                         break;
                 }
                 feedback->msg = "Executing step " + std::to_string(step);
                 goal_handle->publish_feedback(feedback);
             } else {
+                // 全ての指定ステップが完了
                 stop_all();
                 result->success = true;
-                result->msg = "Sequence completed up to step " + std::to_string(goal->count);
+                result->msg = "Sequence completed from " + std::to_string(goal->firststep) + " to " + std::to_string(goal->finalstep);
                 goal_handle->succeed(result);
                 return;
             }
@@ -146,15 +146,13 @@ private:
         }
     }
 
+    // --- (以下のメソッドは変更なし) ---
     void publish_all() {
-        // robomas_pub_: 手の目標位置3つ
         if (joint_subscribe_flag_) {
             std_msgs::msg::Float32MultiArray hand_msg;
             hand_msg.data = {(float)target_hand_pos_[0], (float)target_hand_pos_[1], (float)target_hand_pos_[2]};
             robomas_pub_->publish(hand_msg);
         }
-
-        // holder_pub_: ホルダーの目標位置1つ
         if (holder_subscribe_flag_) {
             std_msgs::msg::Float32MultiArray holder_msg;
             holder_msg.data = {(float)target_holder_pos_};
@@ -168,11 +166,6 @@ private:
             if (std::fabs(now_joint_[i] - target_hand_pos_[i]) > kPosTolerance_) return false;
         }
         return true;
-    }
-
-    bool holder_reached() {
-        std::lock_guard<std::mutex> lock(data_mutex_);
-        return std::fabs(now_holder_value_ - target_holder_pos_) <= kPosTolerance_;
     }
 
     void next_step(int& step, rclcpp::Time& start_time) {
@@ -207,7 +200,6 @@ private:
         }
     }
 
-    // メンバ変数
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp_action::Server<TakanoHand>::SharedPtr action_server_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
@@ -220,6 +212,7 @@ private:
     std::vector<double> target_hand_pos_ = {0.0, 0.0, 0.0};
     double now_holder_value_ = 0.0;
     double target_holder_pos_ = 0.0;
+    double target_holder_pos_target = 0.0;
 
     bool joint_subscribe_flag_ = false;
     bool holder_subscribe_flag_ = false;
