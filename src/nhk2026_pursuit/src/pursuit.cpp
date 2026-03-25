@@ -238,6 +238,10 @@ class FollowNode: public rclcpp::Node {
                 is_action_busy_ = false; // アクションが終わったらフラグを下ろす
                 if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                     RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
+
+                    //action通信が終わったら回転するようにする。emergency treatment
+                    is_rotating_ = true;
+
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
                 }
@@ -498,14 +502,14 @@ class FollowNode: public rclcpp::Node {
                     break;
                 }
 
-                //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation) {
+                // //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
+                // if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation) {
 
-                    if(linear_error < max_reaching_distance){
-                        is_rotating_ = true; 
-                    }
-                    break;
-                }
+                //     if(linear_error < max_reaching_distance){
+                //         is_rotating_ = true; 
+                //     }
+                //     break;
+                // }
 
                 current_waypoint_index_++;
                 linear_error = std::hypot(
