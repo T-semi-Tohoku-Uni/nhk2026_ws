@@ -208,9 +208,9 @@ class FollowNode: public rclcpp::Node {
             pose_.position.y = msgs.position.y;
             pose_.position.z = msgs.position.z;
             pose_.orientation = msgs.orientation;
-            RCLCPP_INFO(this->get_logger(), "pose z: %.4f, path z: %.4f", 
-                pose_.position.z, 
-                path_.empty() ? 0.0 : path_[current_waypoint_index_].pose.position.z);
+            // RCLCPP_INFO(this->get_logger(), "pose z: %.4f, path z: %.4f", 
+            //     pose_.position.z, 
+            //     path_.empty() ? 0.0 : path_[current_waypoint_index_].pose.position.z);
         }
 
         void send_step_goal(const std::string & command) {
