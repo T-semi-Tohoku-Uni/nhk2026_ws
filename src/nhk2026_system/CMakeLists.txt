@@ -139,6 +139,7 @@ add_library(bt_library
   src/bt/bt_vacuum.cpp
   src/bt/bt_trigger.cpp
   src/bt/bt_generate_route.cpp
+  src/bt/bt_linear_path.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
