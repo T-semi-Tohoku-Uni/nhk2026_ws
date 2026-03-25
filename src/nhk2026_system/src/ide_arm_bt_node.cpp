@@ -35,6 +35,7 @@ int main(int argc, char ** argv)
   
   BT::RosNodeParams service_params;
   service_params.nh = node;
+  service_params.default_port_value = "vacuum";
 
   factory.registerNodeType<MoveArmAction>("MoveArm", action_params);
   factory.registerNodeType<ServiceVacuum>("ServiceVacuum", service_params);
