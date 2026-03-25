@@ -26,6 +26,13 @@ def generate_launch_description():
         parameters=[{"kPosTolerance": k_pos_tolerance}],
     )
 
+    vacuum_server_node = Node(
+        package="nhk2026_control",
+        executable="vacuum_server",
+        name="vacuum_server",
+        output="screen",
+    )
+
     ide_arm_bt_node = Node(
         package="nhk2026_system",
         executable="ide_arm_bt_node",
@@ -68,4 +75,5 @@ def generate_launch_description():
             period=bt_start_delay,
             actions=[ide_arm_bt_node],
         ),
+        vacuum_server_node,
     ])

@@ -2,10 +2,10 @@
   <BehaviorTree ID="MainTree">
     <Sequence>
       <MoveArm y="0.60" z="0.6" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <PublisherVacuum service_name="vacuum" value="true" />
+      <ServiceVacuum service_name="vacuum" value="true" />
       <MoveArm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
       <MoveArm y="0.70" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
-      <PublisherVacuum service_name="vacuum" value="false" />
+      <ServiceVacuum service_name="vacuum" value="false" />
       <MoveArm y="0.80" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
     </Sequence>
   </BehaviorTree>
