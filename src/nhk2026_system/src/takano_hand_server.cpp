@@ -103,6 +103,7 @@ private:
                 switch (step) {
                     case 0:
                         target_hand_pos_ = {-3.18, -1.57, -1.0};
+                        target_holder_pos_ = 0.0;
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
@@ -123,6 +124,7 @@ private:
                         break;
                     case 5:
                         target_hand_pos_ = {-0.1, -3.18, 1.0};
+                        target_holder_pos_ = target_holder_pos_target_;
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
