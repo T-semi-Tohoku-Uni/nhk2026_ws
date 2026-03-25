@@ -236,7 +236,7 @@ class FollowNode: public rclcpp::Node {
             };
 
             //実機でテストするためコメントアウト
-            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
+            this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
         
 
