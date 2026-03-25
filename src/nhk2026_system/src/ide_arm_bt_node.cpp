@@ -10,6 +10,7 @@
 #include "behaviortree_ros2/ros_node_params.hpp"
 #include "bt/bt_move_arm.hpp"
 #include "bt/bt_vacuum.hpp"
+#include "bt/bt_trigger.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -37,8 +38,13 @@ int main(int argc, char ** argv)
   service_params.nh = node;
   service_params.default_port_value = "vacuum";
 
+  BT::RosNodeParams trigger_params;
+  trigger_params.nh = node;
+  trigger_params.default_port_value = "trigger";
+
   factory.registerNodeType<MoveArmAction>("MoveArm", action_params);
   factory.registerNodeType<ServiceVacuum>("ServiceVacuum", service_params);
+  factory.registerNodeType<TestTrigger>("TestTrigger", trigger_params);
 
   auto tree = factory.createTreeFromFile(bt_xml_file);
   tree.tickWhileRunning();
