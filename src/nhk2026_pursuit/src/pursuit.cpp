@@ -385,6 +385,9 @@ class FollowNode: public rclcpp::Node {
                 jumpZ();
                 return;
             }
+            if(is_action_busy_){
+                return;
+            }
 
 
             // publish goal position
