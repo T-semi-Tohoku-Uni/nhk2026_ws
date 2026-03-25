@@ -92,7 +92,7 @@ def generate_launch_description():
     # 2D/3D両方のマップパスとノイズパラメータを設定
     integrated_mcl_node = Node(
         package="nhk2026_localization",
-        executable="integrated_mcl_node",
+        executable="intergrated_mcl_node",
         output="screen",
         parameters=[{
             # 初期ポーズ
