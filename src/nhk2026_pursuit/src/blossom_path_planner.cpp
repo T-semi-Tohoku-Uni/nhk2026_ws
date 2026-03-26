@@ -239,6 +239,7 @@ namespace nhk2026_pursuit::blossom_path{
         //後で強化学習の関数からグリッドの配列をもらう
         //仮にグリッドの配列を入れる
         std::vector<GridIndex> grids = {
+            {0,1},
             {0,0},
             {1,0},
             {1,1},
