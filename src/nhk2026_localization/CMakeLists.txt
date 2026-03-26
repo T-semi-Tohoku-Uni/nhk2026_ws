@@ -72,11 +72,6 @@ ros_node_executable(vel_feedback_node src/vel_feedback_node.cpp)
 ros_node_executable(vel_feedback_pass_through src/vel_feedback_pass_through.cpp)
 ros_node_executable(joy2vel src/joy2vel.cpp)
 ros_node_executable(lidar_filter src/lidar_filter.cpp)
-ros_node_executable(mcl_3d_node src/mcl_3d_node.cpp)
-ros_node_executable(map_mesh_publisher src/map_mesh_publisher.cpp)
-ros_node_executable(mcl_manage src/mcl_manage.cpp)
-ros_node_executable(joy_controller_node src/joy_controller_node.cpp)
-ros_node_executable(intergrated_mcl_node src/intergrated_mcl_node.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)

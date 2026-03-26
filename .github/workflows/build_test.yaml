@@ -21,7 +21,7 @@ jobs:
       - name: Install apt repository
         run: |
             sudo apt-get update
-            sudo apt-get install -y libzmq3-dev libboost-dev qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libopencv-dev libudev-dev libnanoflann-dev libhdf5-dev libignition-transport8-dev libignition-msgs8-dev
+            sudo apt-get install -y libzmq3-dev libboost-dev qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libopencv-dev libudev-dev libnanoflann-dev libhdf5-dev
 
       - name: Behaivor Tree cache restore
         id: cache-behaivor-tree
@@ -41,36 +41,12 @@ jobs:
             mkdir build
             cd build
             cmake ..
-            make -j8      
+            make -j8
 
       - name: Install behaivor tree
         run: |
             cd BehaviorTree.CPP/build
             sudo make install
-      
-      - name: livox cache restore
-        id: cache-livox
-        uses: actions/cache@v4
-        with:
-            path: ./Livox-SDK2
-            key: ${{ runner.os }}-build-livox-${{ hashFiles('**/package-lock.json')}}
-            restore-keys:
-                ${{ runner.os }}-build-livox-
-
-      - if: ${{ steps.cache-livox.outputs.cache-hit != 'true' }}
-        name: Build livox
-        run: |
-            git clone https://github.com/atinfinity/Livox-SDK2.git
-            cd ./Livox-SDK2
-            mkdir build
-            cd build
-            cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8
-      
-      - name: Install livox
-        run: |
-            cd Livox-SDK2/build
-            sudo make install
-            sudo ldconfig
 
       - name: rosdep
         run: |

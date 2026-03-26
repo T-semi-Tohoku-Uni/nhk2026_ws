@@ -14,8 +14,6 @@
 
   <depend>rmw_zenoh_cpp</depend>
 
-  <exec_depend>rosbridge_suite</exec_depend>
-
   <export>
     <build_type>ament_cmake</build_type>
   </export>

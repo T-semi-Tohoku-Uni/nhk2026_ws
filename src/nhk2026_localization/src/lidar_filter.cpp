@@ -48,7 +48,7 @@ namespace lidar_filter{
                 } 
                 else if (lidar_id == 2) {
                     // Back Lidar
-                    filterScan(msg,  M_PI / 6, M_PI * 3 / 4);
+                    filterScan(msg,  -M_PI * 3/ 4, -M_PI / 6);
                 }
 
                 multi_scan_pub_->publish(multi_scan_msg_);

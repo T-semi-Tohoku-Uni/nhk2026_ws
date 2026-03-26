@@ -1,5 +1,0 @@
-geometry_msgs/PoseStamped now_pos
-geometry_msgs/PoseStamped[] waypoints
-geometry_msgs/PoseStamped goal_pos
----
-nav_msgs/Path route

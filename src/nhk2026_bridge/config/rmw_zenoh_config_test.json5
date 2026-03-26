@@ -1,6 +1,6 @@
 {
   mode: "client",
-  connect: { endpoints: ["udp/localhost:7447"] },
+  connect: { endpoints: ["udp/192.168.11.4:7447"] },
   scouting: { multicast: { enabled: false }, gossip: { enabled: true } },
   timestamping: { enabled: { router: true, peer: true, client: true } }
 }
