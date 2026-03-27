@@ -153,6 +153,8 @@ namespace nhk2026_pursuit::blossom_path{
 
         waypoints.push_back(init_pose);
 
+        double prev_z = init_pose.position.z;
+
         for (int i = 0; i < static_cast<int>(grids.size()); ++i) {
 
             const GridIndex& grid = grids[i];
@@ -170,6 +172,11 @@ namespace nhk2026_pursuit::blossom_path{
                 yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
             }
             
+            // //角度再構築
+            // double z_diff = world_pose.position.z - prev_z;
+            // if (z_diff < 0.0){
+            //     yaw += M_PI;
+            // }
             
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
@@ -202,6 +209,8 @@ namespace nhk2026_pursuit::blossom_path{
             waypoints.push_back(mid_start);
             waypoints.push_back(mid_end);
             waypoints.push_back(world_pose);
+
+            prev_z = world_pose.position.z;
         }
 
         return waypoints;
@@ -235,10 +244,10 @@ namespace nhk2026_pursuit::blossom_path{
             {1,0},
             {1,1},
             {2,1},
-            {3,1},
-            {4,1},
-            {4,0},
-            {5,0},
+            {2,2},
+            {3,2},
+            {4,2},
+            {5,2},
         };
         
         std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);

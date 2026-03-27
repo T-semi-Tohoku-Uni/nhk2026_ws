@@ -166,8 +166,8 @@ def generate_launch_description():
             "num_points_": 50,
             "shorten_": 0.15,
             "theta_offset_": 0.0,
-            "start_shorten_": 0.15,
-            "end_shorten_": 0.15,
+            "start_shorten_": 0.45,
+            "end_shorten_": 0.45,
         }],
         remappings=[('clock', '/world/nhk2026/clock')],
     )
@@ -214,6 +214,7 @@ def generate_launch_description():
             "slow_rotate_speed_": 0.4,
             "accel_angle_": math.pi / 10,
             "stop_angle_": math.pi / 90,
+            "offset_z_": 0.02,
         },
         ],
         remappings=[('clock', '/world/nhk2026/clock')],

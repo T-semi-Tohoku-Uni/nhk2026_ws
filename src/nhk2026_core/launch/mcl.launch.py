@@ -51,7 +51,7 @@ def generate_launch_description():
     x = -1.25
     y = 0.45
     z = 0.40
-    theata = 0.0
+    theta = 0.0
     frequency = 25.0
 
     package_dir = get_package_share_directory("nhk2026_sim")
@@ -62,6 +62,59 @@ def generate_launch_description():
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc}
 
+    world = os.path.join(
+        get_package_share_directory("nhk2026_sim"), "worlds", "field_nhk.world"
+    )
+
+    gazebo = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource([os.path.join(
+            get_package_share_directory('ros_gz_sim'), 'launch'), '/gz_sim.launch.py']),
+        launch_arguments=[('gz_args', [f' -r  {world}'])]
+    )
+
+    gz_spawn_entity = Node(
+        package='ros_gz_sim',
+        executable='create',
+        output='screen',
+        arguments=['-string', robot_desc,
+                   '-name', 'robot',
+                   '-allow_renaming', 'false',
+                   '-x', str(x),
+                   '-y', str(y),
+                   '-z', str(z),
+                   '-Y', str(theta)
+                ],
+    )
+
+    bridge = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='ros_gz_bridge_1',
+        arguments=[
+            '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
+            '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
+            '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
+            '/tf_static@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
+            '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'],
+        output='screen'
+    )
+
+    rviz_config_path = os.path.join(
+        package_dir,
+        "config",
+        "nhk2026.rviz"
+    )
+
+    rviz = Node(
+        package="rviz2",
+        executable="rviz2",
+        name="rviz2",
+        output="log",
+        arguments=["-d", rviz_config_path],
+        remappings=[('clock', '/world/nhk2026/clock')]
+    )
 
 
 
@@ -123,7 +176,7 @@ def generate_launch_description():
             "particleNum": 200,
             "initial_x": x,
             "initial_y": y,
-            "initial_theta": theata,
+            "initial_theta": theta,
             "odomNoise1": 1.2,
             "odomNoise2": 0.5,
             "odomNoise3": 1.3,
@@ -173,7 +226,7 @@ def generate_launch_description():
                 "initial_x": x,
                 "initial_y": y,
                 "initial_z": z,
-                "initial_theta": theata,
+                "initial_theta": theta,
                 
                 
                 # MCLのパラメータ
@@ -221,6 +274,82 @@ def generate_launch_description():
         output='screen'
     )
 
+    vel_feedback_node = Node(
+        package="nhk2026_localization",
+        executable="vel_feedback_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    blossom_path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="blossom_path_planner",
+        output="screen",
+        parameters=[{
+            "num_points_": 50,
+            "shorten_": 0.15,
+            "theta_offset_": 0.0,
+            "start_shorten_": 0.65,
+            "end_shorten_": 0.45,
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="path_planner",
+        output="screen",
+        parameters=[
+            {
+                "initial_x": x,
+                "initial_y": y,
+                "initial_theta": theta,
+                "sample_parameter": frequency,
+            },
+        ],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    pursuit = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 1.75,
+            "max_angular_speed": 0.7,
+            "max_linear_tolerance": 0.75,
+            "max_theta_tolerance": 0.10,
+            "max_reaching_distance": 0.05,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 0.80,
+            "Ki_tan": 0.0,
+            "Kd_tan": 0.0,
+            "Kp_normal": 0.80,
+            "Ki_normal": 0.00,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.0,
+            "Ki_theta": 0.00,
+            "Kd_theta": 0.00,
+            "x": 10,
+            "max_rotate_speed_": 0.7,
+            "slow_rotate_speed_": 0.4,
+            "accel_angle_": math.pi / 10,
+            "stop_angle_": math.pi / 90,
+            "offset_z_": 0.02,
+        },
+        ],
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    bt_node = Node (
+        package="yasarobo2025_26",
+        executable="bt_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+        parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
+    )    
     takano_hand_sequencer = Node(
         package='nhk2026_system',
         executable='takano_hand_server',
@@ -236,6 +365,10 @@ def generate_launch_description():
         SetEnvironmentVariable(name='WITH_lidar', value='2'),
          DeclareLaunchArgument('node_name', default_value='urg_node2_nl'),
         SetEnvironmentVariable(name='WITH_SIM', value='0'),
+        # gazebo,
+        # gz_spawn_entity,
+        # rviz,
+        # bridge,
         node_robot_state_publisher,
         static_from_map_to_odom,
         # joy_node,
@@ -246,7 +379,12 @@ def generate_launch_description():
         urg_node_front,
         urg_node_rear,
         lidar_filter_node,
-        joy_controller_node,
+        # joy_controller_node,
+        vel_feedback_node,
+        blossom_path_planner,
+        path_planner,
+        pursuit,
+        bt_node,
         step_leg_worker,
         step_leg_sequencer,
         jsp_node,

@@ -33,8 +33,8 @@ set(srv_files
   "srv/PathPlan.srv"
   "srv/Waypoint.srv"
   "srv/SystemR2.srv"
-  "srv/ArmPathPlan.srv"
   "srv/ResetPose.srv"
+  "srv/ArmPathPlan.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

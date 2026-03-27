@@ -17,6 +17,7 @@
 #include <ignition/msgs/pose.pb.h>
 #include <ignition/msgs/boolean.pb.h>
 #include <nhk2026_msgs/srv/reset_pose.hpp>
+#include "nhk2026_msgs/action/step_move.hpp"
 
 using namespace std::chrono_literals; 
 
@@ -58,6 +59,9 @@ class PIDController {
 
 class FollowNode: public rclcpp::Node {
     public:
+        using StepMove = nhk2026_msgs::action::StepMove;
+        using GoalHandleStepMove = rclcpp_action::ClientGoalHandle<StepMove>;
+
         explicit FollowNode(const rclcpp::NodeOptions & options = rclcpp::NodeOptions()): Node("follow_node", options) {
             double Kp_tan, Ki_tan, Kd_tan;
             double Kp_norm, Ki_norm, Kd_norm;
@@ -84,6 +88,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("slow_rotate_speed_", 0.4);
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
+            this->declare_parameter<double>("offset_z_", 0.2);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -105,6 +110,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("slow_rotate_speed_", slow_rotate_speed_);
             this->get_parameter("accel_angle_", accel_angle_);
             this->get_parameter("stop_angle_", stop_angle_);
+            this->get_parameter("offset_z_", offset_z_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -155,6 +161,11 @@ class FollowNode: public rclcpp::Node {
                 std::bind(&FollowNode::handleCancel, this, std::placeholders::_1),
                 std::bind(&FollowNode::handleAccepted, this, std::placeholders::_1)
             );
+
+            action_client_ = rclcpp_action::create_client<StepMove>(
+                this,
+                "step_leg_sequence"
+            );
         }
 
         std::shared_ptr<rclcpp_action::ServerGoalHandle<inrof2025_ros_type::action::Follow>> goal_handle_;
@@ -195,9 +206,51 @@ class FollowNode: public rclcpp::Node {
             // std::lock_guard<std::mutex> lock(mutex_);
             pose_.position.x = msgs.position.x;
             pose_.position.y = msgs.position.y;
+            pose_.position.z = msgs.position.z;
             pose_.orientation = msgs.orientation;
-            // RCLCPP_INFO(this->get_logger(), "%.4f %.4f", pose_.x, pose_.y);
+            // RCLCPP_INFO(this->get_logger(), "pose z: %.4f, path z: %.4f", 
+            //     pose_.position.z, 
+            //     path_.empty() ? 0.0 : path_[current_waypoint_index_].pose.position.z);
         }
+
+        void send_step_goal(const std::string & command) {
+            if (!this->action_client_->wait_for_action_server(std::chrono::seconds(5))) {
+                RCLCPP_ERROR(this->get_logger(), "Step Action Server not available");
+                return;
+            }
+
+            is_action_busy_ = true; // アクション開始フラグを立てる
+            auto goal_msg = StepMove::Goal();
+            goal_msg.msg = command;
+
+            // //実機でしっかりとwaypointが先に進むように simulation real
+            // int index = current_waypoint_index_ + 1;
+            // while (index + 1 < static_cast<int>(path_.size()) &&
+            //     std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+            //     index++;
+            // }
+            // current_waypoint_index_ = index;
+
+            auto send_goal_options = rclcpp_action::Client<StepMove>::SendGoalOptions();
+            
+            // アクション完了時のコールバックを登録
+            send_goal_options.result_callback = [this](const GoalHandleStepMove::WrappedResult & result) {
+                is_action_busy_ = false; // アクションが終わったらフラグを下ろす
+                if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+                    RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
+
+                    // //action通信が終わったら回転するようにする。emergency treatment
+                    // is_rotating_ = true;
+
+                } else {
+                    RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
+                }
+            };
+
+            //実機でテストするためコメントアウト simulation real
+            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
+        }
+        
 
         void resetWaypointIndex(double reset_x, double reset_y) {
             if (path_.empty()) return;
@@ -208,20 +261,9 @@ class FollowNode: public rclcpp::Node {
                 double dx = path_[i].pose.position.x - reset_x;
                 double dy = path_[i].pose.position.y - reset_y;
                 double dist = std::hypot(dx, dy);
-                // if (dist < max_linear_tolerance 
-                //     &&  (i + 1 >= static_cast<int>(path_.size()) 
-                //     ||  path_[i+1].pose.orientation != path_[i].pose.orientation)) {
-
-                //     current_waypoint_index_ = i;
-                //     return;
-                // }
-
-                // if (dist < max_linear_tolerance) {
-                //     nearest_index = i;
-                // }
 
                 if (dist < max_linear_tolerance) {
-                    if (path_[i+1].pose.orientation != path_[i].pose.orientation ){
+                    if (std::abs(getYaw(path_[i+1].pose.orientation) - getYaw(path_[i].pose.orientation)) > 1e-2){
                         current_waypoint_index_ = i;
                         return; 
                     }
@@ -243,6 +285,7 @@ class FollowNode: public rclcpp::Node {
                 // 目標到達
                 publishZero();
                 is_rotating_ = false;
+                RCLCPP_INFO(this->get_logger(), "Rotation completed. Moving to next waypoint.");
                 current_waypoint_index_++;  // 回転完了後にwaypointを進める
                 return;
             } else if (abs_err > accel_angle_) {
@@ -263,8 +306,82 @@ class FollowNode: public rclcpp::Node {
             if (a < 0) a += 2.0 * M_PI;
             return a - M_PI;
         }
+
+
+        void jumpZ(){
+            // simulationでの処理
+            ignition::transport::Node node;
+            // zが変化しなくなるまでインデックスを進める
+            int index = current_waypoint_index_ + 1;   
+            
+            //あとでジャンプ前と後の姿勢を同じようにする。
+            // geometry_msgs::msg::Pose init_pose = path_[index].pose;
+
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+                index++;
+            }
+
+            // zが変化しなくなったindexの座標をteleport先に設定
+            double target_x = path_[index].pose.position.x;
+            double target_y = path_[index].pose.position.y;
+            double target_z = path_[index].pose.position.z;
+
+            ignition::msgs::Pose req;
+            ignition::msgs::Boolean rep;
+            bool result;
+            req.set_name("robot");
+            ignition::msgs::Vector3d* position = req.mutable_position();
+            ignition::msgs::Quaternion* orientation = req.mutable_orientation();
+            position->set_x(target_x);
+            position->set_y(target_y);
+            position->set_z(target_z + offset_z_); // 少し上にオフセットしてテレポート
+            // orientation->set_x(init_pose.orientation.x);
+            // orientation->set_y(init_pose.orientation.y);
+            // orientation->set_z(init_pose.orientation.z);
+            // orientation->set_w(init_pose.orientation.w);
+            orientation->set_x(0.0);
+            orientation->set_y(0.0);
+            orientation->set_z(0.0);
+            orientation->set_w(1.0);
+
+            bool executed = node.Request(
+                "/world/nhk2026/set_pose",
+                req, 1000, rep, result
+            );
+
+            std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
+                std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
+            request->pose.position.x = target_x;
+            request->pose.position.y = target_y;
+            request->pose.position.z = target_z + offset_z_; // 少し上にオフセットしてテレポート
+            // request->pose.orientation.x = init_pose.orientation.x;
+            // request->pose.orientation.y = init_pose.orientation.y;
+            // request->pose.orientation.z = init_pose.orientation.z;
+            // request->pose.orientation.w = init_pose.orientation.w;
+            request->pose.orientation.x = 0.0;
+            request->pose.orientation.y = 0.0;
+            request->pose.orientation.z = 0.0;
+            request->pose.orientation.w = 1.0;
+
+            reset_pose_client_->async_send_request(
+                request,
+                [this, request, index](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                {
+                    auto response = future.get();
+                    RCLCPP_INFO(this->get_logger(),
+                                "Service call succeeded: %s",
+                                response->success ? "true" : "false");
+                    if (response->success){
+                        is_jump_ = false;
+                        current_waypoint_index_ = index; // ジャンプ後のインデックスに直接設定
+                        // resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                    }
+                }
+            );
+        }
+
         void controlLoop() {
-            //do nothing if if there is no goal or path
             if (!goal_handle_){
                 publishZero();
                 return;
@@ -277,6 +394,14 @@ class FollowNode: public rclcpp::Node {
                 publishZero();  
                 double target_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
                 rotate(target_yaw);
+                return;
+            }
+            if (is_jump_){
+                publishZero();
+                jumpZ();
+                return;
+            }
+            if(is_action_busy_){
                 return;
             }
 
@@ -295,6 +420,13 @@ class FollowNode: public rclcpp::Node {
             double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
             double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
             double norm = std::hypot(tx, ty);
+
+            //if norm == 0.0 then use the previous segment to calculate the tangent vector. This is for the case when there are consecutive waypoints with the same position but different orientations.
+            if (norm < 1e-6 && current_waypoint_index_ > 0) {
+                tx = path_[current_waypoint_index_].pose.position.x - path_[current_waypoint_index_-1].pose.position.x;
+                ty = path_[current_waypoint_index_].pose.position.y - path_[current_waypoint_index_-1].pose.position.y;
+                norm = std::hypot(tx, ty);
+            }
             if (norm > 0) {
                 tx /= norm;
                 ty /= norm;
@@ -377,10 +509,24 @@ class FollowNode: public rclcpp::Node {
             while (max_linear_tolerance > linear_error) {
                 if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
 
+                // zの変化があればジャンプアクションを呼び出す
+                double dz = path_[current_waypoint_index_ +1].pose.position.z
+                        - path_[current_waypoint_index_].pose.position.z;
+
+                if (std::abs(dz) > 0.0) {  
+                    if (linear_error < max_reaching_distance) {
+                        //simulation real
+                        is_jump_ = true;
+                        // send_step_goal(dz > 0.0 ? "step up" : "step down");
+                    }
+                    break;
+                }
+
                 //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation) {
+                if (std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) > 1e-2) {
 
                     if(linear_error < max_reaching_distance){
+                        RCLCPP_INFO(this->get_logger(), "Approaching rotation point. Initiating rotation.");
                         is_rotating_ = true; 
                     }
                     break;
@@ -396,76 +542,15 @@ class FollowNode: public rclcpp::Node {
             while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
                 double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
                 double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
-                if (tx == 0 && ty == 0) {
+                if (tx == 0 && ty == 0
+                    && std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) < 1e-2) {
                     current_waypoint_index_++;
                 } else {
                     break;
                 }
             }
 
-            ignition::transport::Node node;
-            //pathの目標zが今のpose_.zから変わった場合、その目標経路のところに瞬間移動する
-            //3patternあって、引き算が正、負、0のときで場合分けする。正で上がる。負で下がる。0で変わらない。
-            if (path_[current_waypoint_index_].pose.position.z - pose_.position.z > 0){
-                ignition::msgs::Pose req;
-                ignition::msgs::Boolean rep;
-                bool result;
-                req.set_name("robot");
-                ignition::msgs::Vector3d* position = req.mutable_position();
-                ignition::msgs::Quaternion* orientation = req.mutable_orientation();
-                orientation->set_x(0.0);
-                orientation->set_y(0.0);
-                orientation->set_z(0.0);
-                orientation->set_w(1.0);
-                position->set_x(-1.825);
-                position->set_y(3.3);
-                position->set_z(0.21);
-
-                
-                bool executed = node.Request(
-                    "/world/nhk2026/set_pose",
-                    req,
-                    1000,
-                    rep,
-                    result
-                );
-
-                std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
-                    std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
-                request->pose.position.x = -1.825;
-                request->pose.position.y = 3.3;
-                request->pose.position.z = 0.21;
-                request->pose.orientation.x = 0.0;
-                request->pose.orientation.y = 0.0;
-                request->pose.orientation.z = 0.0;
-                request->pose.orientation.w = 1.0;
-
-
-                reset_pose_client_->async_send_request(
-                    request,
-                    [this, request](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
-                    {
-                        auto response = future.get();
-                        RCLCPP_INFO(this->get_logger(),
-                                    "Service call succeeded: %s",
-                                    response->success ? "true" : "false");
-                        // if (response->success){
-                        //     resetWaypointIndex(request->pose.position.x, request->pose.position.y);
-                        // }
-        
-                        
-                    }
-                );
-
-
-
-            }
-
-            
-
-            
-
-
+           
 
             if ((linear_goal_distance < max_reaching_distance)){ //&& theta_goal < max_reaching_theta) {
                 //goal reached
@@ -510,6 +595,9 @@ class FollowNode: public rclcpp::Node {
 
 
             printCmdVelArrow(linear_speed_cmd_x, linear_speed_cmd_y, clipped_v_x_f, clipped_v_y_f);
+
+            //test 
+            RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
@@ -684,6 +772,10 @@ class FollowNode: public rclcpp::Node {
         // action server
         rclcpp_action::Server<inrof2025_ros_type::action::Follow>::SharedPtr action_server_;
 
+        // action client 
+        rclcpp_action::Client<StepMove>::SharedPtr action_client_;
+
+
         double lookahead_distance_;
         double max_linear_speed_;
         double max_theta_speed_;
@@ -726,6 +818,11 @@ class FollowNode: public rclcpp::Node {
         double slow_rotate_speed_ = 0.4;
         double accel_angle_       = M_PI / 10;
         double stop_angle_        = M_PI / 90;
+
+        //teleport 
+        bool is_jump_ = false;
+        bool is_action_busy_ = false;
+        double offset_z_ = 0.02; 
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;

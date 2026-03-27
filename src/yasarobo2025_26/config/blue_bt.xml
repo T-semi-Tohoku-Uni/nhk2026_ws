@@ -3,7 +3,7 @@
       main_tree_to_execute="MainBT">
   <BehaviorTree ID="MainBT">
     <Sequence>
-      <generate_route x="-3.025"
+      <generate_route x="-1.47"
                       y="0.95"
                       theta="0.0"/>
       <follow_route/>
