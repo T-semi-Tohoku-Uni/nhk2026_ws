@@ -174,6 +174,24 @@ target_link_libraries(ide_arm_bt_node
 install(TARGETS ide_arm_bt_node DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
+# path_bt_node
+# -----------------------------------------------------------------------------
+add_executable(path_bt_node
+  src/path_bt_node.cpp
+)
+ament_target_dependencies(path_bt_node
+  rclcpp
+  rclcpp_action
+  inrof2025_ros_type
+  ament_index_cpp
+)
+target_link_libraries(path_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
+install(TARGETS path_bt_node DESTINATION lib/${PROJECT_NAME})
+
+# -----------------------------------------------------------------------------
 # Install other directories
 # -----------------------------------------------------------------------------
 install(
