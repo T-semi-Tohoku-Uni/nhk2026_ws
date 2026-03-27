@@ -32,18 +32,24 @@ int main(int argc, char ** argv)
     BT::RosNodeParams follow_route_params;
     follow_route_params.nh = node;
     follow_route_params.default_port_value = "follow";
+    follow_route_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    follow_route_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
     BT::RosNodeParams generate_route_params;
     generate_route_params.nh = node;
     generate_route_params.default_port_value = "generate_route";
+    generate_route_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    generate_route_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
     BT::RosNodeParams linear_path_params;
     linear_path_params.nh = node;
     linear_path_params.default_port_value = "generate_ball_path";
+    linear_path_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    linear_path_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
-    factory.registerNodeType<FollowRoute>("FollowRoute", follow_route_params);
-    factory.registerNodeType<GenerateRoute>("GenerateRoute", generate_route_params);
-    factory.registerNodeType<LinearPath>("LinearPath", linear_path_params);
+    factory.registerNodeType<FollowRoute>("follow_route", follow_route_params);
+    factory.registerNodeType<GenerateRoute>("generate_route", generate_route_params);
+    factory.registerNodeType<LinearPath>("linear_path", linear_path_params);
 
     auto tree = factory.createTreeFromFile(bt_xml_file);
     tree.tickWhileRunning();

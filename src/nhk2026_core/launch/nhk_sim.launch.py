@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -219,9 +219,16 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
     )
 
-    bt_node = Node (
+    ball_path_node = Node(
         package="yasarobo2025_26",
-        executable="bt_node",
+        executable="ball_path_node",
+        output="screen",
+        remappings=[('clock', '/world/nhk2026/clock')],
+    )
+
+    bt_node = Node (
+        package="nhk2026_system",
+        executable="path_bt_node",
         output="screen",
         remappings=[('clock', '/world/nhk2026/clock')],
         parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
@@ -244,6 +251,10 @@ def generate_launch_description():
         blossom_path_planner,
         path_planner,
         pursuit,
-        bt_node,
+        ball_path_node,
+        TimerAction(
+            period=10.0,
+            actions=[bt_node],
+        ),
         lidar_filter_node,
     ])

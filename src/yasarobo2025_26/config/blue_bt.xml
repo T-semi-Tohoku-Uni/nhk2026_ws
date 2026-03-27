@@ -7,7 +7,7 @@
                       y="0.95"
                       theta="0.0"/>
       <follow_route/>
-      <ball_path x="0"
+      <linear_path x="0"
                  y="0"
                  is_return="0"/>
       <follow_route/>
@@ -16,7 +16,7 @@
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="ball_path"
+    <Action ID="linear_path"
             editable="true">
       <input_port name="x"/>
       <input_port name="y"/>
