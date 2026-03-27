@@ -312,8 +312,10 @@ class FollowNode: public rclcpp::Node {
             // simulationでの処理
             ignition::transport::Node node;
             // zが変化しなくなるまでインデックスを進める
-            int index = current_waypoint_index_ + 1;          
-            geometry_msgs::msg::Pose init_pose = path_[index].pose;
+            int index = current_waypoint_index_ + 1;   
+            
+            //あとでジャンプ前と後の姿勢を同じようにする。
+            // geometry_msgs::msg::Pose init_pose = path_[index].pose;
 
             while (index + 1 < static_cast<int>(path_.size()) &&
                 std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
@@ -334,10 +336,14 @@ class FollowNode: public rclcpp::Node {
             position->set_x(target_x);
             position->set_y(target_y);
             position->set_z(target_z + offset_z_); // 少し上にオフセットしてテレポート
-            orientation->set_x(init_pose.orientation.x);
-            orientation->set_y(init_pose.orientation.y);
-            orientation->set_z(init_pose.orientation.z);
-            orientation->set_w(init_pose.orientation.w);
+            // orientation->set_x(init_pose.orientation.x);
+            // orientation->set_y(init_pose.orientation.y);
+            // orientation->set_z(init_pose.orientation.z);
+            // orientation->set_w(init_pose.orientation.w);
+            orientation->set_x(0.0);
+            orientation->set_y(0.0);
+            orientation->set_z(0.0);
+            orientation->set_w(1.0);
 
             bool executed = node.Request(
                 "/world/nhk2026/set_pose",
@@ -349,10 +355,14 @@ class FollowNode: public rclcpp::Node {
             request->pose.position.x = target_x;
             request->pose.position.y = target_y;
             request->pose.position.z = target_z + offset_z_; // 少し上にオフセットしてテレポート
-            request->pose.orientation.x = init_pose.orientation.x;
-            request->pose.orientation.y = init_pose.orientation.y;
-            request->pose.orientation.z = init_pose.orientation.z;
-            request->pose.orientation.w = init_pose.orientation.w;
+            // request->pose.orientation.x = init_pose.orientation.x;
+            // request->pose.orientation.y = init_pose.orientation.y;
+            // request->pose.orientation.z = init_pose.orientation.z;
+            // request->pose.orientation.w = init_pose.orientation.w;
+            request->pose.orientation.x = 0.0;
+            request->pose.orientation.y = 0.0;
+            request->pose.orientation.z = 0.0;
+            request->pose.orientation.w = 1.0;
 
             reset_pose_client_->async_send_request(
                 request,
