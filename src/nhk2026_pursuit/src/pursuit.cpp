@@ -247,8 +247,8 @@ class FollowNode: public rclcpp::Node {
                 }
             };
 
-            //実機でテストするためコメントアウト
-            this->action_client_->async_send_goal(goal_msg, send_goal_options);
+            //実機でテストするためコメントアウト simulation real
+            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
         
 
@@ -263,7 +263,7 @@ class FollowNode: public rclcpp::Node {
                 double dist = std::hypot(dx, dy);
 
                 if (dist < max_linear_tolerance) {
-                    if (path_[i+1].pose.orientation != path_[i].pose.orientation ){
+                    if (std::abs(getYaw(path_[i+1].pose.orientation) - getYaw(path_[i].pose.orientation)) > 1e-2){
                         current_waypoint_index_ = i;
                         return; 
                     }
@@ -409,6 +409,13 @@ class FollowNode: public rclcpp::Node {
             double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
             double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
             double norm = std::hypot(tx, ty);
+
+            //if norm == 0.0 then use the previous segment to calculate the tangent vector. This is for the case when there are consecutive waypoints with the same position but different orientations.
+            if (norm < 1e-6 && current_waypoint_index_ > 0) {
+                tx = path_[current_waypoint_index_].pose.position.x - path_[current_waypoint_index_-1].pose.position.x;
+                ty = path_[current_waypoint_index_].pose.position.y - path_[current_waypoint_index_-1].pose.position.y;
+                norm = std::hypot(tx, ty);
+            }
             if (norm > 0) {
                 tx /= norm;
                 ty /= norm;
@@ -505,9 +512,10 @@ class FollowNode: public rclcpp::Node {
                 }
 
                 //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                if (path_[current_waypoint_index_].pose.orientation != path_[current_waypoint_index_+1].pose.orientation) {
+                if (std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) > 1e-2) {
 
                     if(linear_error < max_reaching_distance){
+                        RCLCPP_INFO(this->get_logger(), "Approaching rotation point. Initiating rotation.");
                         is_rotating_ = true; 
                     }
                     break;
@@ -523,7 +531,8 @@ class FollowNode: public rclcpp::Node {
             while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
                 double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
                 double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
-                if (tx == 0 && ty == 0) {
+                if (tx == 0 && ty == 0
+                    && std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) < 1e-2) {
                     current_waypoint_index_++;
                 } else {
                     break;
