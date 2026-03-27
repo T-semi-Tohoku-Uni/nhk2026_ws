@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <cmath>
+#include <algorithm> // std::min, std::max用
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
@@ -11,7 +12,7 @@
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp"
-#include "sensor_msgs/msg/joint_state.hpp" // 脚のジョイント用に追加
+#include "sensor_msgs/msg/joint_state.hpp" 
 #include <mutex> 
 
 using namespace std::chrono_literals; 
@@ -37,7 +38,6 @@ public:
 
         rclcpp::QoS reliable_qos = rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable).durability(rclcpp::DurabilityPolicy::Volatile);
         
-        // パブリッシャーの初期化
         zaxis_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("zaxis", 10);
         robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_robomas", reliable_qos);
         cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", reliable_qos);
@@ -48,7 +48,6 @@ public:
         auto sub_opt = rclcpp::SubscriptionOptions();
         sub_opt.callback_group = callback_group_;
         
-        // サブスクライバーの初期化
         lidar_sub_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
             "onedlidar", 10, std::bind(&StepActionServer::lidar_callback, this, _1), sub_opt
         );
@@ -61,7 +60,9 @@ public:
             10ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
             
         this->declare_parameter<double>("kPosTolerance", 0.05);
-        this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
+        this->declare_parameter<double>("max_leg_rad_per_sec", 2.0); // 補間速度のパラメータ化
+        kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
+        max_leg_vel_ = this->get_parameter("max_leg_rad_per_sec").as_double();
     }
 
 private:
@@ -81,22 +82,40 @@ private:
         std::thread{std::bind(&StepActionServer::execute, this, _1), goal_handle}.detach();
     }
 
-    void publish_zaxis_periodic() {
-        std_msgs::msg::Int32MultiArray msg;
-        msg.data.push_back(this->zaxics_count);
-        zaxis_pub_->publish(msg);
+    // 同期補間ロジック：左右の脚を同じ値で更新する
+    void update_interpolation(double dt) {
+        for (size_t i = 0; i < 3; ++i) {
+            double diff = target_leg_pos_[i] - current_cmd_pos_[i];
+            if (std::fabs(diff) > 0.001) {
+                // 最大速度制限に基づいたステップ量
+                double step = std::copysign(std::min(std::fabs(diff), max_leg_vel_ * dt), diff);
+                current_cmd_pos_[i] += step;
+            }
+        }
+        // 強制同期：左右（0と1）を平均または片方に合わせる
+        double sync_val = (current_cmd_pos_[0] + current_cmd_pos_[1]) / 2.0;
+        current_cmd_pos_[0] = sync_val;
+        current_cmd_pos_[1] = sync_val;
     }
 
     void execute(const std::shared_ptr<GoalHandleStepMove> goal_handle) {
         const auto goal = goal_handle->get_goal();
         auto result = std::make_shared<StepMove::Result>();
-
-        rclcpp::Rate loop_rate(10.0); // 10Hzで全体を回す
+        
+        double hz = 100.0; // 制御周期を少し上げると滑らかになります
+        rclcpp::Rate loop_rate(hz);
+        double dt = 1.0 / hz;
 
         int step = 0;
         auto state_start_time = this->now();
         
-        target_leg_pos_ = {now_joint_.position[0], now_joint_.position[1], now_joint_.position[2]};
+        // 現在の関節位置から補間を開始する
+        {
+            std::lock_guard<std::mutex> lock(joint_mutex_);
+            current_cmd_pos_ = {now_joint_.position[0], now_joint_.position[1], now_joint_.position[2]};
+            target_leg_pos_ = current_cmd_pos_;
+        }
+
         float target_robomas = 0.0f;
         geometry_msgs::msg::Twist target_cmd_vel;
 
@@ -151,18 +170,16 @@ private:
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     default:
-                        // 全ステップ完了
                         count++;
                         stop_all();
                         result->success = true; result->msg = "Step up Completed!";
                         goal_handle->succeed(result);
-                        RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス正常終了 ===");
                         return;
                 }
 
+                update_interpolation(dt);
                 publish_all(target_robomas, target_cmd_vel);
                 loop_rate.sleep();
-                RCLCPP_INFO(this->get_logger(), "step: %d", step);
             }
 
         } else if (goal->msg == "step down" && count > -2) {
@@ -182,8 +199,7 @@ private:
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_robomas = -0.3f; 
-                        target_cmd_vel.linear.y = -0.5;
+                        target_robomas = -0.3f; target_cmd_vel.linear.y = -0.5;
                         if (check_lidar(1, 1)) next_step(step, state_start_time);
                         break;
                     case 2:
@@ -199,16 +215,13 @@ private:
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 5:
-                        target_robomas = -0.3f; 
-                        target_cmd_vel.linear.y = 0.0;
+                        target_robomas = -0.3f; target_cmd_vel.linear.y = 0.0;
                         if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                         break;
                     case 6:
-                        target_robomas = 0.0f;
-                        leg_max_speed_  =1.0;
-                        leg_max_acc_  = 1.0;
+                        target_robomas = 0.0f; leg_max_speed_ = 1.0; leg_max_acc_ = 1.0;
                         target_leg_pos_ = {3.66 + count * 6.28, 3.66 + count * 6.28, -0.52};
-                        if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
+                        if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 7:
                         if (elapsed_sec(state_start_time) > 0.6) next_step(step, state_start_time);
@@ -219,8 +232,7 @@ private:
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
                     case 9:
-                        leg_max_speed_  =50.0;
-                        leg_max_acc_  = 20.0;
+                        leg_max_speed_ = 50.0; leg_max_acc_ = 20.0;
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
@@ -228,10 +240,9 @@ private:
                         stop_all();
                         result->success = true; result->msg = "Step down Completed!";
                         goal_handle->succeed(result);
-                        RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス正常終了 ===");
                         return;
                 }
-                RCLCPP_INFO(this->get_logger(), "step: %d", step);
+                update_interpolation(dt);
                 publish_all(target_robomas, target_cmd_vel);
                 loop_rate.sleep();
             }
@@ -241,7 +252,6 @@ private:
         }
     }
 
- 
     void publish_all(float target_robomas, geometry_msgs::msg::Twist target_cmd_vel) {
         std_msgs::msg::Float32MultiArray rb_msg;
         rb_msg.data = {target_robomas};
@@ -250,19 +260,27 @@ private:
 
         if (joint_subscribe_flag_) {
             std_msgs::msg::Float32MultiArray legs_cmd;
-            // [速度, 加速度, 右, 左, 後ろ] の順番にデータを詰める
+            // 補間された current_cmd_pos_ をパブリッシュ
             legs_cmd.data = {
                 leg_max_speed_,
                 leg_max_acc_,
-                static_cast<float>(target_leg_pos_[0]),
-                static_cast<float>(target_leg_pos_[1]),
-                static_cast<float>(target_leg_pos_[2])
+                static_cast<float>(current_cmd_pos_[0]),
+                static_cast<float>(current_cmd_pos_[1]),
+                static_cast<float>(current_cmd_pos_[2])
             };
             legs_pub_->publish(legs_cmd);
         }
     }
 
+    void publish_zaxis_periodic() {
+        std_msgs::msg::Int32MultiArray msg;
+        msg.data.push_back(this->zaxics_count);
+        zaxis_pub_->publish(msg);
+    }
+
+    // 判定は「最終目標値」に到達したかで見る
     bool leg_reached() {
+        std::lock_guard<std::mutex> lock(joint_mutex_);
         if (!joint_subscribe_flag_ || now_joint_.position.size() < 3) return false;
         bool right_reached = std::fabs(now_joint_.position[0] - target_leg_pos_[0]) <= kPosTolerance_;
         bool left_reached  = std::fabs(now_joint_.position[1] - target_leg_pos_[1]) <= kPosTolerance_;
@@ -292,11 +310,12 @@ private:
         stop_rb.data = {0.0f};
         robomas_pub_->publish(stop_rb);
         cmd_vel_pub_->publish(geometry_msgs::msg::Twist());
-        // 脚は現在位置を目標に書き換えて停止させる
-        target_leg_pos_ = {now_joint_.position[0], now_joint_.position[1], now_joint_.position[2]};
+        // 現在の補間位置を最終目標にして停止
+        target_leg_pos_ = current_cmd_pos_;
     }
 
     void joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr msg) {
+        std::lock_guard<std::mutex> lock(joint_mutex_);
         if (msg->position.size() >= 3) {
             now_joint_ = *msg;
             joint_subscribe_flag_ = true;
@@ -308,31 +327,25 @@ private:
         lidar_data_ = msg->data;
     }
 
+    // メンバ変数
     rclcpp::CallbackGroup::SharedPtr callback_group_;
     rclcpp_action::Server<StepMove>::SharedPtr action_server_;
-    
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_, legs_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr zaxis_pub_;
-    rclcpp::TimerBase::SharedPtr zaxis_timer_;
-
-    // ★ 脚用の統合トピック
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr legs_pub_;
-
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr lidar_sub_;
-    
-    std::vector<int> lidar_data_;
-    std::mutex lidar_mutex_;
-    
-    int count; 
-    int zaxics_count = 0;
+    rclcpp::TimerBase::SharedPtr zaxis_timer_;
 
-    // 脚制御用の変数
+    std::vector<int> lidar_data_;
+    std::mutex lidar_mutex_, joint_mutex_;
+    int count, zaxics_count = 0;
     sensor_msgs::msg::JointState now_joint_;
     bool joint_subscribe_flag_ = false;
-    double kPosTolerance_;
-    std::vector<double> target_leg_pos_ = {0.0, 0.0, 0.0};
+    double kPosTolerance_, max_leg_vel_;
+    
+    std::vector<double> target_leg_pos_ = {0.0, 0.0, 0.0};  // 最終目標
+    std::vector<double> current_cmd_pos_ = {0.0, 0.0, 0.0}; // 補間中の指令値
     float leg_max_speed_ = 50.0f;
     float leg_max_acc_ = 20.0f;
 };
@@ -343,7 +356,6 @@ int main(int argc, char **argv) {
     rclcpp::executors::MultiThreadedExecutor executor;
     executor.add_node(node);
     executor.spin();
-
     rclcpp::shutdown();
     return 0;
 }
