@@ -350,6 +350,14 @@ def generate_launch_description():
         remappings=[('clock', '/world/nhk2026/clock')],
         parameters=[{"bt_xml_file" : os.path.join(get_package_share_directory("yasarobo2025_26"), "config", "blue_bt.xml")}]
     )    
+    takano_hand_sequencer = Node(
+        package='nhk2026_system',
+        executable='takano_hand_server',
+        name='takano_hand_sequencer',
+        output='screen'
+    )
+
+   
 
  
     return LaunchDescription([
@@ -381,4 +389,5 @@ def generate_launch_description():
         step_leg_sequencer,
         jsp_node,
         mcl_manage,
+        takano_hand_sequencer,
     ])

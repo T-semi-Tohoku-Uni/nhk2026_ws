@@ -66,9 +66,9 @@ def _ensure_can0_up(context, *args, **kwargs):
     
 def generate_launch_description():
     pkg_share = get_package_share_directory('nhk2026_bridge')
-    # namespaceを外したため、必要に応じて設定ファイルのパス等も確認してください
     canid_file = os.path.join(pkg_share, 'config', 'nhk206_canbridge_r2.yml')
 
+    name_space = ''
     ld = LaunchDescription()
     ld.add_action(OpaqueFunction(function=_require_can0))
     ld.add_action(OpaqueFunction(function=_ensure_can0_up))
