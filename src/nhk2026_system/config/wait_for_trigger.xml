@@ -8,4 +8,11 @@
       </KeepRunningUntilFailure>
     </ForceSuccess>
   </BehaviorTree>
+  
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="trigger_topic"
+            editable="true">
+    </Action>
+  </TreeNodesModel>
 </root>
