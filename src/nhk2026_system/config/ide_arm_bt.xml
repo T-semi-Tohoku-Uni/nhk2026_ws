@@ -1,19 +1,45 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <MoveArm y="0.60" z="0.6" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <ServiceVacuum value="true" />
-      <MoveArm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <ForceSuccess>
-        <KeepRunningUntilFailure>
-          <Inverter>
-            <TestTrigger />
-          </Inverter>
-        </KeepRunningUntilFailure>
-      </ForceSuccess>
-      <MoveArm y="0.70" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
-      <ServiceVacuum value="false" />
-      <MoveArm y="0.80" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
+      <move_arm y="0.60" z="0.6" roll="-1.57" max_speed="0.2" max_acc="0.01" />
+      <service_vacuum value="true" />
+      <move_arm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
+      
+      <move_arm y="0.70" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
+      <service_vacuum value="false" />
+      <move_arm y="0.80" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
     </Sequence>
   </BehaviorTree>
+  
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+
+    <Action ID="linear_path"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="is_return"/>
+    </Action>
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x">TODO</input_port>
+      <input_port name="y">TODO</input_port>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
+  </TreeNodesModel>
 </root>

@@ -42,9 +42,8 @@ int main(int argc, char ** argv)
   trigger_params.nh = node;
   trigger_params.default_port_value = "trigger";
 
-  factory.registerNodeType<MoveArmAction>("MoveArm", action_params);
-  factory.registerNodeType<ServiceVacuum>("ServiceVacuum", service_params);
-  factory.registerNodeType<TestTrigger>("TestTrigger", trigger_params);
+  factory.registerNodeType<MoveArmAction>("move_arm", action_params);
+  factory.registerNodeType<ServiceVacuum>("service_vacuum", service_params);
 
   auto tree = factory.createTreeFromFile(bt_xml_file);
   tree.tickWhileRunning();
