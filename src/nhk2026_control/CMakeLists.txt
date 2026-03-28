@@ -22,8 +22,15 @@ find_package(urdf REQUIRED)
 set(ALL_DEPENDENCIES
   rclcpp
   std_msgs
+  geometry_msgs
   sensor_msgs
+  nav_msgs
+  nhk2026_msgs
   std_srvs
+  orocos_kdl
+  kdl_parser
+  tf2
+  urdf
 )
 
 function(configure_nhk_target target_name)
@@ -33,33 +40,6 @@ function(configure_nhk_target target_name)
   )
   install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
 endfunction()
-
-add_executable(ide_arm_sim_bridge
-  src/ide_arm_sim_bridge.cpp
-)
-
-ament_target_dependencies(ide_arm_sim_bridge
-  rclcpp
-  std_msgs
-)
-
-configure_nhk_target(ide_arm_sim_bridge)
-
-add_executable(arm_path_plan
-  src/arm_path_plan_server.cpp
-)
-
-ament_target_dependencies(arm_path_plan
-  rclcpp
-  geometry_msgs
-  nav_msgs
-  nhk2026_msgs
-  std_msgs
-  orocos_kdl
-  kdl_parser
-  tf2
-  urdf
-)
 
 # 共通ビルド関数
 function(add_nhk_node target_name source_file)
@@ -77,6 +57,8 @@ endfunction()
 add_nhk_node(joint_state_publisher_ide src/joint_state_publisher_ide.cpp)
 add_nhk_node(joint_state_publisher_step src/joint_state_publisher_step.cpp)
 add_nhk_node(vacuum_server src/vacuum_service.cpp)
+add_nhk_node(ide_arm_sim_bridge src/ide_arm_sim_bridge.cpp)
+add_nhk_node(arm_path_plan src/arm_path_plan_server.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include launch config DESTINATION share/${PROJECT_NAME} OPTIONAL)
