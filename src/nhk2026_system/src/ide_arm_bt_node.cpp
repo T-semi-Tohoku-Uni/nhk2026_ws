@@ -44,6 +44,7 @@ int main(int argc, char ** argv)
 
   factory.registerNodeType<MoveArmAction>("move_arm", action_params);
   factory.registerNodeType<ServiceVacuum>("service_vacuum", service_params);
+  factory.registerNodeType<TriggerTopic>("trigger_topic", trigger_params);
 
   auto tree = factory.createTreeFromFile(bt_xml_file);
   tree.tickWhileRunning();

@@ -1,17 +1,17 @@
 #pragma once
 
 #include <behaviortree_ros2/bt_topic_sub_node.hpp>
-#include <std_msgs/msg/bool.hpp>
+#include <std_msgs/msg/empty.hpp>
 
-class TestTrigger
-: public BT::RosTopicSubNode<std_msgs::msg::Bool>
+class TriggerTopic
+: public BT::RosTopicSubNode<std_msgs::msg::Empty>
 {
 public:
-    TestTrigger(
+    TriggerTopic(
     const std::string & name,
     const BT::NodeConfig & conf,
     const BT::RosNodeParams & params)
-  : BT::RosTopicSubNode<std_msgs::msg::Bool>(name, conf, params)
+  : BT::RosTopicSubNode<std_msgs::msg::Empty>(name, conf, params)
   {
   }
 
@@ -20,7 +20,7 @@ public:
     return providedBasicPorts({});
   }
 
-  BT::NodeStatus onTick(const std::shared_ptr<std_msgs::msg::Bool>& msg) override;
+  BT::NodeStatus onTick(const std::shared_ptr<std_msgs::msg::Empty>& msg) override;
   bool latchLastMessage() const override { return false; }
 
 private:

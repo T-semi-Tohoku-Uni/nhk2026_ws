@@ -1,0 +1,11 @@
+<root BTCPP_format="4">
+  <BehaviorTree ID="WaitForTrigger">
+    <ForceSuccess>
+      <KeepRunningUntilFailure>
+        <Inverter>
+          <trigger_topic />
+        </Inverter>
+      </KeepRunningUntilFailure>
+    </ForceSuccess>
+  </BehaviorTree>
+</root>

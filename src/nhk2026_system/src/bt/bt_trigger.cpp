@@ -1,6 +1,6 @@
 #include "bt/bt_trigger.hpp"
 
-BT::NodeStatus TestTrigger::onTick(const std::shared_ptr<std_msgs::msg::Bool>& msg)
+BT::NodeStatus TriggerTopic::onTick(const std::shared_ptr<std_msgs::msg::Empty>& msg)
 {
     if (!armed_)
     {
@@ -8,7 +8,7 @@ BT::NodeStatus TestTrigger::onTick(const std::shared_ptr<std_msgs::msg::Bool>& m
         return BT::NodeStatus::FAILURE;
     }
 
-    if (msg && msg->data) {
+    if (msg) {
         armed_ = false;
         return BT::NodeStatus::SUCCESS;
     }
