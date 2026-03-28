@@ -1,9 +1,58 @@
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, TimerAction
-from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
-from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
+import os
+import subprocess
 
+from ament_index_python.packages import get_package_share_directory
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, EmitEvent, RegisterEventHandler, OpaqueFunction, Shutdown, TimerAction
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node, LifecycleNode
+from launch_ros.substitutions import FindPackageShare
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+from launch.event_handlers import OnProcessStart
+import lifecycle_msgs.msg
+import launch
+
+def _require_can0(context, *args, **kwargs):
+    try:
+        subprocess.check_output(["/usr/sbin/ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
+        return []
+    except subprocess.CalledProcessError as e:
+        msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
+        launch.logging.get_logger(__name__).error(msg)
+        return [Shutdown(reason="can0 not found")]
+    except FileNotFoundError:
+        msg = "ip コマンドが見つかりません。launch を停止します。"
+        launch.logging.get_logger(__name__).error(msg)
+        return [Shutdown(reason="ip command not found")]
+
+def _ensure_can0_up(context, *args, **kwargs):
+    try:
+        out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
+    except Exception:
+        return []
+
+    desired_ok = all(token in out for token in ("bitrate 1000000", "dbitrate 2000000", "fd on"))
+    if "UP" in out and desired_ok:
+        return []
+
+    cmds = [
+        ["sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "down"],
+        [
+            "sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "up",
+            "type", "can",
+            "bitrate", "1000000",
+            "dbitrate", "2000000",
+            "fd", "on",
+        ],
+    ]
+    for cmd in cmds:
+        try:
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
+        except subprocess.CalledProcessError as e:
+            launch.logging.get_logger(__name__).error(f"can0 設定失敗: {e.output.strip()}")
+            return [Shutdown(reason="can0 setup failed")]
+    return []
 
 def generate_launch_description():
     bt_xml_file = LaunchConfiguration("bt_xml_file")
@@ -44,6 +93,47 @@ def generate_launch_description():
         ],
     )
 
+    pkg_share_bridge = get_package_share_directory('nhk2026_bridge')
+    canid_file = os.path.join(pkg_share_bridge, 'config', 'ide_arm_canbridge.yml')
+    canbridgenode = LifecycleNode(
+        package='nhk2026_bridge',
+        executable='nhk2026_canbridge',
+        name='nhk2026_canbridge_step',
+        namespace='',
+        parameters=[canid_file],
+        output='screen',
+        emulate_tty=True, 
+    )
+    canbridge_configure_event_handler = RegisterEventHandler(
+        OnProcessStart(
+            target_action=canbridgenode,
+            on_start=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=launch.events.matches_action(canbridgenode),
+                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                    )
+                )
+            ]
+        )
+    )
+
+    canbridge_activate_event_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=canbridgenode,
+            start_state='configuring',
+            goal_state='inactive',
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=launch.events.matches_action(canbridgenode),
+                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                    )
+                )
+            ]
+        )
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             "bt_xml_file",
@@ -69,6 +159,11 @@ def generate_launch_description():
             default_value="0.03",
             description="Joint position tolerance used by ide_arm_action_server.",
         ),
+        OpaqueFunction(function=_require_can0),
+        OpaqueFunction(function=_ensure_can0_up),
+        canbridgenode,
+        canbridge_configure_event_handler,
+        canbridge_activate_event_handler,
         arm_path_plan_node,
         ide_arm_action_server_node,
         vacuum_server_node,
