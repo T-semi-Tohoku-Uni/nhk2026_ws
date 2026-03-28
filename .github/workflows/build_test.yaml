@@ -21,7 +21,7 @@ jobs:
       - name: Install apt repository
         run: |
             sudo apt-get update
-            sudo apt-get install -y libzmq3-dev libboost-dev qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libopencv-dev libudev-dev libnanoflann-dev libhdf5-dev
+            sudo apt-get install -y libzmq3-dev libboost-dev qtbase5-dev libqt5svg5-dev libzmq3-dev libdw-dev libopencv-dev libudev-dev libnanoflann-dev libhdf5-dev libignition-transport8-dev libignition-msgs8-dev
 
       - name: Behaivor Tree cache restore
         id: cache-behaivor-tree
@@ -74,6 +74,7 @@ jobs:
 
       - name: rosdep
         run: |
+            sudo apt-get update
             rosdep update
             rosdep install --from-paths src -y --ignore-src 
 

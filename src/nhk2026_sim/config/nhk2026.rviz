@@ -14,7 +14,7 @@ Panels:
         - /Path2/Topic1
         - /Path2/Offset1
       Splitter Ratio: 0.5
-    Tree Height: 413
+    Tree Height: 407
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -251,6 +251,7 @@ Visualization Manager:
       Enabled: true
       Name: Marker
       Namespaces:
+        waypoint_marker: true
         waypoint_marker: true
       Topic:
         Depth: 5
