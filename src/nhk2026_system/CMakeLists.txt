@@ -26,6 +26,8 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(inrof2025_ros_type REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -96,7 +98,7 @@ ament_target_dependencies(step_leg_action_server
 install(TARGETS step_leg_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
-# step_action_server (追加)
+# step_action_server
 # -----------------------------------------------------------------------------
 add_executable(step_action_server
   src/step_action_server.cpp
@@ -112,7 +114,7 @@ ament_target_dependencies(step_action_server
 install(TARGETS step_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
-# kaneko_arm_action_server (追加)
+# kaneko_arm_action_server
 # -----------------------------------------------------------------------------
 add_executable(kaneko_arm_action_server
   src/kaneko_arm_action_server.cpp
@@ -130,11 +132,31 @@ ament_target_dependencies(kaneko_arm_action_server
 install(TARGETS kaneko_arm_action_server DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
+# bt_library
+# -----------------------------------------------------------------------------
+add_library(bt_library
+  src/bt/bt_move_arm.cpp
+  src/bt/bt_vacuum.cpp
+  src/bt/bt_trigger.cpp
+  src/bt/bt_generate_route.cpp
+  src/bt/bt_linear_path.cpp
+  src/bt/bt_follow_route.cpp
+)
+ament_target_dependencies(bt_library
+  nhk2026_msgs
+  std_srvs
+  std_msgs
+  inrof2025_ros_type
+  tf2
+  tf2_geometry_msgs
+)
+target_link_libraries(bt_library behaviortree_ros2::behaviortree_ros2)
+
+# -----------------------------------------------------------------------------
 # ide_arm_bt_node
 # -----------------------------------------------------------------------------
 add_executable(ide_arm_bt_node
   src/ide_arm_bt_node.cpp
-  src/bt_move_arm.cpp
 )
 ament_target_dependencies(ide_arm_bt_node
   rclcpp
@@ -145,8 +167,29 @@ ament_target_dependencies(ide_arm_bt_node
   tf2
   tf2_geometry_msgs
 )
-target_link_libraries(ide_arm_bt_node behaviortree_ros2::behaviortree_ros2)
+target_link_libraries(ide_arm_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
 install(TARGETS ide_arm_bt_node DESTINATION lib/${PROJECT_NAME})
+
+# -----------------------------------------------------------------------------
+# path_bt_node
+# -----------------------------------------------------------------------------
+add_executable(path_bt_node
+  src/path_bt_node.cpp
+)
+ament_target_dependencies(path_bt_node
+  rclcpp
+  rclcpp_action
+  inrof2025_ros_type
+  ament_index_cpp
+)
+target_link_libraries(path_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
+install(TARGETS path_bt_node DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
 # Install other directories

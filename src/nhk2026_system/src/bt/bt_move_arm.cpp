@@ -1,4 +1,4 @@
-#include "nhk2026_system/bt_move_arm.hpp"
+#include "bt/bt_move_arm.hpp"
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>

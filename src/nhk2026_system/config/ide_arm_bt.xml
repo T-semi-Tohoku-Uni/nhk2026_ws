@@ -1,11 +1,19 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <MoveArm y="-0.30" z="0.5" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <MoveArm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
       <MoveArm y="0.60" z="0.6" roll="-1.57" max_speed="0.2" max_acc="0.01" />
+      <ServiceVacuum value="true" />
+      <MoveArm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
+      <ForceSuccess>
+        <KeepRunningUntilFailure>
+          <Inverter>
+            <TestTrigger />
+          </Inverter>
+        </KeepRunningUntilFailure>
+      </ForceSuccess>
+      <MoveArm y="0.70" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
+      <ServiceVacuum value="false" />
       <MoveArm y="0.80" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
-      <MoveArm y="-0.10" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
     </Sequence>
   </BehaviorTree>
 </root>

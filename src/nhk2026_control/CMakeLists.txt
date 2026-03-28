@@ -12,6 +12,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(tf2 REQUIRED)
@@ -21,15 +22,24 @@ find_package(urdf REQUIRED)
 set(ALL_DEPENDENCIES
   rclcpp
   std_msgs
+  geometry_msgs
   sensor_msgs
   nav_msgs
   nhk2026_msgs
-  std_msgs
+  std_srvs
   orocos_kdl
   kdl_parser
   tf2
   urdf
 )
+
+function(configure_nhk_target target_name)
+  target_include_directories(${target_name} PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include>"
+  )
+  install(TARGETS ${target_name} DESTINATION lib/${PROJECT_NAME})
+endfunction()
 
 # 共通ビルド関数
 function(add_nhk_node target_name source_file)
@@ -46,6 +56,9 @@ endfunction()
 # --- 実行ファイルの登録（ここですべて一括管理） ---
 add_nhk_node(joint_state_publisher_ide src/joint_state_publisher_ide.cpp)
 add_nhk_node(joint_state_publisher_step src/joint_state_publisher_step.cpp)
+add_nhk_node(vacuum_server src/vacuum_service.cpp)
+add_nhk_node(ide_arm_sim_bridge src/ide_arm_sim_bridge.cpp)
+add_nhk_node(arm_path_plan src/arm_path_plan_server.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include launch config DESTINATION share/${PROJECT_NAME} OPTIONAL)
