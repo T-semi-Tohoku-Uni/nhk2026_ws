@@ -145,7 +145,7 @@ namespace nhk2026_pursuit::blossom_path{
         geometry_msgs::msg::Pose init_pose;
         init_pose.position.x = pose_->position.x;
         init_pose.position.y = pose_->position.y;
-        init_pose.position.z = 0.0;
+        init_pose.position.z = pose_->position.z;
 
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, getYaw(pose_->orientation));
@@ -172,11 +172,14 @@ namespace nhk2026_pursuit::blossom_path{
                 yaw = atan2(static_cast<double>(dv), static_cast<double>(du));
             }
             
-            // //角度再構築
-            // double z_diff = world_pose.position.z - prev_z;
-            // if (z_diff < 0.0){
-            //     yaw += M_PI;
-            // }
+            //角度再構築
+            double z_diff = world_pose.position.z - prev_z;
+            if (z_diff < 0.0){
+                yaw += M_PI;
+            }
+            while (yaw > M_PI)  yaw -= 2.0 * M_PI;
+            while (yaw < -M_PI) yaw += 2.0 * M_PI;
+            
             
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
