@@ -1,5 +1,6 @@
 import os
 import subprocess
+import xacro
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
@@ -133,6 +134,19 @@ def generate_launch_description():
             ]
         )
     )
+    
+    sim_package_share = get_package_share_directory("nhk2026_sim")
+    xacro_file = os.path.join(sim_package_share, "urdf", "ide_arm.xacro")
+    doc = xacro.process_file(xacro_file, mappings={"use_sim": "true"})
+    robot_desc = doc.toprettyxml(indent="  ")
+    robot_description = {"robot_description": robot_desc}
+    robot_state_publisher = Node(
+        package='robot_state_publisher',
+        executable='robot_state_publisher',
+        name='robot_state_publisher',
+        output='screen',
+        parameters=[robot_description]
+    )
 
     joint_state_publisher_ide_arm_node = Node(
         package='nhk2026_control',
@@ -179,4 +193,5 @@ def generate_launch_description():
             actions=[ide_arm_bt_node],
         ),
         joint_state_publisher_ide_arm_node,
+        robot_state_publisher,
     ])
