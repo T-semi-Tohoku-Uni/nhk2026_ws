@@ -56,7 +56,7 @@ private:
             if (std::isnan(*iter_x) || std::isnan(*iter_y) || std::isnan(*iter_z)) continue;
 
             double dist_sq = (*iter_x)*(*iter_x) + (*iter_y)*(*iter_y);
-            if (dist_sq < 0.45*0.45 || dist_sq > 5.0*5.0) continue; // 距離フィルタ
+            if (dist_sq < 0.45*0.45 || dist_sq > 2.0*2.0) continue; // 距離フィルタ
 
             double z_map = *iter_z + pose_.position.z;
             // 地面・棚の高さ除去（ユーザーのロジックを継承）
