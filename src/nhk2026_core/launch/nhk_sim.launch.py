@@ -68,7 +68,6 @@ def generate_launch_description():
                 ],
     )
 
-    # Bridge (修正箇所: ignition.msgs -> gz.msgs)
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',

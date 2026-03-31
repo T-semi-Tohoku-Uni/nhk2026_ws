@@ -372,7 +372,7 @@ namespace mcl {
                     count++;
                     if (count % step != 0) continue;
 
-                    float x = *iter_x;
+                    float x = *iter_x; 
                     float y = *iter_y;
                     float z = *iter_z;
 

@@ -23,6 +23,9 @@ find_package(nanoflann REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
 find_package(nhk2026_msgs REQUIRED)
+find_package(PCL REQUIRED)
+find_package(pcl_conversions REQUIRED)
+
 
 # 依存関係をまとめる関数
 function(setup_node_dependencies target)
@@ -38,6 +41,7 @@ function(setup_node_dependencies target)
     "laser_geometry"
     "tf2_sensor_msgs"
     "nhk2026_msgs"
+    "pcl_conversions"
   )
 
   target_include_directories(${target}
@@ -77,6 +81,7 @@ ros_node_executable(map_mesh_publisher src/map_mesh_publisher.cpp)
 ros_node_executable(mcl_manage src/mcl_manage.cpp)
 ros_node_executable(joy_controller_node src/joy_controller_node.cpp)
 ros_node_executable(intergrated_mcl_node src/intergrated_mcl_node.cpp)
+ros_node_executable(object_detection src/object_detection.cpp)
 
 # ディレクトリのインストール
 install(DIRECTORY include/ DESTINATION include)
