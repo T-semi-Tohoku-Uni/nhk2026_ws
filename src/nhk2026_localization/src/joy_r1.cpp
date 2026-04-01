@@ -27,21 +27,23 @@ public:
         this->joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
             "/joy", 10, std::bind(&JoyControllerNode::joy_callback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Rotation: L1/R1, Kaneko: RightStick)");
+        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Rotation: L1/R1, Kaneko: D-pad)");
     }
 
 private:
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        // ボタン割り当て（配列サイズチェックを入れるとより安全です）
-        if (msg->buttons.size() < 6 || msg->axes.size() < 5) return;
+        // 十字キー（axes[6], [7]）を使用するため、サイズチェックを8以上に拡張
+        if (msg->buttons.size() < 6 || msg->axes.size() < 8) return;
 
         bool l1_pressed       = msg->buttons[4];
         bool r1_pressed       = msg->buttons[5];
         bool triangle_pressed = msg->buttons[2];
         bool square_pressed   = msg->buttons[3];
 
-        double rs_h = msg->axes[3]; 
-        double rs_v = msg->axes[4];
+        // 十字キー（D-pad）
+        // 一般的なマッピング: 6=左右方向(Left:1.0, Right:-1.0), 7=上下方向(Up:1.0, Down:-1.0)
+        double dpad_h = msg->axes[6]; 
+        double dpad_v = msg->axes[7];
 
         // 真空吸着
         auto vacuum_msg = std_msgs::msg::Int32MultiArray();
@@ -66,10 +68,11 @@ private:
         }
         vel_pub_->publish(twist);
 
-        // kaneko_arm 制御
+        // kaneko_arm 制御（十字キーの入力に応じて増減）
+        // 押し続けている間、感度（0.01）分だけ値が変化し続けます
         const double sensitivity = 0.01;
-        kaneko_values_[0] += rs_h * sensitivity;
-        kaneko_values_[1] += rs_v * sensitivity;
+        kaneko_values_[0] += dpad_h * sensitivity;
+        kaneko_values_[1] += dpad_v * sensitivity;
 
         auto kaneko_msg = std_msgs::msg::Float32MultiArray();
         kaneko_msg.data = {static_cast<float>(kaneko_values_[0]), static_cast<float>(kaneko_values_[1])};
@@ -92,7 +95,6 @@ private:
         opts.result_callback = [this](const GoalHandleNakamuraHand::WrappedResult & result) {
             is_hand_busy_ = false;
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                // 最大ステップ数はサーバー側の定義(case 3まで) に合わせる
                 current_hand_step_ = (current_hand_step_ >= 4) ? 0 : current_hand_step_ + 1;
             }
         };
@@ -105,7 +107,6 @@ private:
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp_action::Client<NakamuraHand>::SharedPtr hand_client_;
 
-    // 初期化を追加
     bool is_hand_busy_ = false;
     bool prev_triangle_ = false;
     int current_hand_step_ = 0;
