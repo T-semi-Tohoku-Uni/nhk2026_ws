@@ -7,7 +7,7 @@ VacuumServer::VacuumServer()
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    this->vacuum_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+    this->vacuum_publisher_ = this->create_publisher<std_msgs::msg::Int32MultiArray>(
         "vacuum_device",
         device
     );
@@ -39,10 +39,10 @@ void VacuumServer::server_callback(
 
 void VacuumServer::publisher_timer_callback()
 {
-    std_msgs::msg::Float32MultiArray txdata;
+    std_msgs::msg::Int32MultiArray txdata;
     if (this->vacuum_on_)
     {
-        txdata.data = {500};
+        txdata.data = {800};
     }
     else
     {
