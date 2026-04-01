@@ -79,7 +79,7 @@ def generate_launch_description():
         executable='nhk2026_canbridge',
         name='nhk2026_canbridge',
         parameters=[canid_file],
-        namespace='',
+        namespace= name_space,
         output='screen',
         emulate_tty=True, 
     )
