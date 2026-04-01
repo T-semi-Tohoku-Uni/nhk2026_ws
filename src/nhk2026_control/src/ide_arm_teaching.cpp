@@ -76,7 +76,14 @@ int main(int argc, char * argv[])
     std::string pos_name;
     while (rclcpp::ok())
     {
-        std::cin >> pos_name;
+        if (!(std::cin >> pos_name)) {
+            break;
+        }
+
+        if (!rclcpp::ok()) {
+            break;
+        }
+
         std::vector<double> zahyo = node->listen_transform();
         if (zahyo.size() != 3) continue;
         file << pos_name << ","
