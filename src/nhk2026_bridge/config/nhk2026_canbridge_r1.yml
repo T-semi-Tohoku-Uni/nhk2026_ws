@@ -12,7 +12,7 @@
     # pub_bytes_bridge_canid: [0x402]
 
     # ROS -> CAN (dansa_arm_action_serverがPublishし、ブリッジがSubscribeする)
-    sub_float_bridge_topic: ["nakamura_hand","nakamura_vertical","kaneko_arm","kaneko_lift",]
+    sub_float_bridge_topic: ["nakamura_hand","nakamura_vertical","kaneko_arm","kaneko_lift"]
     sub_float_bridge_canid: [0x301,0x302,0x311,0x321] 
 
     sub_int_bridge_topic: ["vacuum"]
