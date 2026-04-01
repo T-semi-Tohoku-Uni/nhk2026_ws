@@ -7,7 +7,7 @@ IdeArmTeaching::IdeArmTeaching()
     this->tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
-geometry_msgs::msg::TransformStamped IdeArmTeaching::listen_transform()
+std::vector<double> IdeArmTeaching::listen_transform()
 {
     geometry_msgs::msg::TransformStamped t;
 
@@ -15,7 +15,7 @@ geometry_msgs::msg::TransformStamped IdeArmTeaching::listen_transform()
             "tcp_link", "arm_base", tf2::TimePointZero, tf2::durationFromSec(3.0))) {
         RCLCPP_WARN(this->get_logger(),
                     "Timed out waiting for transform arm_base -> tcp_link");
-        return t;
+        return;
     }
 
     try
@@ -30,7 +30,7 @@ geometry_msgs::msg::TransformStamped IdeArmTeaching::listen_transform()
         RCLCPP_INFO(
             this->get_logger(), "Could not transform base_link to dynamic_frame: %s",
             ex.what());
-        return t;
+        return;
     }
     
     
@@ -41,7 +41,8 @@ geometry_msgs::msg::TransformStamped IdeArmTeaching::listen_transform()
     RCLCPP_INFO(
         this->get_logger(), "base_link->dynamic_frame: %f %f %f",
         t.transform.translation.y, t.transform.translation.z, roll);
-    return t;
+    std::vector<double> zahyo = {t.transform.translation.y, t.transform.translation.z, roll};
+    return zahyo;
 }
 
 int main(int argc, char * argv[])

@@ -13,7 +13,7 @@ class IdeArmTeaching
 {
 public:
     IdeArmTeaching();
-    geometry_msgs::msg::TransformStamped listen_transform();
+    std::vector<double> listen_transform();
 
 private:
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
