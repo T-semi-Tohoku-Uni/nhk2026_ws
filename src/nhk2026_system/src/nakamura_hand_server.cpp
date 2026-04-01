@@ -97,12 +97,24 @@ private:
             if (step <= goal->finalstep) {
                 switch (step) {
                     case 0:
-                        target_hand_pos_ = {-3.18, -1.57, -1.0};
+                        target_hand_pos_ = {0.0,0.0 ,0.0,0.0 ,1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_hand_pos_ = {-5.00, -1.57, -1.0};
-                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        target_hand_pos_ = {1.0, 0.0,0.0, 1.57};
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 2:
+                        target_hand_pos_ = {0.0, 0.0,0.0, 1.57};
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 3:
+                        target_hand_pos_ = {0.0, 1.0,0.0, 1.57};
+                        if (hand_reached()) next_step(step, state_start_time);
+                        break;
+                    case 3:
+                        target_hand_pos_ = {0.0, 1.0,0.0, 3.14};
+                        if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
                         RCLCPP_WARN(this->get_logger(), "Step %d is not defined. Terminating.", step);
@@ -129,7 +141,7 @@ private:
     void publish_all() {
         if (joint_subscribe_flag_) {
             std_msgs::msg::Float32MultiArray hand_msg;
-            hand_msg.data = {(float)target_hand_pos_[0], (float)target_hand_pos_[1], (float)target_hand_pos_[2]};
+            hand_msg.data = {(float)target_hand_pos_[0], (float)target_hand_pos_[1], (float)target_hand_pos_[2],(float)target_hand_pos_[3]};
             robomas_pub_->publish(hand_msg);
         }
     }
@@ -160,7 +172,7 @@ private:
     void joint_state_callback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
         if (msg->data.size() >= 3) {
             std::lock_guard<std::mutex> lock(data_mutex_);
-            now_joint_ = {msg->data[0], msg->data[1], msg->data[2]};
+            now_joint_ = {msg->data[0], msg->data[1], msg->data[2],msg->data[3]};
             joint_subscribe_flag_ = true;
         }
     }
@@ -174,7 +186,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr holder_sub_;
 
     std::mutex data_mutex_;
-    std::vector<double> now_joint_ = {0.0, 0.0, 0.0};
+    std::vector<double> now_joint_ = {0.0, 0.0, 0.0,0.0};
     std::vector<double> target_hand_pos_ = {0.0, 0.0, 0.0,0.0};
     double now_holder_value_ = 0.0;
 
