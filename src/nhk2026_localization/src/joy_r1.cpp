@@ -93,7 +93,7 @@ private:
             is_hand_busy_ = false;
             if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                 // 最大ステップ数はサーバー側の定義(case 3まで) に合わせる
-                current_hand_step_ = (current_hand_step_ >= 3) ? 0 : current_hand_step_ + 1;
+                current_hand_step_ = (current_hand_step_ >= 4) ? 0 : current_hand_step_ + 1;
             }
         };
         this->hand_client_->async_send_goal(goal_msg, opts);

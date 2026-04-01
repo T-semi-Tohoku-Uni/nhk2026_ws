@@ -112,7 +112,7 @@ private:
                         target_hand_pos_ = {0.0, 1.0,0.0, 1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
-                    case 3:
+                    case 4:
                         target_hand_pos_ = {0.0, 1.0,0.0, 3.14};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
