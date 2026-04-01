@@ -75,7 +75,7 @@ private:
         kaneko_values_[1] += dpad_v * sensitivity;
 
         auto kaneko_msg = std_msgs::msg::Float32MultiArray();
-        kaneko_msg.data = {static_cast<float>(kaneko_values_[0]), static_cast<float>(kaneko_values_[1])};
+        kaneko_msg.data = {static_cast<float>(kaneko_values_[0]),0.0,0.0, static_cast<float>(kaneko_values_[1])};
         kaneko_pub_->publish(kaneko_msg);
 
         prev_triangle_ = triangle_pressed;
