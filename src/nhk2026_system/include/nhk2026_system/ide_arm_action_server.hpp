@@ -4,6 +4,7 @@
 #include <rclcpp_action/rclcpp_action.hpp>
 
 #include "nhk2026_msgs/action/arm_move.hpp"
+#include "std_msgs/msg/float32.hpp"
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -57,6 +58,8 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j1_motor_publisher_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j2_motor_publisher_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr j3_motor_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr pos_error_publisher_;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_error_publisher_;
     rclcpp::TimerBase::SharedPtr feedback_timer_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber;
     rclcpp::Subscription<std_msgs::msg::String>::SharedPtr robot_description_subscriber_;

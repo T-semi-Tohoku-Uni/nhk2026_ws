@@ -117,6 +117,14 @@ IdeArmActionServer::IdeArmActionServer()
     );
 
     this->path_client_ = this->create_client<nhk2026_msgs::srv::ArmPathPlan>(std::string("arm_path"));
+    this->pos_error_publisher_ = this->create_publisher<std_msgs::msg::Float32>(
+        std::string("ide_arm_pos_error"),
+        device
+    );
+    this->joint_error_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
+        std::string("ide_arm_joint_error"),
+        device
+    );
 
     this->declare_parameter<double>("kPosTolerance", 0.01);
     this->kPosTolerance_ = this->get_parameter("kPosTolerance").as_double();
@@ -427,6 +435,15 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
         return;
     }
 
+    sensor_msgs::msg::JointState joint_error_msg;
+    joint_error_msg.header.frame_id = "arm_base";
+    joint_error_msg.name = {
+        this->joint1_name_,
+        this->joint2_name_,
+        this->joint3_name_
+    };
+    joint_error_msg.position.resize(3);
+
     while (rclcpp::ok())
     {
         if (i >= response->route.size())
@@ -486,6 +503,14 @@ void IdeArmActionServer::execute(const std::shared_ptr<GoalHandleArmMove> goal_h
             this->active_goal_handle_.reset();
             return;
         }
+
+        joint_error_msg.header.stamp = this->get_clock()->now();
+        for (size_t joint_index = 0; joint_index < 3; ++joint_index)
+        {
+            joint_error_msg.position[joint_index] =
+                target_positions[joint_index] - this->joint_positions_[joint_index];
+        }
+        this->joint_error_publisher_->publish(joint_error_msg);
 
         this->j1_motor_publisher_->publish(j1_msg);
         this->j2_motor_publisher_->publish(j2_msg);
@@ -579,6 +604,10 @@ void IdeArmActionServer::feedback_timer_callback()
     if (this->active_goal_handle_ && this->goal_active_) {
         this->active_goal_handle_->publish_feedback(feedback);
     }
+
+    std_msgs::msg::Float32 pos_error_msg;
+    pos_error_msg.data = feedback->pos_error;
+    this->pos_error_publisher_->publish(pos_error_msg);
 }
 
 void IdeArmActionServer::joint_state_callback(const sensor_msgs::msg::JointState::SharedPtr rxdata)
