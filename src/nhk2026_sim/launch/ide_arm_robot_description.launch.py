@@ -35,7 +35,7 @@ def generate_launch_description():
             '/joint_sim2@std_msgs/msg/Float64]ignition.msgs.Double',
             '/joint_sim3@std_msgs/msg/Float64]ignition.msgs.Double',
             '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
-            '/tf_static@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+            # '/tf_static@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
             '/world/nhk2026/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
             '/world/nhk2026/model/robot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model'
         ],

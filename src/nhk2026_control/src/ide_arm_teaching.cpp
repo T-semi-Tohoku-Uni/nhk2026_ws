@@ -76,6 +76,7 @@ int main(int argc, char * argv[])
     std::string pos_name;
     while (rclcpp::ok())
     {
+        std::cout << "name?";
         if (!(std::cin >> pos_name)) {
             break;
         }
