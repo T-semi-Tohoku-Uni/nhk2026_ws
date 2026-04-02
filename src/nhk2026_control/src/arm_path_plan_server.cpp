@@ -15,6 +15,8 @@ namespace
 {
 
 constexpr double kEpsilon = 1e-6;
+constexpr double kTwoPi = 6.28318530717958647692;
+constexpr double kPositionErrorTieTolerance = 1e-8;
 
 double position_distance(
     const geometry_msgs::msg::PoseStamped & from,
@@ -144,49 +146,144 @@ double squared_position_error(const KDL::Frame & reached_frame, const KDL::Frame
     return dx * dx + dy * dy + dz * dz;
 }
 
+double normalize_angle_near_reference(
+    const double value,
+    const double reference,
+    const double lower,
+    const double upper)
+{
+    const long long nearest_shift =
+        static_cast<long long>(std::llround((reference - value) / kTwoPi));
+
+    long long min_shift = nearest_shift;
+    long long max_shift = nearest_shift;
+
+    if (std::isfinite(lower))
+    {
+        min_shift = static_cast<long long>(std::ceil((lower - value - kEpsilon) / kTwoPi));
+    }
+
+    if (std::isfinite(upper))
+    {
+        max_shift = static_cast<long long>(std::floor((upper - value + kEpsilon) / kTwoPi));
+    }
+
+    if (min_shift > max_shift)
+    {
+        return value;
+    }
+
+    const long long selected_shift = std::clamp(nearest_shift, min_shift, max_shift);
+    return value + static_cast<double>(selected_shift) * kTwoPi;
+}
+
+void align_solution_to_preferred_seed(
+    KDL::JntArray & solution,
+    const KDL::JntArray & preferred_seed,
+    const std::vector<bool> & wrap_equivalent_joints,
+    const KDL::JntArray & q_min,
+    const KDL::JntArray & q_max)
+{
+    for (unsigned int joint_index = 0; joint_index < solution.rows(); ++joint_index)
+    {
+        if (!wrap_equivalent_joints[joint_index])
+        {
+            continue;
+        }
+
+        solution(joint_index) = normalize_angle_near_reference(
+            solution(joint_index),
+            preferred_seed(joint_index),
+            q_min(joint_index),
+            q_max(joint_index));
+    }
+}
+
+double joint_delta_cost(
+    const KDL::JntArray & candidate,
+    const KDL::JntArray & reference)
+{
+    double total_cost = 0.0;
+    for (unsigned int joint_index = 0; joint_index < candidate.rows(); ++joint_index)
+    {
+        total_cost += std::abs(candidate(joint_index) - reference(joint_index));
+    }
+
+    return total_cost;
+}
+
 bool solve_ik_with_fallback(
     KDL::ChainIkSolverPos_NR_JL & ik_solver,
     KDL::ChainFkSolverPos_recursive & fk_solver,
     const KDL::Frame & target_frame,
     const std::vector<KDL::JntArray> & seed_candidates,
+    const std::vector<bool> & wrap_equivalent_joints,
+    const KDL::JntArray & q_min,
+    const KDL::JntArray & q_max,
     const KDL::JntArray * preferred_seed,
     KDL::JntArray & solution)
 {
     bool solved = false;
     double best_error = std::numeric_limits<double>::max();
+    double best_delta_cost = std::numeric_limits<double>::max();
 
     auto try_seed =
-        [&](const KDL::JntArray & seed)
+        [&](const KDL::JntArray & seed, const bool prioritize_on_success)
         {
             KDL::JntArray candidate(solution.rows());
             if (ik_solver.CartToJnt(seed, target_frame, candidate) < 0)
             {
-                return;
+                return false;
+            }
+
+            if (preferred_seed != nullptr)
+            {
+                align_solution_to_preferred_seed(
+                    candidate,
+                    *preferred_seed,
+                    wrap_equivalent_joints,
+                    q_min,
+                    q_max);
             }
 
             KDL::Frame reached_frame;
             if (fk_solver.JntToCart(candidate, reached_frame) < 0)
             {
-                return;
+                return false;
             }
 
             const double error = squared_position_error(reached_frame, target_frame);
-            if (!solved || error < best_error)
+            const double delta_cost =
+                preferred_seed != nullptr ? joint_delta_cost(candidate, *preferred_seed) : 0.0;
+
+            const bool has_smaller_error = error < (best_error - kPositionErrorTieTolerance);
+            const bool is_error_tie = std::abs(error - best_error) <= kPositionErrorTieTolerance;
+
+            if (
+                !solved ||
+                has_smaller_error ||
+                (preferred_seed != nullptr && is_error_tie && delta_cost < best_delta_cost))
             {
                 best_error = error;
+                best_delta_cost = delta_cost;
                 solution = candidate;
                 solved = true;
             }
+
+            return prioritize_on_success;
         };
 
     if (preferred_seed != nullptr)
     {
-        try_seed(*preferred_seed);
+        if (try_seed(*preferred_seed, true))
+        {
+            return true;
+        }
     }
 
     for (const auto & seed : seed_candidates)
     {
-        try_seed(seed);
+        try_seed(seed, false);
     }
 
     return solved;
@@ -338,6 +435,7 @@ void ArmPathPlan::path_gen_callback(
     KDL::ChainIkSolverVel_pinv ik_vel_solver(chain);
     KDL::JntArray q_min(joint_count);
     KDL::JntArray q_max(joint_count);
+    std::vector<bool> wrap_equivalent_joints(joint_count, false);
     for (unsigned int i = 0; i < joint_count; ++i)
     {
         q_min(i) = -std::numeric_limits<double>::max();
@@ -365,6 +463,18 @@ void ArmPathPlan::path_gen_callback(
             {
                 q_min(i) = joint->limits->lower;
                 q_max(i) = joint->limits->upper;
+            }
+
+            if (
+                joint &&
+                (joint->type == urdf::Joint::CONTINUOUS ||
+                (joint->type == urdf::Joint::REVOLUTE &&
+                joint->limits &&
+                std::isfinite(joint->limits->lower) &&
+                std::isfinite(joint->limits->upper) &&
+                ((joint->limits->upper - joint->limits->lower) >= (kTwoPi - kEpsilon)))))
+            {
+                wrap_equivalent_joints[i] = true;
             }
         }
     }
@@ -412,6 +522,9 @@ void ArmPathPlan::path_gen_callback(
                 fk_solver,
                 pose_to_frame(now_pos),
                 seed_candidates,
+                wrap_equivalent_joints,
+                q_min,
+                q_max,
                 nullptr,
                 now_joints))
         {
@@ -494,6 +607,9 @@ void ArmPathPlan::path_gen_callback(
                 fk_solver,
                 pose_to_frame(segment_goal_pose),
                 seed_candidates,
+                wrap_equivalent_joints,
+                q_min,
+                q_max,
                 &segment_start_joints,
                 segment_goal_joints))
         {
@@ -524,6 +640,9 @@ void ArmPathPlan::path_gen_callback(
                         fk_solver,
                         pose_to_frame(sampled_pose),
                         seed_candidates,
+                        wrap_equivalent_joints,
+                        q_min,
+                        q_max,
                         &cartesian_seed,
                         cartesian_solution))
                 {
