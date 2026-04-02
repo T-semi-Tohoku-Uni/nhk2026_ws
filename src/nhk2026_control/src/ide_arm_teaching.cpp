@@ -13,7 +13,7 @@ std::vector<double> IdeArmTeaching::listen_transform()
     std::vector<double> empty;
 
     if (!tf_buffer_->canTransform(
-            "tcp_link", "arm_base", tf2::TimePointZero, tf2::durationFromSec(3.0))) {
+            "arm_base","tcp_link",  tf2::TimePointZero, tf2::durationFromSec(3.0))) {
         RCLCPP_WARN(this->get_logger(),
                     "Timed out waiting for transform arm_base -> tcp_link");
         return empty;
@@ -22,7 +22,7 @@ std::vector<double> IdeArmTeaching::listen_transform()
     try
     {
         t = tf_buffer_->lookupTransform(
-            "tcp_link", "arm_base",
+            "arm_base","tcp_link",
             tf2::TimePointZero
         );
     }
