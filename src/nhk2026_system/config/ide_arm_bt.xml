@@ -13,7 +13,7 @@
                 max_acc="0.01"/>
       <service_vacuum value="true" />
       <move_arm y="0.928"
-                z="0.021"
+                z="0.111"
                 roll="-1.57"
                 max_speed="0.1"
                 max_acc="0.01"/>
@@ -40,6 +40,10 @@
       <input_port name="roll"/>
       <input_port name="max_speed"/>
       <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
     </Action>
   </TreeNodesModel>
 
