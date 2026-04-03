@@ -70,7 +70,7 @@ private:
 
         // kaneko_arm 制御（十字キーの入力に応じて増減）
         // 押し続けている間、感度（0.01）分だけ値が変化し続けます
-        const double sensitivity = 0.1;
+        const double sensitivity = 0.05;
         const double sen = 5.0;
         kaneko_values_[0] += dpad_h * sensitivity;
         kaneko_values_[1] += dpad_v * sen;

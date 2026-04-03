@@ -148,7 +148,7 @@ private:
 
     bool hand_reached() {
         std::lock_guard<std::mutex> lock(data_mutex_);
-        for (size_t i = 0; i < 3; ++i) {
+        for (size_t i = 0; i < 4; ++i) {
             if (std::fabs(now_joint_[i] - target_hand_pos_[i]) > kPosTolerance_) return false;
         }
         return true;
