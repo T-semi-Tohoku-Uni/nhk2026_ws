@@ -76,7 +76,7 @@ private:
         // --- 感度の設定 ---
         const double sensitivity = 0.05;
         const double sen = 5.0;
-        const double vertical_sensitivity = 0.01; // 右スティック用の感度（適宜調整）
+        const double vertical_sensitivity = 10; // 右スティック用の感度（適宜調整）
 
         // kaneko_arm 制御（十字キー）
         kaneko_values_[0] += dpad_h * sensitivity;
