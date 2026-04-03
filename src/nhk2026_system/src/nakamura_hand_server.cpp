@@ -97,23 +97,23 @@ private:
             if (step <= goal->finalstep) {
                 switch (step) {
                     case 0:
-                        target_hand_pos_ = {0.0,0.0 ,0.0,0.0 ,0.0};
+                        target_hand_pos_ = {0.0,0.0 ,0.0,0.0 ,1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_hand_pos_ = {1.0, 0.0,0.0, 0.0};
+                        target_hand_pos_ = {1.0, 0.0,0.0, 1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 2:
-                        target_hand_pos_ = {0.0, 0.0,0.0, 0.0};
+                        target_hand_pos_ = {0.0, 0.0,0.0, 1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 3:
-                        target_hand_pos_ = {0.0, 1.0,0.0, 0.0};
+                        target_hand_pos_ = {0.0, 1.0,0.0, 1.57};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 4:
-                        target_hand_pos_ = {0.0, 1.0,0.0, 1.57};
+                        target_hand_pos_ = {0.0, 1.0,0.0, 3.14};
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     default:
