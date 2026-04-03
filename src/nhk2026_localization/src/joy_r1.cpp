@@ -35,7 +35,6 @@ public:
 
 private:
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        // 十字キー（axes[6],[7]）や右スティック（axes[4]）を使用するためサイズチェック
         if (msg->buttons.size() < 6 || msg->axes.size() < 8) return;
 
         bool l1_pressed       = msg->buttons[4];
@@ -43,11 +42,10 @@ private:
         bool triangle_pressed = msg->buttons[2];
         bool square_pressed   = msg->buttons[3];
 
-        // 十字キー（D-pad）
         double dpad_h = msg->axes[6]; 
         double dpad_v = msg->axes[7];
         
-        // 右スティック上下（axes[4]）
+        double rs_h = msg->axes[5];
         double rs_v = msg->axes[4];
 
         // 真空吸着
@@ -64,34 +62,31 @@ private:
         geometry_msgs::msg::Twist twist;
         twist.linear.x = msg->axes[1] * 2.0;
         twist.linear.y = msg->axes[0] * 2.0;
-        if (l1_pressed) {
-            twist.angular.z = 1.5;
-        } else if (r1_pressed) {
-            twist.angular.z = -1.5;
-        } else {
-            twist.angular.z = 0.0;
-        }
+        twist.angular.z = l1_pressed ? 1.5 : (r1_pressed ? -1.5 : 0.0);
         vel_pub_->publish(twist);
 
-        // --- 感度の設定 ---
+        // 感度の設定
         const double sensitivity = 0.05;
         const double sen = 5.0;
-        const double vertical_sensitivity = 10; // 右スティック用の感度（適宜調整）
+        const double vertical_sensitivity = 10.0; 
 
-        // kaneko_arm 制御（十字キー）
+        // kaneko_arm 制御
         kaneko_values_[0] += dpad_h * sensitivity;
         kaneko_values_[1] += dpad_v * sen;
-
         auto kaneko_msg = std_msgs::msg::Float32MultiArray();
-        // 前回の形式（4要素）を維持
         kaneko_msg.data = {static_cast<float>(kaneko_values_[0]), 0.0f, 0.0f, static_cast<float>(kaneko_values_[1])};
         kaneko_pub_->publish(kaneko_msg);
 
-        // --- nakamura_vertical 制御（右スティック上下） ---
-        nakamura_vertical_value_ += rs_v * vertical_sensitivity;
+        // nakamura_vertical 制御 (修正済み)
+        nakamura_vertical_value_[0] += rs_v * vertical_sensitivity;
+        nakamura_vertical_value_[1] += rs_h * 0.1; // 横方向の感度
 
         auto nv_msg = std_msgs::msg::Float32MultiArray();
-        nv_msg.data = {static_cast<float>(nakamura_vertical_value_)};
+        // 修正: 個別にキャストして2つの要素を格納
+        nv_msg.data = {
+            static_cast<float>(nakamura_vertical_value_[0]), 
+            static_cast<float>(nakamura_vertical_value_[1])
+        };
         nakamura_vertical_pub_->publish(nv_msg);
 
         prev_triangle_ = triangle_pressed;
@@ -130,7 +125,7 @@ private:
     bool prev_triangle_ = false;
     int current_hand_step_ = 0;
     std::vector<double> kaneko_values_ = {0.0, 0.0}; 
-    double nakamura_vertical_value_ = 0.0; // 追加
+    std::vector<double> nakamura_vertical_value_ = {0.0, 0.0}; // 追加
 };
 
 int main(int argc, char ** argv) {
