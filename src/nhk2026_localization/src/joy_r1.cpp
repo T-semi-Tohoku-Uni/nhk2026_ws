@@ -17,22 +17,25 @@ public:
     using GoalHandleNakamuraHand = rclcpp_action::ClientGoalHandle<NakamuraHand>;
 
     JoyControllerNode() : Node("joy_r1") {
+        // パブリッシャーの設定
         this->vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
         this->vacuum_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("vacuum", 10);
         this->kaneko_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("kaneko_arm", 10);
+        
+        // nakamura_vertical用のパブリッシャーを追加
+        this->nakamura_vertical_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("nakamura_vertical", 10);
 
         this->hand_client_ = rclcpp_action::create_client<NakamuraHand>(this, "nakamura_hand_sequence");
 
-        // /joyはグローバルなものを読み取る設定
         this->joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
             "/joy", 10, std::bind(&JoyControllerNode::joy_callback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Rotation: L1/R1, Kaneko: D-pad)");
+        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Kaneko: D-pad, NakamuraVertical: RightStick-V)");
     }
 
 private:
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        // 十字キー（axes[6], [7]）を使用するため、サイズチェックを8以上に拡張
+        // 十字キー（axes[6],[7]）や右スティック（axes[4]）を使用するためサイズチェック
         if (msg->buttons.size() < 6 || msg->axes.size() < 8) return;
 
         bool l1_pressed       = msg->buttons[4];
@@ -41,9 +44,11 @@ private:
         bool square_pressed   = msg->buttons[3];
 
         // 十字キー（D-pad）
-        // 一般的なマッピング: 6=左右方向(Left:1.0, Right:-1.0), 7=上下方向(Up:1.0, Down:-1.0)
         double dpad_h = msg->axes[6]; 
         double dpad_v = msg->axes[7];
+        
+        // 右スティック上下（axes[4]）
+        double rs_v = msg->axes[4];
 
         // 真空吸着
         auto vacuum_msg = std_msgs::msg::Int32MultiArray();
@@ -68,16 +73,26 @@ private:
         }
         vel_pub_->publish(twist);
 
-        // kaneko_arm 制御（十字キーの入力に応じて増減）
-        // 押し続けている間、感度（0.01）分だけ値が変化し続けます
+        // --- 感度の設定 ---
         const double sensitivity = 0.05;
         const double sen = 5.0;
+        const double vertical_sensitivity = 0.01; // 右スティック用の感度（適宜調整）
+
+        // kaneko_arm 制御（十字キー）
         kaneko_values_[0] += dpad_h * sensitivity;
         kaneko_values_[1] += dpad_v * sen;
 
         auto kaneko_msg = std_msgs::msg::Float32MultiArray();
-        kaneko_msg.data = {static_cast<float>(kaneko_values_[0]),0.0,0.0, static_cast<float>(kaneko_values_[1])};
+        // 前回の形式（4要素）を維持
+        kaneko_msg.data = {static_cast<float>(kaneko_values_[0]), 0.0f, 0.0f, static_cast<float>(kaneko_values_[1])};
         kaneko_pub_->publish(kaneko_msg);
+
+        // --- nakamura_vertical 制御（右スティック上下） ---
+        nakamura_vertical_value_ += rs_v * vertical_sensitivity;
+
+        auto nv_msg = std_msgs::msg::Float32MultiArray();
+        nv_msg.data = {static_cast<float>(nakamura_vertical_value_)};
+        nakamura_vertical_pub_->publish(nv_msg);
 
         prev_triangle_ = triangle_pressed;
     }
@@ -102,16 +117,20 @@ private:
         this->hand_client_->async_send_goal(goal_msg, opts);
     }
 
+    // パブリッシャー・クライアント
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr vacuum_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr kaneko_pub_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr nakamura_vertical_pub_; // 追加
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp_action::Client<NakamuraHand>::SharedPtr hand_client_;
 
+    // 内部状態
     bool is_hand_busy_ = false;
     bool prev_triangle_ = false;
     int current_hand_step_ = 0;
     std::vector<double> kaneko_values_ = {0.0, 0.0}; 
+    double nakamura_vertical_value_ = 0.0; // 追加
 };
 
 int main(int argc, char ** argv) {
