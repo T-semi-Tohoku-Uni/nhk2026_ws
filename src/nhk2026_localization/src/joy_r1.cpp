@@ -17,12 +17,9 @@ public:
     using GoalHandleNakamuraHand = rclcpp_action::ClientGoalHandle<NakamuraHand>;
 
     JoyControllerNode() : Node("joy_r1") {
-        // パブリッシャーの設定
         this->vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
         this->vacuum_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("vacuum", 10);
         this->kaneko_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("kaneko_arm", 10);
-        
-        // nakamura_vertical用のパブリッシャーを追加
         this->nakamura_vertical_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("nakamura_vertical", 10);
 
         this->hand_client_ = rclcpp_action::create_client<NakamuraHand>(this, "nakamura_hand_sequence");
@@ -30,23 +27,24 @@ public:
         this->joy_sub_ = this->create_subscription<sensor_msgs::msg::Joy>(
             "/joy", 10, std::bind(&JoyControllerNode::joy_callback, this, std::placeholders::_1));
 
-        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Kaneko: D-pad, NakamuraVertical: RightStick-V)");
+        RCLCPP_INFO(this->get_logger(), "Joy Controller Node started. (Vertical: RS-V, Horizontal: L2/R2)");
     }
 
 private:
     void joy_callback(const sensor_msgs::msg::Joy::SharedPtr msg) {
-        if (msg->buttons.size() < 6 || msg->axes.size() < 8) return;
+        // L2(6), R2(7), 十字キー(7)まで使用するためサイズチェック
+        if (msg->buttons.size() < 8 || msg->axes.size() < 8) return;
 
         bool l1_pressed       = msg->buttons[4];
         bool r1_pressed       = msg->buttons[5];
+        bool l2_pressed       = msg->buttons[6]; // 追加: L2
+        bool r2_pressed       = msg->buttons[7]; // 追加: R2
         bool triangle_pressed = msg->buttons[2];
         bool square_pressed   = msg->buttons[3];
 
         double dpad_h = msg->axes[6]; 
         double dpad_v = msg->axes[7];
-        
-        double rs_h = msg->axes[5];
-        double rs_v = msg->axes[4];
+        double rs_v   = msg->axes[4];
 
         // 真空吸着
         auto vacuum_msg = std_msgs::msg::Int32MultiArray();
@@ -77,12 +75,18 @@ private:
         kaneko_msg.data = {static_cast<float>(kaneko_values_[0]), 0.0f, 0.0f, static_cast<float>(kaneko_values_[1])};
         kaneko_pub_->publish(kaneko_msg);
 
-        // nakamura_vertical 制御 (修正済み)
+        // nakamura_vertical 制御
+        // 縦方向: 右スティック上下
         nakamura_vertical_value_[0] += rs_v * vertical_sensitivity;
-        nakamura_vertical_value_[1] += rs_h * 0.1; // 横方向の感度
+
+        // 横方向: L2/R2ボタンで増減 (R2で増加、L2で減少)
+        double l2_r2_input = 0.0;
+        if (r2_pressed) l2_r2_input += 1.0;
+        if (l2_pressed) l2_r2_input -= 1.0;
+        
+        nakamura_vertical_value_[1] += l2_r2_input * 0.1; // 感度0.1を継承
 
         auto nv_msg = std_msgs::msg::Float32MultiArray();
-        // 修正: 個別にキャストして2つの要素を格納
         nv_msg.data = {
             static_cast<float>(nakamura_vertical_value_[0]), 
             static_cast<float>(nakamura_vertical_value_[1])
@@ -93,10 +97,7 @@ private:
     }
 
     void send_hand_goal(int first, int final) {
-        if (!this->hand_client_->wait_for_action_server(std::chrono::seconds(2))) {
-            RCLCPP_ERROR(this->get_logger(), "Action server not available");
-            return;
-        }
+        if (!this->hand_client_->wait_for_action_server(std::chrono::seconds(2))) return;
         is_hand_busy_ = true;
         auto goal_msg = NakamuraHand::Goal();
         goal_msg.firststep = first;
@@ -112,20 +113,18 @@ private:
         this->hand_client_->async_send_goal(goal_msg, opts);
     }
 
-    // パブリッシャー・クライアント
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr vel_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr vacuum_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr kaneko_pub_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr nakamura_vertical_pub_; // 追加
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr nakamura_vertical_pub_;
     rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joy_sub_;
     rclcpp_action::Client<NakamuraHand>::SharedPtr hand_client_;
 
-    // 内部状態
     bool is_hand_busy_ = false;
     bool prev_triangle_ = false;
     int current_hand_step_ = 0;
     std::vector<double> kaneko_values_ = {0.0, 0.0}; 
-    std::vector<double> nakamura_vertical_value_ = {0.0, 0.0}; // 追加
+    std::vector<double> nakamura_vertical_value_ = {0.0, 0.0};
 };
 
 int main(int argc, char ** argv) {
