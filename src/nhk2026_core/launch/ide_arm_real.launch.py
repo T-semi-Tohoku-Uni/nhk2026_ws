@@ -155,6 +155,13 @@ def generate_launch_description():
         output='screen'
     )
 
+    joy_controller_node = Node(
+        package="nhk2026_localization",
+        executable="joy_controller_node",
+        name="joy_controller_node",
+        output="screen"
+    )
+
     return LaunchDescription([
         DeclareLaunchArgument(
             "bt_xml_file",
@@ -194,4 +201,5 @@ def generate_launch_description():
         ),
         joint_state_publisher_ide_arm_node,
         robot_state_publisher,
+        joy_controller_node,
     ])
