@@ -24,6 +24,7 @@ def generate_launch_description():
         name="ide_arm_action_server",
         output="screen",
         parameters=[{"kPosTolerance": k_pos_tolerance}],
+        remappings=[('robot_description', 'robot_description_ide_arm')],
     )
 
     vacuum_server_node = Node(
