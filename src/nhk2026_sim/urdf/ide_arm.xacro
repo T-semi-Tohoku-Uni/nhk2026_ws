@@ -55,16 +55,16 @@
     <inertia ixx="0.003366" iyy="0.00235" izz="0.005662" ixy="0.001697" iyz="-0.0" ixz="-0.0"/>
   </inertial>
   <visual>
-    <origin xyz="0.032751 -0.722789 -0.147378" rpy="0 0 0"/>
+    <origin xyz="-0.02 -0.02 -0.005" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://nhk2026_sim/meshes/end_effector_v1_1.stl" scale="1.0 1.0 1.0"/>
+      <mesh filename="package://nhk2026_sim/meshes/end_effector_v5.stl" scale="1.0 1.0 1.0"/>
     </geometry>
     <material name="aluminum_satin"/>
   </visual>
   <collision>
-    <origin xyz="0.032751 -0.722789 -0.147378" rpy="0 0 0"/>
+    <origin xyz="-0.02 -0.02 -0.005" rpy="0 0 0"/>
     <geometry>
-      <mesh filename="package://nhk2026_sim/meshes/end_effector_v1_1.stl" scale="1.0 1.0 1.0"/>
+      <mesh filename="package://nhk2026_sim/meshes/end_effector_v5.stl" scale="1.0 1.0 1.0"/>
     </geometry>
   </collision>
 </link>
@@ -125,7 +125,7 @@
 </joint>
 
 <joint name="end_effector" type="fixed">
-  <origin xyz="-0.15 0.230 0" rpy="0 0 0"/>
+  <origin xyz="-0.15 0.150 0" rpy="0 0 0"/>
   <parent link="end_effector_v1_1"/>
   <child link="tcp_link"/>
 </joint>
