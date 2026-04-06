@@ -12,7 +12,7 @@ import xacro
 def generate_launch_description():
     package_share = get_package_share_directory("nhk2026_sim")
     world = os.path.join(package_share, "worlds", "arm_plane.world")
-    xacro_file = os.path.join(package_share, "urdf", "ide_arm.xacro")
+    xacro_file = os.path.join(package_share, "urdf", "r2_all.xacro")
     spawn_pose = (0.0, 0.0, 0.2, 0.0)
 
     doc = xacro.process_file(xacro_file, mappings={"use_sim": "true"})
@@ -50,7 +50,6 @@ def generate_launch_description():
         name='robot_state_publisher',
         output='screen',
         parameters=[robot_description],
-        remappings=[('robot_description', 'robot_description_ide_arm')],
     )
     create_node = Node(
         package='ros_gz_sim',
