@@ -3,6 +3,16 @@
   <include path="wait_for_trigger.xml"/>
 
   <BehaviorTree ID="MainTree">
+    <Sequence>
+      <generate_route x="-1.47"
+                      y="0.95"
+                      theta="0.0"/>
+      <follow_route/>
+      <linear_path x="0"
+                 y="0"
+                 is_return="0"/>
+      <follow_route/>
+    </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
