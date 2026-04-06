@@ -17,7 +17,7 @@ def generate_launch_description():
                 [
                     FindPackageShare("nhk2026_sim"),
                     "urdf",
-                    "r2_2nd.xacro",
+                    "r2_all.xacro",
                 ]
             ),
 
