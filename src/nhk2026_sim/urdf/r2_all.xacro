@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="combined_robot" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro"/>
+  <xacro:include filename="$(find nhk2026_sim)/urdf/ide_arm_macro.xacro"/>
+  <xacro:include filename="$(find nhk2026_sim)/urdf/r2_2nd_macro.xacro"/>
+
+  <!-- 各モデルを生成 -->
+  <xacro:r2_2nd prefix="r2_2nd"/>
+  <xacro:ide_arm prefix="ide_arm"/>
+
+  <joint name="arm_fixed_joint" type="fixed">
+    <parent link="base_root"/>
+    <child link="arm_base"/>
+    <origin xyz=" 0.25 -0.16 0.12" rpy="0 0 0"/>
+  </joint>
+
+</robot>

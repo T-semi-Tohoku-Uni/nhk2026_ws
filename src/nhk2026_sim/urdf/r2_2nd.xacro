@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<robot name="r2_2nd" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find nhk2026_sim)/urdf/materials.xacro" />
+<xacro:include filename="$(find nhk2026_sim)/urdf/r2_2nd_macro.xacro" />
+
+<xacro:r2_2nd prefix="" />
+
+</robot>

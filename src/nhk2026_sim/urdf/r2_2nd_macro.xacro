@@ -1,0 +1,121 @@
+<?xml version="1.0" ?>
+<robot name="r2_2nd_macro" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<xacro:include filename="$(find nhk2026_sim)/urdf/r2_2nd.trans" />
+
+<xacro:macro name="r2_2nd" params="prefix:=''">
+  <link name="base_root"/>
+
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.01897592062348662 -0.10555425475997327 0.14298974134420891" rpy="0 0 0"/>
+      <mass value="13.072259884111979"/>
+      <inertia ixx="1.047084" iyy="1.016092" izz="1.499027" ixy="0.043842" iyz="0.037546" ixz="0.102502"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="steel_satin"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/base_link_r2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="R2_step_climber_front_v2_1">
+    <inertial>
+      <origin xyz="0.016127121216774898 0.18644792175710703 -2.1817373602184276e-10" rpy="0 0 0"/>
+      <mass value="1.2591666960686572"/>
+      <inertia ixx="0.007687" iyy="0.000408" izz="0.007414" ixy="-8.7e-05" iyz="0.0" ixz="0.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.335 -0.095 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="steel_satin"/>
+    </visual>
+    <collision>
+      <origin xyz="-0.335 -0.095 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="R2_step_climber_front_v2_2">
+    <inertial>
+      <origin xyz="-0.016127121215468332 -0.18644792175710334 -2.1817370132737324e-10" rpy="0 0 0"/>
+      <mass value="1.2591666960686572"/>
+      <inertia ixx="0.007687" iyy="0.000408" izz="0.007414" ixy="-8.7e-05" iyz="-0.0" ixz="-0.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0.335 -0.095 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="steel_satin"/>
+    </visual>
+    <collision>
+      <origin xyz="0.335 -0.095 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_climber_front_v2_2.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="R2_step_clibmer_arm_v2_1">
+    <inertial>
+      <origin xyz="-0.008920789398712332 0.004691281182066187 0.20281005076730813" rpy="0 0 0"/>
+      <mass value="2.376029715091139"/>
+      <inertia ixx="0.011384" iyy="0.031797" izz="0.022759" ixy="2.2e-05" iyz="0.000365" ixz="-0.000359"/>
+    </inertial>
+    <visual>
+      <origin xyz="-0.019 0.37 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="steel_satin"/>
+    </visual>
+    <collision>
+      <origin xyz="-0.019 0.37 -0.06" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://nhk2026_sim/meshes/R2_step_clibmer_arm_v2_1.stl" scale="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="root" type="fixed">
+    <parent link="base_root"/>
+    <child link="base_link"/>
+  </joint>
+
+  <joint name="right" type="continuous">
+    <origin xyz="0.335 0.095 0.06" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="R2_step_climber_front_v2_1"/>
+    <axis xyz="1.0 0.0 0.0"/>
+  </joint>
+
+  <joint name="left" type="continuous">
+    <origin xyz="-0.335 0.095 0.06" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="R2_step_climber_front_v2_2"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+  </joint>
+
+  <joint name="back" type="revolute">
+    <origin xyz="0.019 -0.37 0.06" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="R2_step_clibmer_arm_v2_1"/>
+    <axis xyz="-1.0 0.0 0.0"/>
+    <limit upper="6.283185" lower="3.141593" effort="100" velocity="100"/>
+  </joint>
+</xacro:macro>
+
+</robot>

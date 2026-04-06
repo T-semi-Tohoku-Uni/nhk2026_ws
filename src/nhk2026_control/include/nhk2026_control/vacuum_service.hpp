@@ -4,7 +4,7 @@
 #include "rclcpp/node.hpp"
 
 #include "std_srvs/srv/set_bool.hpp"
-#include "std_msgs/msg/float32_multi_array.hpp"
+#include "std_msgs/msg/int32_multi_array.hpp"
 
 class VacuumServer
 : public rclcpp::Node
@@ -20,7 +20,7 @@ private:
     void publisher_timer_callback();
 
     rclcpp::Service<std_srvs::srv::SetBool>::SharedPtr server_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr vacuum_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr vacuum_publisher_;
     rclcpp::TimerBase::SharedPtr publish_timer_;
 
     bool vacuum_on_{false};

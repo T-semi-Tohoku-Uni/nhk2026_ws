@@ -1,19 +1,45 @@
-<root BTCPP_format="4">
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <include path="wait_for_trigger.xml"/>
+
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <MoveArm y="0.60" z="0.6" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <ServiceVacuum value="true" />
-      <MoveArm y="0.60" z="0.3" roll="-1.57" max_speed="0.2" max_acc="0.01" />
-      <ForceSuccess>
-        <KeepRunningUntilFailure>
-          <Inverter>
-            <TestTrigger />
-          </Inverter>
-        </KeepRunningUntilFailure>
-      </ForceSuccess>
-      <MoveArm y="0.70" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
-      <ServiceVacuum value="false" />
-      <MoveArm y="0.80" z="0.9" roll="0.0" max_speed="0.2" max_acc="0.01" />
+      <SubTree ID="WaitForTrigger"
+               _autoremap="false"/>
+      <service_vacuum value="true"/>
+      <move_arm y="0.095582"
+                z="0.676967"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="0.3"
+                z="1.016996"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="0.459225"
+                z="1.016996"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>

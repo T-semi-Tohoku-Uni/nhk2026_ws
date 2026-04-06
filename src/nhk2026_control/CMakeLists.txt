@@ -16,6 +16,7 @@ find_package(std_srvs REQUIRED)
 find_package(orocos_kdl REQUIRED)
 find_package(kdl_parser REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 find_package(urdf REQUIRED)
 
 # すべてのノードで共通して使用する依存関係を網羅しておく
@@ -30,6 +31,7 @@ set(ALL_DEPENDENCIES
   orocos_kdl
   kdl_parser
   tf2
+  tf2_ros
   urdf
 )
 
@@ -59,6 +61,11 @@ add_nhk_node(joint_state_publisher_step src/joint_state_publisher_step.cpp)
 add_nhk_node(vacuum_server src/vacuum_service.cpp)
 add_nhk_node(ide_arm_sim_bridge src/ide_arm_sim_bridge.cpp)
 add_nhk_node(arm_path_plan src/arm_path_plan_server.cpp)
+add_nhk_node(ide_arm_teaching src/ide_arm_teaching.cpp)
+target_compile_definitions(ide_arm_teaching PRIVATE
+  NHK2026_CONTROL_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
 
 # ディレクトリのインストール
 install(DIRECTORY include launch config DESTINATION share/${PROJECT_NAME} OPTIONAL)

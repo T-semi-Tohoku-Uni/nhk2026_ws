@@ -12,7 +12,7 @@ import xacro
 def generate_launch_description():
     package_share = get_package_share_directory("nhk2026_sim")
     world = os.path.join(package_share, "worlds", "arm_plane.world")
-    xacro_file = os.path.join(package_share, "urdf", "ide_arm.xacro")
+    xacro_file = os.path.join(package_share, "urdf", "r2_all.xacro")
     spawn_pose = (0.0, 0.0, 0.2, 0.0)
 
     doc = xacro.process_file(xacro_file, mappings={"use_sim": "true"})
@@ -35,7 +35,7 @@ def generate_launch_description():
             '/joint_sim2@std_msgs/msg/Float64]ignition.msgs.Double',
             '/joint_sim3@std_msgs/msg/Float64]ignition.msgs.Double',
             '/tf@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
-            '/tf_static@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
+            # '/tf_static@tf2_msgs/msg/TFMessage[ignition.msgs.Pose_V',
             '/world/nhk2026/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
             '/world/nhk2026/model/robot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model'
         ],
@@ -49,7 +49,7 @@ def generate_launch_description():
         executable='robot_state_publisher',
         name='robot_state_publisher',
         output='screen',
-        parameters=[robot_description]
+        parameters=[robot_description],
     )
     create_node = Node(
         package='ros_gz_sim',

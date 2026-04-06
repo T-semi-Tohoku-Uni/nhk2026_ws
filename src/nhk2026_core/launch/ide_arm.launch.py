@@ -66,7 +66,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             "k_pos_tolerance",
-            default_value="0.03",
+            default_value="0.06",
             description="Joint position tolerance used by ide_arm_action_server.",
         ),
         arm_path_plan_node,
