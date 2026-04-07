@@ -21,7 +21,7 @@ int main(int argc, char ** argv)
 
     rclcpp::Node::SharedPtr node = std::make_shared<rclcpp::Node>("video_2nd_bt_node");
     const std::string default_xml =
-        ament_index_cpp::get_package_share_directory("nhk2026_sim") + "/config/video_2nd_bt.xml";
+        ament_index_cpp::get_package_share_directory("nhk2026_system") + "/config/video_2nd_bt.xml";
     node->declare_parameter<std::string>("bt_xml_file", default_xml);
     node->declare_parameter<int>("wait_for_server_timeout_ms", 5000);
 
