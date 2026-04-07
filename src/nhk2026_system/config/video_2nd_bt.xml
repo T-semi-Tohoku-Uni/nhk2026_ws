@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
   <include path="wait_for_trigger.xml"/>
+  <include path="arena_bt.xml"/>
+  <include path="martial_club_bt.xml"/>
+  <include path="forest_bt.xml"/>
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <generate_route x="-1.47"
-                      y="0.95"
-                      theta="0.0"/>
-      <follow_route/>
-      <linear_path x="0"
-                   y="0"
-                   is_return="0"/>
-      <follow_route/>
+      <SubTree ID="WaitForTrigger"
+               _autoremap="false"/>
     </Sequence>
   </BehaviorTree>
 
