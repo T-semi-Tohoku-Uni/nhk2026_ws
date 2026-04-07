@@ -192,6 +192,24 @@ target_link_libraries(path_bt_node
 install(TARGETS path_bt_node DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
+# video_2nd_bt_node
+# -----------------------------------------------------------------------------
+add_executable(video_2nd_bt_node
+  src/video_2nd_bt_node.cpp
+)
+ament_target_dependencies(video_2nd_bt_node
+  rclcpp
+  rclcpp_action
+  inrof2025_ros_type
+  ament_index_cpp
+)
+target_link_libraries(video_2nd_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
+install(TARGETS video_2nd_bt_node DESTINATION lib/${PROJECT_NAME})
+
+# -----------------------------------------------------------------------------
 # Install other directories
 # -----------------------------------------------------------------------------
 install(
