@@ -1,5 +1,7 @@
 <root BTCPP_format="4">
   <include path="../operation/arm_front_step.xml"/>
+  <include path="../operation/arm_up_step.xml"/>
+  <include path="../operation/arm_down_step.xml"/>
   <BehaviorTree ID="Forest">
     <Sequence>
       <generate_route x="-1.47"
