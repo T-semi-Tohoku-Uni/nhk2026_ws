@@ -16,7 +16,7 @@ def generate_launch_description():
     ld = LaunchDescription()
     x = -1.47
     y = 0.45
-    z = 0.2
+    z = 0.05
     theta = 0.0
 
     sim_package_dir = get_package_share_directory("nhk2026_sim")
@@ -63,13 +63,18 @@ def generate_launch_description():
         executable='parameter_bridge',
         name='ros_gz_bridge_1',
         arguments=[
+            '/joint_sim1@std_msgs/msg/Float64]ignition.msgs.Double',
+            '/joint_sim2@std_msgs/msg/Float64]ignition.msgs.Double',
+            '/joint_sim3@std_msgs/msg/Float64]ignition.msgs.Double',
             '/scan_front@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
             '/scan_back@sensor_msgs/msg/LaserScan@ignition.msgs.LaserScan',
+            '/livox/points@sensor_msgs/msg/PointCloud2@gz.msgs.PointCloudPacked',
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
             '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/tf_static@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
-            '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock'],
+            '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
+            '/world/nhk2026/model/robot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model',
+            ],
         output='screen'
     )
     ld.add_action(bridge)
