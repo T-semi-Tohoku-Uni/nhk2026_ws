@@ -10,7 +10,7 @@
   <xacro:ide_arm prefix="ide_arm"/>
 
   <joint name="arm_fixed_joint" type="fixed">
-    <parent link="base_root"/>
+    <parent link="base_footprint"/>
     <child link="arm_base"/>
     <origin xyz=" 0.25 -0.16 0.12" rpy="0 0 0"/>
   </joint>
