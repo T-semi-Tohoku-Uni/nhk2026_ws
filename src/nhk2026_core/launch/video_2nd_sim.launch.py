@@ -79,4 +79,13 @@ def generate_launch_description():
     )
     ld.add_action(bridge)
 
+    static_from_map_to_odom = Node(
+        package="tf2_ros",
+        executable="static_transform_publisher",
+        name="static_transform_publisher",
+        output="screen",
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+    )
+    ld.add_action(static_from_map_to_odom)
+
     return ld
