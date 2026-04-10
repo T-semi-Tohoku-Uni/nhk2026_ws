@@ -17,6 +17,8 @@ MarkerPublisher::MarkerPublisher()
         100ms,
         std::bind(&MarkerPublisher::pub_timer_callback, this)
     );
+
+    RCLCPP_INFO(this->get_logger(), "start to publish field model");
 }
 
 void MarkerPublisher::pub_timer_callback()
