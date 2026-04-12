@@ -33,7 +33,10 @@ def generate_launch_description():
     xacro_file = os.path.join(sim_package_dir, "urdf", "r2_all.xacro")
     doc = xacro.process_file(xacro_file, mappings={'use_sim' : 'true'})
     robot_desc = doc.toprettyxml(indent='  ')
-    params = {'robot_description': robot_desc}
+    params = {
+        'robot_description': robot_desc,
+        'use_sim_time': True,
+    }
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -75,6 +78,7 @@ def generate_launch_description():
             '/odom@nav_msgs/msg/Odometry@gz.msgs.Odometry',
             '/cmd_vel@geometry_msgs/msg/Twist@gz.msgs.Twist',
             '/tf@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
+            '/tf_static@tf2_msgs/msg/TFMessage@gz.msgs.Pose_V',
             '/world/nhk2026/clock@rosgraph_msgs/msg/Clock@gz.msgs.Clock',
             '/world/nhk2026/model/robot/joint_state@sensor_msgs/msg/JointState[ignition.msgs.Model',
             ],
@@ -82,12 +86,26 @@ def generate_launch_description():
     )
     ld.add_action(bridge)
 
+    localization_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(
+            os.path.join(
+                get_package_share_directory("nhk2026_core"),
+                "launch",
+                "video_2nd_localization.launch.py",
+            )
+        ),
+        launch_arguments={"use_sim": "true"}.items(),
+    )
+    ld.add_action(localization_launch)
+
     static_from_map_to_odom = Node(
         package="tf2_ros",
         executable="static_transform_publisher",
         name="static_transform_publisher",
         output="screen",
-        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
+        arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom'],
+        parameters=[{"use_sim_time": True}],
+        remappings=[('clock', '/world/nhk2026/clock')],
     )
     ld.add_action(static_from_map_to_odom)
 

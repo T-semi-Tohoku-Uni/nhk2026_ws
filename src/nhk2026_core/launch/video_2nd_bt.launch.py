@@ -20,6 +20,7 @@ def generate_launch_description():
     wait_for_server_timeout_ms = LaunchConfiguration("wait_for_server_timeout_ms")
     k_pos_tolerance = LaunchConfiguration("k_pos_tolerance")
 
+    """ide_arm begin"""
     arm_path_plan_node = Node(
         package="nhk2026_control",
         executable="arm_path_plan",
@@ -44,7 +45,9 @@ def generate_launch_description():
         output="screen",
     )
     ld.add_action(vacuum_server_node)
+    """ide_arm end"""
 
+    """bt start"""
     ide_arm_bt_node = Node(
         package="nhk2026_system",
         executable="ide_arm_bt_node",
@@ -60,5 +63,6 @@ def generate_launch_description():
         period=bt_start_delay,
         actions=[ide_arm_bt_node],
     ))
+    """bt end"""
 
     return ld
