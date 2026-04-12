@@ -15,8 +15,6 @@
   <depend>inrof2025_ros_type</depend>
   <depend>nlohmann-json-dev</depend> 
   <depend>nhk2026_msgs</depend>
-  <depend>ignition-transport8</depend>
-  <depend>ignition-msgs8</depend>
 
   <export>
     <build_type>ament_cmake</build_type>
