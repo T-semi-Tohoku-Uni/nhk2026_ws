@@ -255,38 +255,6 @@
       </ray>
     </sensor>
   </gazebo>
-  
-  <gazebo>
-    <plugin filename="gz-sim-joint-state-publisher-system"
-            name="gz::sim::systems::JointStatePublisher" />
-    <plugin filename="gz-sim-joint-position-controller-system"
-            name="gz::sim::systems::JointPositionController">
-      <joint_name>right</joint_name>
-      <joint_index>0</joint_index>
-      <topic>/right_sim</topic>
-      <p_gain>900.0</p_gain>
-      <i_gain>25.0</i_gain>
-      <d_gain>48.0</d_gain>
-    </plugin>
-    <plugin filename="gz-sim-joint-position-controller-system"
-            name="gz::sim::systems::JointPositionController">
-      <joint_name>left</joint_name>
-      <joint_index>0</joint_index>
-      <topic>/left_sim</topic>
-      <p_gain>900.0</p_gain>
-      <i_gain>25.0</i_gain>
-      <d_gain>140.0</d_gain>
-    </plugin>
-    <plugin filename="gz-sim-joint-position-controller-system"
-            name="gz::sim::systems::JointPositionController">
-      <joint_name>back</joint_name>
-      <joint_index>0</joint_index>
-      <topic>/back_sim</topic>
-      <p_gain>900.0</p_gain>
-      <i_gain>25.0</i_gain>
-      <d_gain>48.0</d_gain>
-    </plugin>
-  </gazebo>
 </xacro:macro>
 
 </robot>
