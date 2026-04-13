@@ -8,7 +8,11 @@ class TfSetServer
 { 
 public:
     TfSetServer();
-    ~TfSetServer();
 private:
+    void tf_set_callback(
+        const std::shared_ptr<nhk2026_msgs::srv::TfSet::Request> request,
+        std::shared_ptr<nhk2026_msgs::srv::TfSet::Response> response
+    );
+
    rclcpp::Service<nhk2026_msgs::srv::TfSet>::SharedPtr tf_server_;
 };
