@@ -35,6 +35,7 @@ set(srv_files
   "srv/SystemR2.srv"
   "srv/ResetPose.srv"
   "srv/ArmPathPlan.srv"
+  "srv/TfSet.srv"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
