@@ -8,15 +8,19 @@ from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch_ros.actions import Node, LifecycleNode
 from launch import LaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.actions import IncludeLaunchDescription
+from launch.actions import IncludeLaunchDescription, DeclareLaunchArgument, EmitEvent, RegisterEventHandler, OpaqueFunction, Shutdown, TimerAction
 from launch.substitutions import PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch.event_handlers import OnProcessExit, OnProcessStart
-
+from launch_ros.events.lifecycle import ChangeState
+from launch_ros.event_handlers import OnStateTransition
+import lifecycle_msgs.msg
+import launch
 
 import os
 import xacro
 import math
+import subprocess
 
 ################### user configure parameters for ros2 start ###################
 xfer_format   = 0    # 0-Pointcloud2(PointXYZRTL), 1-customized pointcloud format
@@ -27,6 +31,47 @@ output_type   = 0
 frame_id      = 'livox_frame'
 lvx_file_path = '/home/livox/livox_test.lvx'
 cmdline_bd_code = 'livox0000000001'
+
+def _require_can0(context, *args, **kwargs):
+    try:
+        subprocess.check_output(["/usr/sbin/ip", "link", "show", "can0"], stderr=subprocess.STDOUT, text=True)
+        return []
+    except subprocess.CalledProcessError as e:
+        msg = f"can0 が見つかりません。launch を停止します。\n(ip output: {e.output.strip()})"
+        launch.logging.get_logger(__name__).error(msg)
+        return [Shutdown(reason="can0 not found")]
+    except FileNotFoundError:
+        msg = "ip コマンドが見つかりません。launch を停止します。"
+        launch.logging.get_logger(__name__).error(msg)
+        return [Shutdown(reason="ip command not found")]
+
+def _ensure_can0_up(context, *args, **kwargs):
+    try:
+        out = subprocess.check_output(["/usr/sbin/ip", "-details", "link", "show", "can0"], text=True)
+    except Exception:
+        return []
+
+    desired_ok = all(token in out for token in ("bitrate 1000000", "dbitrate 2000000", "fd on"))
+    if "UP" in out and desired_ok:
+        return []
+
+    cmds = [
+        ["sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "down"],
+        [
+            "sudo", "-n", "/usr/sbin/ip", "link", "set", "can0", "up",
+            "type", "can",
+            "bitrate", "1000000",
+            "dbitrate", "2000000",
+            "fd", "on",
+        ],
+    ]
+    for cmd in cmds:
+        try:
+            subprocess.check_output(cmd, stderr=subprocess.STDOUT, text=True)
+        except subprocess.CalledProcessError as e:
+            launch.logging.get_logger(__name__).error(f"can0 設定失敗: {e.output.strip()}")
+            return [Shutdown(reason="can0 setup failed")]
+    return []
 
 def generate_launch_description():
     x = -1.25
@@ -42,7 +87,51 @@ def generate_launch_description():
     doc = xacro.process_file(xacro_file)
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc}
+
+    """can node begin"""
+    pkg_share_bridge = get_package_share_directory('nhk2026_bridge')
+    canid_file = os.path.join(pkg_share_bridge, 'config', 'video_2nd_canbridge.yml')
+    canbridgenode = LifecycleNode(
+        package='nhk2026_bridge',
+        executable='nhk2026_canbridge',
+        name='nhk2026_canbridge',
+        namespace='',
+        parameters=[canid_file],
+        output='screen',
+        emulate_tty=True, 
+    )
+    canbridge_configure_event_handler = RegisterEventHandler(
+        OnProcessStart(
+            target_action=canbridgenode,
+            on_start=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=launch.events.matches_action(canbridgenode),
+                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+                    )
+                )
+            ]
+        )
+    )
+
+    canbridge_activate_event_handler = RegisterEventHandler(
+        OnStateTransition(
+            target_lifecycle_node=canbridgenode,
+            start_state='configuring',
+            goal_state='inactive',
+            entities=[
+                EmitEvent(
+                    event=ChangeState(
+                        lifecycle_node_matcher=launch.events.matches_action(canbridgenode),
+                        transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+                    )
+                )
+            ]
+        )
+    )
+    """can node end"""
     
+    """parameter nodes begin"""
     node_robot_state_publisher = Node(
         package='robot_state_publisher',
         executable='robot_state_publisher',
@@ -61,7 +150,9 @@ def generate_launch_description():
         output="screen",
         arguments=['0', '0', '0', '0', '0', '0', 'map', 'odom']
     )
+    """parameter nodes end"""
 
+    """lidar nodes begin"""
     livox_config_path = os.path.join(
         get_package_share_directory('livox_ros_driver2'), # または設定ファイルがあるパッケージ名
         'config',
@@ -104,7 +195,9 @@ def generate_launch_description():
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether_2nd.yaml"])],
         output='screen',
     )
+    """lidar nodes end"""
     
+    """localization nodes begin"""
     mcl_node = Node(
         package="nhk2026_localization",
         executable="mcl_node",
@@ -171,8 +264,14 @@ def generate_launch_description():
         name="map_mesh_publisher",
         output="screen",
     )
+    """localization nodes end"""
 
     return LaunchDescription([
+        OpaqueFunction(function=_require_can0),
+        OpaqueFunction(function=_ensure_can0_up),
+        canbridgenode,
+        canbridge_configure_event_handler,
+        canbridge_activate_event_handler,
         node_robot_state_publisher,
         static_from_map_to_odom,
         livox_driver,
