@@ -78,8 +78,8 @@ def generate_launch_description():
     y = 0.45
     z = 0.40
     theta = 0.0
-    frequency = 25.0
 
+    """parameter begin"""
     sim_package_dir = get_package_share_directory("nhk2026_sim")
     urg_node2_nl_pkg = get_package_share_directory('urg_node2_nl')
 
@@ -87,6 +87,7 @@ def generate_launch_description():
     doc = xacro.process_file(xacro_file)
     robot_desc = doc.toprettyxml(indent='  ')
     params = {'robot_description': robot_desc}
+    """parameter end"""
 
     """can node begin"""
     pkg_share_bridge = get_package_share_directory('nhk2026_bridge')
@@ -265,6 +266,21 @@ def generate_launch_description():
         output="screen",
     )
     """localization nodes end"""
+
+    """ide arm nodes begin"""
+    joint_state_publisher_ide_arm_node = Node(
+        package='nhk2026_control',
+        executable='joint_state_publisher_ide',
+        name='joint_state_publisher_ide_arm',
+        output='screen'
+    )
+    vacuum_server_node = Node(
+        package="nhk2026_control",
+        executable="vacuum_server",
+        name="vacuum_server",
+        output="screen",
+    )
+    """ide arm nodes end"""
 
     return LaunchDescription([
         OpaqueFunction(function=_require_can0),
