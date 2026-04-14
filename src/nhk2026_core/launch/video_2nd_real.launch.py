@@ -315,16 +315,16 @@ def generate_launch_description():
     """pursuit nodes end"""
 
     return LaunchDescription([
-        # OpaqueFunction(function=_require_can0),
-        # OpaqueFunction(function=_ensure_can0_up),
-        # canbridgenode,
-        # canbridge_configure_event_handler,
-        # canbridge_activate_event_handler,
+        OpaqueFunction(function=_require_can0),
+        OpaqueFunction(function=_ensure_can0_up),
+        canbridgenode,
+        canbridge_configure_event_handler,
+        canbridge_activate_event_handler,
         node_robot_state_publisher,
         static_from_map_to_odom,
-        # livox_driver,
-        # urg_node_front,
-        # urg_node_rear,
+        livox_driver,
+        urg_node_front,
+        urg_node_rear,
         mcl_node,
         lidar_filter_node,
         mcl_3d_node,
@@ -332,5 +332,5 @@ def generate_launch_description():
         map_publisher,
         joint_state_publisher_ide_arm_node,
         vacuum_server_node,
-        path_planner,
+        # path_planner,
     ])
