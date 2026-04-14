@@ -207,8 +207,27 @@ ament_target_dependencies(takano_hand_server
   nhk2026_msgs
 )
 
+install(
+  DIRECTORY config launch include
+  DESTINATION share/${PROJECT_NAME}
+)
+
+add_executable(nakamura_hand_server src/nakamura_hand_server.cpp)
+ament_target_dependencies(nakamura_hand_server
+  rclcpp 
+  rclcpp_action 
+  std_msgs 
+  nhk2026_msgs
+)
+
 install(TARGETS
   takano_hand_server
+  # (ここには他のノード名も並んでいるはずです)
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(TARGETS
+  nakamura_hand_server
   # (ここには他のノード名も並んでいるはずです)
   DESTINATION lib/${PROJECT_NAME}
 )
