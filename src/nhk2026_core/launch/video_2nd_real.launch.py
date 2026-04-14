@@ -78,6 +78,7 @@ def generate_launch_description():
     y = 0.45
     z = 0.40
     theta = 0.0
+    frequency = 25.0
 
     """parameter begin"""
     sim_package_dir = get_package_share_directory("nhk2026_sim")
@@ -282,6 +283,22 @@ def generate_launch_description():
     )
     """ide arm nodes end"""
 
+    """pursuit nodes begin"""
+    path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="path_planner",
+        output="screen",
+        parameters=[
+            {
+                "initial_x": x,
+                "initial_y": y,
+                "initial_theta": theta,
+                "sample_parameter": frequency,
+            },
+        ],
+    )
+    """pursuit nodes end"""
+
     return LaunchDescription([
         OpaqueFunction(function=_require_can0),
         OpaqueFunction(function=_ensure_can0_up),
@@ -298,4 +315,5 @@ def generate_launch_description():
         mcl_3d_node,
         mcl_manage,
         map_publisher,
+        path_planner,
     ])
