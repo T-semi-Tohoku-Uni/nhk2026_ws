@@ -19,45 +19,68 @@ def generate_launch_description():
     bt_start_delay = LaunchConfiguration("bt_start_delay")
     wait_for_server_timeout_ms = LaunchConfiguration("wait_for_server_timeout_ms")
     k_pos_tolerance = LaunchConfiguration("k_pos_tolerance")
+    name_space = 'aro'
 
     """ide_arm begin"""
-    arm_path_plan_node = Node(
-        package="nhk2026_control",
-        executable="arm_path_plan",
-        name="arm_path_plan",
-        output="screen",
-    )
-    ld.add_action(arm_path_plan_node)
-
     ide_arm_action_server_node = Node(
         package="nhk2026_system",
         executable="ide_arm_action_server",
         name="ide_arm_action_server",
         output="screen",
         parameters=[{"kPosTolerance": k_pos_tolerance}],
+        namespace=name_space,
     )
     ld.add_action(ide_arm_action_server_node)
-
-    vacuum_server_node = Node(
-        package="nhk2026_control",
-        executable="vacuum_server",
-        name="vacuum_server",
-        output="screen",
-    )
-    ld.add_action(vacuum_server_node)
     """ide_arm end"""
+
+    """pursuit nodes begin"""
+    pursuit = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 1.75,
+            "max_angular_speed": 0.7,
+            "max_linear_tolerance": 0.75,
+            "max_theta_tolerance": 0.10,
+            "max_reaching_distance": 0.05,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 0.80,
+            "Ki_tan": 0.0,
+            "Kd_tan": 0.0,
+            "Kp_normal": 0.80,
+            "Ki_normal": 0.00,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.0,
+            "Ki_theta": 0.00,
+            "Kd_theta": 0.00,
+            "x": 10,
+            "max_rotate_speed_": 0.7,
+            "slow_rotate_speed_": 0.4,
+            "accel_angle_": math.pi / 10,
+            "stop_angle_": math.pi / 90,
+            "offset_z_": 0.02,
+        },
+        ],
+        namespace=name_space,
+    )
+    ld.add_action(pursuit)
+    """pursuit nodes end"""
 
     """bt start"""
     ide_arm_bt_node = Node(
         package="nhk2026_system",
-        executable="ide_arm_bt_node",
-        name="ide_arm_bt_node",
+        executable="video_2nd_bt_node",
+        name="video_2nd_bt_node",
         output="screen",
         parameters=[
             {"bt_xml_file": bt_xml_file},
             {"wait_for_server_timeout_ms": wait_for_server_timeout_ms},
             {"k_pos_tolerance": k_pos_tolerance},
         ],
+        namespace=name_space,
     )
     ld.add_action(TimerAction(
         period=bt_start_delay,
