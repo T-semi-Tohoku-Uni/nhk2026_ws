@@ -222,7 +222,7 @@ def generate_launch_description():
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
 	        "lfmSigma":0.05,
-            "mapFile":"src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5",
+            "mapFile":"src/nhk2026_localization/map/nhk2026_field.h5",
         }],
         namespace=name_space,
     )
@@ -256,6 +256,8 @@ def generate_launch_description():
                 "particleNum": 100,
                 "mapResolution": 0.01,
                 "lfmSigma": 0.03,
+                
+                "mapFile":"src/nhk2026_localization/map/nhk2026_field.h5",
             },
         ],
         namespace=name_space,
@@ -313,20 +315,22 @@ def generate_launch_description():
     """pursuit nodes end"""
 
     return LaunchDescription([
-        OpaqueFunction(function=_require_can0),
-        OpaqueFunction(function=_ensure_can0_up),
-        canbridgenode,
-        canbridge_configure_event_handler,
-        canbridge_activate_event_handler,
+        # OpaqueFunction(function=_require_can0),
+        # OpaqueFunction(function=_ensure_can0_up),
+        # canbridgenode,
+        # canbridge_configure_event_handler,
+        # canbridge_activate_event_handler,
         node_robot_state_publisher,
         static_from_map_to_odom,
-        livox_driver,
-        urg_node_front,
-        urg_node_rear,
+        # livox_driver,
+        # urg_node_front,
+        # urg_node_rear,
         mcl_node,
         lidar_filter_node,
         mcl_3d_node,
         mcl_manage,
         map_publisher,
+        joint_state_publisher_ide_arm_node,
+        vacuum_server_node,
         path_planner,
     ])
