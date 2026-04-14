@@ -80,6 +80,8 @@ def generate_launch_description():
     theta = 0.0
     frequency = 25.0
 
+    name_space = "aro"
+
     """parameter begin"""
     sim_package_dir = get_package_share_directory("nhk2026_sim")
     urg_node2_nl_pkg = get_package_share_directory('urg_node2_nl')
@@ -97,7 +99,7 @@ def generate_launch_description():
         package='nhk2026_bridge',
         executable='nhk2026_canbridge',
         name='nhk2026_canbridge',
-        namespace='',
+        namespace=name_space,
         parameters=[canid_file],
         output='screen',
         emulate_tty=True, 
@@ -141,7 +143,8 @@ def generate_launch_description():
         emulate_tty=True,
         parameters=[
             params,
-        ]
+        ],
+        namespace=name_space,
     ) 
 
     # tf transfromer
@@ -176,7 +179,8 @@ def generate_launch_description():
         executable='livox_ros_driver2_node',
         name='livox_lidar_publisher',
         output='screen',
-        parameters=livox_ros2_params
+        parameters=livox_ros2_params,
+        namespace=name_space,
     )
     
     urg_node_front = Node(
@@ -185,7 +189,7 @@ def generate_launch_description():
         name="urg_node_front" ,
         remappings=[('scan', 'scan_front')],
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether.yaml"])],
-        namespace='',
+        namespace=name_space,
         output='screen',
     )
 
@@ -195,6 +199,7 @@ def generate_launch_description():
         name='urg_node_rear',                    
         remappings=[('scan', 'scan_back')],       
         parameters=[PathJoinSubstitution([urg_node2_nl_pkg, "config", "params_ether_2nd.yaml"])],
+        namespace=name_space,
         output='screen',
     )
     """lidar nodes end"""
@@ -219,6 +224,7 @@ def generate_launch_description():
 	        "lfmSigma":0.05,
             "mapFile":"src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5",
         }],
+        namespace=name_space,
     )
 
     lidar_filter_node = Node(
@@ -229,6 +235,7 @@ def generate_launch_description():
         parameters=[{
             "filter_threshold": 0.98, 
         }],
+        namespace=name_space,
     )
     
     mcl_3d_node = Node(
@@ -251,6 +258,7 @@ def generate_launch_description():
                 "lfmSigma": 0.03,
             },
         ],
+        namespace=name_space,
     )
     
     mcl_manage = Node(
@@ -258,6 +266,7 @@ def generate_launch_description():
         executable="mcl_manage",
         name="mcl_manage",
         output="screen",
+        namespace=name_space,
     )
     
     map_publisher = Node(
@@ -265,6 +274,7 @@ def generate_launch_description():
         executable="map_mesh_publisher",
         name="map_mesh_publisher",
         output="screen",
+        namespace=name_space,
     )
     """localization nodes end"""
 
@@ -273,13 +283,15 @@ def generate_launch_description():
         package='nhk2026_control',
         executable='joint_state_publisher_ide',
         name='joint_state_publisher_ide_arm',
-        output='screen'
+        output='screen',
+        namespace=name_space,
     )
     vacuum_server_node = Node(
         package="nhk2026_control",
         executable="vacuum_server",
         name="vacuum_server",
         output="screen",
+        namespace=name_space,
     )
     """ide arm nodes end"""
 
@@ -296,6 +308,7 @@ def generate_launch_description():
                 "sample_parameter": frequency,
             },
         ],
+        namespace=name_space,
     )
     """pursuit nodes end"""
 
