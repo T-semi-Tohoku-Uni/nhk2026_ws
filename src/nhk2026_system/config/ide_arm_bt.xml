@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <include path="wait_for_trigger.xml"/>
+  <include path="common/wait_for_trigger.xml"/>
+  <include path="common/bt_node_models.xml"/>
 
   <BehaviorTree ID="MainTree">
     <Sequence>
@@ -25,21 +26,4 @@
       <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
-
-  <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel>
-    <Action ID="move_arm"
-            editable="true">
-      <input_port name="y"/>
-      <input_port name="z"/>
-      <input_port name="roll"/>
-      <input_port name="max_speed"/>
-      <input_port name="max_acc"/>
-    </Action>
-    <Action ID="service_vacuum"
-            editable="true">
-      <input_port name="value"/>
-    </Action>
-  </TreeNodesModel>
-
 </root>

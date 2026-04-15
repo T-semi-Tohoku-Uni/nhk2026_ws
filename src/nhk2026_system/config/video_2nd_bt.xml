@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4" main_tree_to_execute="MainTree">
-  <include path="wait_for_trigger.xml"/>
   <include path="area/arena_bt.xml"/>
   <include path="area/martial_club_bt.xml"/>
   <include path="area/forest_bt.xml"/>
+  <include path="common/bt_node_models.xml"/>
+  <include path="common/wait_for_trigger.xml"/>
 
   <BehaviorTree ID="MainTree">
     <Sequence>
@@ -11,36 +12,4 @@
                _autoremap="false"/>
     </Sequence>
   </BehaviorTree>
-
-  <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel>
-    <Action ID="move_arm"
-            editable="true">
-      <input_port name="y"/>
-      <input_port name="z"/>
-      <input_port name="roll"/>
-      <input_port name="max_speed"/>
-      <input_port name="max_acc"/>
-    </Action>
-    <Action ID="service_vacuum"
-            editable="true">
-      <input_port name="value"/>
-    </Action>
-    <Action ID="linear_path"
-            editable="true">
-      <input_port name="x"/>
-      <input_port name="y"/>
-      <input_port name="is_return"/>
-    </Action>
-    <Action ID="follow_route"
-            editable="true"/>
-    <Action ID="generate_route"
-            editable="true">
-      <input_port name="x">TODO</input_port>
-      <input_port name="y">TODO</input_port>
-      <input_port name="theta"
-                  default="0.0"/>
-    </Action>
-  </TreeNodesModel>
-
 </root>

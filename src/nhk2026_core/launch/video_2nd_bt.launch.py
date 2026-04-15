@@ -2,9 +2,10 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction
+from launch.actions import IncludeLaunchDescription, TimerAction, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+from launch_ros.substitutions import FindPackageShare
 from launch_ros.actions import Node
 from launch.actions import SetEnvironmentVariable
 import launch_ros
@@ -30,7 +31,6 @@ def generate_launch_description():
         parameters=[{"kPosTolerance": k_pos_tolerance}],
         namespace=name_space,
     )
-    ld.add_action(ide_arm_action_server_node)
     """ide_arm end"""
 
     """pursuit nodes begin"""
@@ -66,7 +66,6 @@ def generate_launch_description():
         ],
         namespace=name_space,
     )
-    ld.add_action(pursuit)
     """pursuit nodes end"""
 
     """bt start"""
@@ -82,10 +81,38 @@ def generate_launch_description():
         ],
         namespace=name_space,
     )
+    """bt end"""
+    
+    ld.add_action(DeclareLaunchArgument(
+        "bt_xml_file",
+        default_value=PathJoinSubstitution([
+            FindPackageShare("nhk2026_system"),
+            "config",
+            "ide_arm_bt.xml",
+        ]),
+        description="Behavior tree XML file path.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "bt_start_delay",
+        default_value="4.0",
+        description="Delay in seconds before starting ide_arm_bt_node.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "wait_for_server_timeout_ms",
+        default_value="5000",
+        description="Timeout in ms to wait for the ide_arm action server.",
+    ))
+    ld.add_action(DeclareLaunchArgument(
+        "k_pos_tolerance",
+        default_value="0.06",
+        description="Joint position tolerance used by ide_arm_action_server.",
+    ))
+    
+    ld.add_action(ide_arm_action_server_node)
+    ld.add_action(pursuit)
     ld.add_action(TimerAction(
         period=bt_start_delay,
         actions=[ide_arm_bt_node],
     ))
-    """bt end"""
 
     return ld
