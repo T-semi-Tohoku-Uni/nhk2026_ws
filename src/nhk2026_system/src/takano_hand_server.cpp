@@ -108,11 +108,11 @@ private:
                         break;
                     case 1:
                         target_hand_pos_ = {-5.00, -1.57, -1.0};
-                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        if (hand_reached())  next_step(step, state_start_time);
                         break;
                     case 2:
                         target_hand_pos_ = {-5.00, -1.57, 1.0};
-                        if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
+                        if (hand_reached())  next_step(step, state_start_time);
                         break;
                     case 3:
                         target_hand_pos_ = {-3.18, -1.57, 1.0};
@@ -123,7 +123,7 @@ private:
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 5:
-                        target_hand_pos_ = {-0.1, -3.18, 1.0};
+                        target_hand_pos_ = {-0.3, -3.18, 1.0};
                         target_holder_pos_ = target_holder_pos_target_;
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
