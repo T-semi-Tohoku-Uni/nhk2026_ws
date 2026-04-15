@@ -27,6 +27,7 @@ set(action_files
   "action/StepMove.action"
   "action/KnekoArm.action"
   "action/TakanoHand.action"
+  "action/NakamuraHand.action"
 )
 
 set(srv_files
