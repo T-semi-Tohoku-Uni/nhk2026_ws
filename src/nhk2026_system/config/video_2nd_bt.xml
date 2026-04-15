@@ -8,8 +8,14 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="arm_put_shelf"
-               _autoremap="false"/>
+      <generate_route x="-1.47"
+                      y="1.95"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-3.0"
+                      y="0.95"
+                      theta="0.0"/>
+      <follow_route/>
     </Sequence>
   </BehaviorTree>
 </root>

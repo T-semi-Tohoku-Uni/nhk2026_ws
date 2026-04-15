@@ -379,7 +379,7 @@ def generate_launch_description():
         urg_node_front,#
         urg_node_rear,#
         lidar_filter_node,#
-        # joy_controller_node,
+        joy_controller_node,
         vel_feedback_node,
         # blossom_path_planner,
         # path_planner,
