@@ -88,7 +88,7 @@ def generate_launch_description():
         default_value=PathJoinSubstitution([
             FindPackageShare("nhk2026_system"),
             "config",
-            "ide_arm_bt.xml",
+            "video_2nd_bt.xml",
         ]),
         description="Behavior tree XML file path.",
     ))
