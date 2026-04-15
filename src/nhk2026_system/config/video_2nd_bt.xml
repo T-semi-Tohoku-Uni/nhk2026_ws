@@ -10,6 +10,14 @@
     <Sequence>
       <SubTree ID="WaitForTrigger"
                _autoremap="false"/>
+      <generate_route x="-1.47"
+                      y="0.95"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-3.0"
+                      y="0.95"
+                      theta="0.0"/>
+      <follow_route/>
     </Sequence>
   </BehaviorTree>
 </root>
