@@ -1,8 +1,12 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="arm_front_step">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+      <move_arm y="0.095582"
+                z="0.676967"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
 </root>
