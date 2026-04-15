@@ -52,7 +52,7 @@ void MarkerPublisher::pub_timer_callback()
     marker.scale.y = 1.0;
     marker.scale.z = 1.0;
 
-    marker.lifetime = rclcpp::Duration::from_seconds(0.1);  // 0 = 永続
+    marker.lifetime = rclcpp::Duration::from_seconds(1);  // 0 = 永続
 
     marker_pub_->publish(marker);
 }
