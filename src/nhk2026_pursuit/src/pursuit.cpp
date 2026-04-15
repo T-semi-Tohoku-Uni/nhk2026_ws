@@ -223,13 +223,13 @@ class FollowNode: public rclcpp::Node {
             auto goal_msg = StepMove::Goal();
             goal_msg.msg = command;
 
-            // //実機でしっかりとwaypointが先に進むように simulation real
-            // int index = current_waypoint_index_ + 1;
-            // while (index + 1 < static_cast<int>(path_.size()) &&
-            //     std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
-            //     index++;
-            // }
-            // current_waypoint_index_ = index;
+            //実機でしっかりとwaypointが先に進むように simulation real
+            int index = current_waypoint_index_ + 1;
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+                index++;
+            }
+            current_waypoint_index_ = index;
 
             auto send_goal_options = rclcpp_action::Client<StepMove>::SendGoalOptions();
             
@@ -248,7 +248,7 @@ class FollowNode: public rclcpp::Node {
             };
 
             //実機でテストするためコメントアウト simulation real
-            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
+            this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
         
 
@@ -516,8 +516,8 @@ class FollowNode: public rclcpp::Node {
                 if (std::abs(dz) > 0.0) {  
                     if (linear_error < max_reaching_distance) {
                         //simulation real
-                        is_jump_ = true;
-                        // send_step_goal(dz > 0.0 ? "step up" : "step down");
+                        // is_jump_ = true;
+                        send_step_goal(dz > 0.0 ? "step up" : "step down");
                     }
                     break;
                 }

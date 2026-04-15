@@ -34,9 +34,9 @@ namespace nhk2026_pursuit::path {
                 sample_parameter_ = this->get_parameter("sample_parameter").as_double();
                 this->mapZIndex_ = this->get_parameter("mapZIndex").as_int();
 
-                this->curOdom_.x = initial_x;
-                this->curOdom_.y = initial_y;
-                this->curOdom_.theta = initial_theta;
+                this->curOdom_.position.x = initial_x;
+                this->curOdom_.position.y = initial_y;
+                this->curOdom_.orientation = tf2::toMsg(thetaToOrientation(initial_theta));
 
                 this->mapResolution_ = 0.01;
                 this->mapWidth_ = 182;
@@ -64,7 +64,7 @@ namespace nhk2026_pursuit::path {
 
                 // initialize subscriber
                 rclcpp::QoS sOdomQos(rclcpp::KeepLast(10));
-                subOdom_ = this->create_subscription<geometry_msgs::msg::Pose2D>(
+                subOdom_ = this->create_subscription<geometry_msgs::msg::Pose>(
                     "pose", sOdomQos, std::bind(&PathGenerator::odomCallback, this, std::placeholders::_1)
                 );
 
@@ -91,6 +91,12 @@ namespace nhk2026_pursuit::path {
             return std::make_pair(u, v);
         }
 
+        tf2::Quaternion thetaToOrientation(double theta) {
+            tf2::Quaternion q;
+            q.setRPY(0, 0, theta);
+            return q;
+        }
+
         struct Cell {
             int u, v;
             double cost;
@@ -100,11 +106,11 @@ namespace nhk2026_pursuit::path {
             }
         };
 
-        void odomCallback(geometry_msgs::msg::Pose2D msgs) {
+        void odomCallback(geometry_msgs::msg::Pose msgs) {
             // TODO lock
-            curOdom_.x = msgs.x;
-            curOdom_.y = msgs.y;
-            curOdom_.theta = msgs.theta; // null ok
+            curOdom_.position.x = msgs.position.x;
+            curOdom_.position.y = msgs.position.y;
+            curOdom_.orientation = msgs.orientation; // null ok
         }
 
         // void poseCallback(inrof2025_ros_type::srv::GenRoute srvs) {
@@ -135,7 +141,7 @@ namespace nhk2026_pursuit::path {
             waypoint_array_.push_back(std::make_pair(request->x, request->y));
 
             std::vector<std::pair<double, double>> path;
-            std::pair<double, double> start_point = std::make_pair(curOdom_.x, curOdom_.y); 
+            std::pair<double, double> start_point = std::make_pair(curOdom_.position.x, curOdom_.position.y); 
             for (size_t i=0; i<waypoint_array_.size(); i++ ) {
                 std::vector<std::pair<double, double>> partial_pass = generator(start_point, waypoint_array_[i]);
                 path.insert(path.end(), partial_pass.begin(), partial_pass.end());
@@ -161,7 +167,7 @@ namespace nhk2026_pursuit::path {
                 if (i+30 > path.size()) {
                     q.setRPY(0, 0, request->theta);
                 } else {
-                    q.setRPY(0, 0, curOdom_.theta);
+                    q.setRPY(0, 0, getYaw(curOdom_.orientation));
                 }
                 pose.pose.orientation = tf2::toMsg(q);
                 pathMsg.poses.push_back(pose);
@@ -413,6 +419,14 @@ namespace nhk2026_pursuit::path {
                 }
         }
 
+        double getYaw(const geometry_msgs::msg::Quaternion& q_msg) {
+            tf2::Quaternion q;
+            tf2::fromMsg(q_msg, q);
+            double roll, pitch, yaw;
+            tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+            return yaw;
+        };
+
         void readMap() {
                 try {
                     RCLCPP_INFO(this->get_logger(), "Loading map from: %s", this->mapFile_.c_str());
@@ -613,8 +627,8 @@ namespace nhk2026_pursuit::path {
         rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
         rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubSamplePath_;        
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarker_;
-        rclcpp::Subscription<geometry_msgs::msg::Pose2D>::SharedPtr subOdom_;
-        geometry_msgs::msg::Pose2D curOdom_;
+        rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subOdom_;
+        geometry_msgs::msg::Pose curOdom_;
         std::vector<std::pair<double, double>> waypoint_array_;
 
         // connect to behaivorTree

@@ -136,6 +136,9 @@ namespace ActionNodes {
             std::shared_ptr<inrof2025_ros_type::srv::Pose::Response> response = result_future.get();
             return *response;
         }
+
+        RCLCPP_ERROR(this->get_logger(), "get_pose failed");
+        return inrof2025_ros_type::srv::Pose::Response();
     }
 
     inrof2025_ros_type::srv::BallColor::Response BTNode::ball_color() {
@@ -157,6 +160,9 @@ namespace ActionNodes {
             std::shared_ptr<inrof2025_ros_type::srv::BallColor::Response> response = result_future.get();
             return *response;
         }
+
+        RCLCPP_ERROR(this->get_logger(), "ball_color failed");
+        return inrof2025_ros_type::srv::BallColor::Response();
     }
 
     bool BTNode::isRuning() {
