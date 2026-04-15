@@ -8,6 +8,8 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
+      <SubTree ID="arm_front_step"
+               _autoremap="false"/>
       <SubTree ID="WaitForTrigger"
                _autoremap="false"/>
       <generate_route x="-1.47"

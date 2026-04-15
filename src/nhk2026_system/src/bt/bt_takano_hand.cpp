@@ -4,7 +4,7 @@ BT::PortsList TakanoHandAction::providedPorts()
 {
   return providedBasicPorts({
     BT::InputPort<int>("step", 0, "which step to execute (0-6)"),
-    BT::InputPort<double>("pos", 0.0f, "target position (not used)")
+    BT::InputPort<double>("pos", 5.0f, "target position (not used)")
   });
 }
 
