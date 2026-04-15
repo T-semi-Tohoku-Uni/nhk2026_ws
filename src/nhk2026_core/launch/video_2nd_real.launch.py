@@ -288,6 +288,13 @@ def generate_launch_description():
         output='screen',
         namespace=name_space,
     )
+    arm_path_plan_node = Node(
+        package="nhk2026_control",
+        executable="arm_path_plan",
+        name="arm_path_plan",
+        output="screen",
+        namespace=name_space,
+    )
     vacuum_server_node = Node(
         package="nhk2026_control",
         executable="vacuum_server",
@@ -331,6 +338,7 @@ def generate_launch_description():
         mcl_manage,
         map_publisher,
         joint_state_publisher_ide_arm_node,
+        arm_path_plan_node,
         vacuum_server_node,
         # path_planner,
     ])

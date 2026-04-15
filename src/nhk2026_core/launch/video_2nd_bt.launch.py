@@ -20,7 +20,7 @@ def generate_launch_description():
     bt_start_delay = LaunchConfiguration("bt_start_delay")
     wait_for_server_timeout_ms = LaunchConfiguration("wait_for_server_timeout_ms")
     k_pos_tolerance = LaunchConfiguration("k_pos_tolerance")
-    name_space = ''
+    name_space = 'aro'
 
     """ide_arm begin"""
     ide_arm_action_server_node = Node(
