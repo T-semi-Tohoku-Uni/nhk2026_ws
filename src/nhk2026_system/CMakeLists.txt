@@ -43,22 +43,6 @@ include_directories(
 )
 
 # -----------------------------------------------------------------------------
-# system_1st_video
-# -----------------------------------------------------------------------------
-add_executable(system_1st_video
-  src/system_1st_video.cpp
-)
-ament_target_dependencies(system_1st_video
-  rclcpp
-  rclcpp_lifecycle
-  std_msgs
-  geometry_msgs
-  lifecycle_msgs
-  nhk2026_msgs
-)
-install(TARGETS system_1st_video DESTINATION lib/${PROJECT_NAME})
-
-# -----------------------------------------------------------------------------
 # ide_arm_action_server
 # -----------------------------------------------------------------------------
 add_executable(ide_arm_action_server
@@ -141,6 +125,7 @@ add_library(bt_library
   src/bt/bt_generate_route.cpp
   src/bt/bt_linear_path.cpp
   src/bt/bt_follow_route.cpp
+  src/bt/bt_takano_hand.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
