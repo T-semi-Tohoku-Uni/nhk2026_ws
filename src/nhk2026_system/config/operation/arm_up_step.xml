@@ -1,8 +1,33 @@
 <root BTCPP_format="4">
   <BehaviorTree ID="arm_up_step">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+      <move_arm y="0.0"
+                z="0.871503"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.864851"
+                z="0.238856"
+                roll="0.0"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <service_vacuum value="true"/>
+      <move_arm y="1.038656"
+                z="0.245521"
+                roll="0.0"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.864851"
+                z="0.238856"
+                roll="0.0"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.0"
+                z="0.871503"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
 </root>
