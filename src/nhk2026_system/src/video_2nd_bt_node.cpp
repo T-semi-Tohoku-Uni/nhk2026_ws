@@ -14,6 +14,7 @@
 #include "bt/bt_follow_route.hpp"
 #include "bt/bt_generate_route.hpp"
 #include "bt/bt_linear_path.hpp"
+#include "bt/bt_takano_hand.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -54,7 +55,13 @@ int main(int argc, char ** argv)
     action_params.nh = node;
     action_params.default_port_value = "ide_arm";
     action_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
-    
+
+    BT::RosNodeParams takano_hand_params;
+    takano_hand_params.nh = node;
+    takano_hand_params.nh = node;
+    takano_hand_params.default_port_value = "takano_hand";
+    takano_hand_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+
     BT::RosNodeParams service_params;
     service_params.nh = node;
     service_params.default_port_value = "vacuum";
@@ -69,6 +76,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<MoveArmAction>("move_arm", action_params);
     factory.registerNodeType<ServiceVacuum>("service_vacuum", service_params);
     factory.registerNodeType<TriggerTopic>("trigger_topic", trigger_params);
+    factory.registerNodeType<TakanoHandAction>("takano_hand", takano_hand_params);
 
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     tree.tickWhileRunning();
