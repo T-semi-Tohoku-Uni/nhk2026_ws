@@ -59,7 +59,7 @@ int main(int argc, char ** argv)
     BT::RosNodeParams takano_hand_params;
     takano_hand_params.nh = node;
     takano_hand_params.nh = node;
-    takano_hand_params.default_port_value = "takano_hand";
+    takano_hand_params.default_port_value = "takano_hand_sequence";
     takano_hand_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
     BT::RosNodeParams service_params;

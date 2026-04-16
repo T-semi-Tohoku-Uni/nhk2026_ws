@@ -68,6 +68,16 @@ def generate_launch_description():
     )
     """pursuit nodes end"""
 
+    """takano hand begin"""
+    takano_hand_sequencer = Node(
+        package='nhk2026_system',
+        executable='takano_hand_server',
+        name='takano_hand_sequencer',
+        output='screen',
+        namespace=name_space,
+    )
+    """takano hand end"""
+
     """bt start"""
     ide_arm_bt_node = Node(
         package="nhk2026_system",
@@ -114,5 +124,6 @@ def generate_launch_description():
         period=bt_start_delay,
         actions=[ide_arm_bt_node],
     ))
+    ld.add_action(takano_hand_sequencer)
 
     return ld

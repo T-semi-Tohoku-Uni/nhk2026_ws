@@ -2,8 +2,11 @@
   <include path="../common/bt_node_models.xml"/>
   <BehaviorTree ID="MartialClub">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+      <takano_hand step="1"/>
+      <takano_hand step="2"/>
+      <takano_hand step="3"/>
+      <takano_hand step="4"/>
+      <takano_hand step="5"/>
     </Sequence>
   </BehaviorTree>
 </root>
