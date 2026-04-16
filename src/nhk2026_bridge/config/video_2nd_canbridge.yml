@@ -4,8 +4,8 @@
 
     pub_float_bridge_topic: ["motor_feedback", "motor_step_feedback","quaternion_feedback","takano_hand_feedback","takano_holder_feedback"]
     pub_float_bridge_canid: [0x300, 0x301, 0x102, 0x302, 0x303]
-    # pub_int_bridge_topic: ["test_i_p"]
-    # pub_int_bridge_canid: [0x401]
+    pub_int_bridge_topic: ["onedlidar"] 
+    pub_int_bridge_canid: [0x401]  
     # pub_bytes_bridge_topic: ["test_b_p"]
     # pub_bytes_bridge_canid: [0x402]
 

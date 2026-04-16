@@ -14,6 +14,7 @@
 #include "bt/bt_follow_route.hpp"
 #include "bt/bt_generate_route.hpp"
 #include "bt/bt_linear_path.hpp"
+#include "bt/bt_move_step.hpp"
 #include "bt/bt_takano_hand.hpp"
 
 int main(int argc, char ** argv)
@@ -70,6 +71,11 @@ int main(int argc, char ** argv)
     trigger_params.nh = node;
     trigger_params.default_port_value = "trigger";
 
+    BT::RosNodeParams step_params;
+    step_params.nh = node;
+    step_params.default_port_value = "step_leg_sequence";
+    step_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+
     factory.registerNodeType<FollowRoute>("follow_route", follow_route_params);
     factory.registerNodeType<GenerateRoute>("generate_route", generate_route_params);
     factory.registerNodeType<LinearPath>("linear_path", linear_path_params);
@@ -77,7 +83,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<ServiceVacuum>("service_vacuum", service_params);
     factory.registerNodeType<TriggerTopic>("trigger_topic", trigger_params);
     factory.registerNodeType<TakanoHandAction>("takano_hand", takano_hand_params);
-
+    factory.registerNodeType<StepMoveAction>("step_move", step_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     tree.tickWhileRunning();
 

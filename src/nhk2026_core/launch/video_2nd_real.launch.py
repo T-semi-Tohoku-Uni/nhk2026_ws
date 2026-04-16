@@ -321,6 +321,16 @@ def generate_launch_description():
     )
     """pursuit nodes end"""
 
+    """step leg nodes begin"""
+    jsp_node = Node(
+        package='nhk2026_control',
+        executable='joint_state_publisher_step',
+        name='joint_state_publisher_step',
+        output='screen',
+        namespace=name_space,
+    )
+    """step leg nodes end"""
+
     return LaunchDescription([
         OpaqueFunction(function=_require_can0),
         OpaqueFunction(function=_ensure_can0_up),
@@ -341,4 +351,5 @@ def generate_launch_description():
         arm_path_plan_node,
         vacuum_server_node,
         path_planner,
+        jsp_node,
     ])

@@ -78,6 +78,16 @@ def generate_launch_description():
     )
     """takano hand end"""
 
+    """step leg begin"""
+    step_leg_sequencer = Node(
+        package='nhk2026_system',
+        executable='step_action_server',
+        name='step_leg_sequencer',
+        output='screen',
+        namespace=name_space,
+    )
+    """step leg end"""
+
     """bt start"""
     ide_arm_bt_node = Node(
         package="nhk2026_system",
@@ -125,5 +135,6 @@ def generate_launch_description():
         actions=[ide_arm_bt_node],
     ))
     ld.add_action(takano_hand_sequencer)
-
+    ld.add_action(step_leg_sequencer)
+    
     return ld

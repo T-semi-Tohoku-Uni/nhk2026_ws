@@ -8,7 +8,7 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="MartialClub"
+      <SubTree ID="Forest"
                _autoremap="false"/>
     </Sequence>
   </BehaviorTree>

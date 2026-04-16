@@ -5,8 +5,8 @@
   <include path="../common/bt_node_models.xml"/>
   <BehaviorTree ID="Forest">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+    <step_move command="step up"/>
+    <step_move command="step down"/>
     </Sequence>
   </BehaviorTree>
 </root>

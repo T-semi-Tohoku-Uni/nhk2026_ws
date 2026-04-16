@@ -126,6 +126,7 @@ add_library(bt_library
   src/bt/bt_linear_path.cpp
   src/bt/bt_follow_route.cpp
   src/bt/bt_takano_hand.cpp
+  src/bt/bt_move_step.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
