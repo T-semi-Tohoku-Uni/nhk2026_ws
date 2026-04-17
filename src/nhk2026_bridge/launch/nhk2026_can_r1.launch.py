@@ -1,9 +1,11 @@
 from launch import LaunchDescription
 from launch_ros.actions import LifecycleNode
 from launch_ros.actions import Node
+from launch.actions import SetEnvironmentVariable
 from ament_index_python.packages import get_package_share_directory
 import os
 import subprocess
+from pathlib import Path
 
 from launch.actions import EmitEvent, RegisterEventHandler
 from launch.actions import OpaqueFunction, Shutdown
@@ -84,8 +86,6 @@ def generate_launch_description():
         emulate_tty=True, 
     )
 
-    ld.add_action(canbridgenode)
-
     canbridge_configure_event_handler = RegisterEventHandler(
         OnProcessStart(
             target_action=canbridgenode,
@@ -115,6 +115,24 @@ def generate_launch_description():
             ]
         )
     )
+
+    set_zenoh_env = SetEnvironmentVariable(
+        "RMW_IMPLEMENTATION",
+        "rmw_zenoh_cpp",
+    )
+
+    zenoh_config = Path(
+        get_package_share_directory("nhk2026_bridge")
+    ) / "config" / "rmw_zenoh_config_r1.json5"
+
+    set_env_var = SetEnvironmentVariable(
+        "ZENOH_ROUTER_CONFIG_URI",
+        str(zenoh_config),
+    )
+    ld.add_action(set_zenoh_env)
+    ld.add_action(set_env_var)
+
+    ld.add_action(canbridgenode)
 
     ld.add_action(canbridge_configure_event_handler)
     ld.add_action(canbridge_activate_event_handler)
