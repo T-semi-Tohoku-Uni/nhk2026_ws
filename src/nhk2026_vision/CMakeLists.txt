@@ -5,71 +5,78 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+option(IS_JETSON "Build on jetson" ON)
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(rclcpp REQUIRED)
-find_package(rclcpp_lifecycle REQUIRED)
-find_package(OpenCV REQUIRED)
-find_package(sensor_msgs REQUIRED)
-find_package(realsense2_camera_msgs REQUIRED)
-find_package(cv_bridge REQUIRED)
-find_package(geometry_msgs REQUIRED)
-find_package(nhk2026_msgs REQUIRED)
-find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-find_package(std_msgs REQUIRED)
-find_package(backward_ros REQUIRED)
 
-add_executable(aruco_node
-  src/aruco_node.cpp
-)
 
-ament_target_dependencies(aruco_node
-  rclcpp
-  rclcpp_lifecycle
-  sensor_msgs
-  realsense2_camera_msgs
-  cv_bridge
-  geometry_msgs
-  nhk2026_msgs
-)
+if(IS_JETSON)
+  find_package(rclcpp REQUIRED)
+  find_package(rclcpp_lifecycle REQUIRED)
+  find_package(OpenCV REQUIRED)
+  find_package(sensor_msgs REQUIRED)
+  find_package(realsense2_camera_msgs REQUIRED)
+  find_package(cv_bridge REQUIRED)
+  find_package(geometry_msgs REQUIRED)
+  find_package(nhk2026_msgs REQUIRED)
+  find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+  find_package(std_msgs REQUIRED)
+  find_package(backward_ros REQUIRED)
 
-target_include_directories(aruco_node PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
-  $<INSTALL_INTERFACE:include>
-)
+  add_executable(aruco_node
+    src/aruco_node.cpp
+  )
 
-install(
-  TARGETS aruco_node
-  DESTINATION lib/${PROJECT_NAME}
-)
+  ament_target_dependencies(aruco_node
+    rclcpp
+    rclcpp_lifecycle
+    sensor_msgs
+    realsense2_camera_msgs
+    cv_bridge
+    geometry_msgs
+    nhk2026_msgs
+  )
 
-install(
-  DIRECTORY include/
-  DESTINATION include
-)
+  target_include_directories(aruco_node PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+    $<INSTALL_INTERFACE:include>
+  )
 
-include_directories(
-  ${OpenCV_INCLUDE_DIRS}
-)
+  install(
+    TARGETS aruco_node
+    DESTINATION lib/${PROJECT_NAME}
+  )
 
-add_library(aruco
-  src/aruco.cpp
-)
+  install(
+    DIRECTORY include/
+    DESTINATION include
+  )
 
-target_include_directories(aruco PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
-  $<INSTALL_INTERFACE:include>
-)
+  include_directories(
+    ${OpenCV_INCLUDE_DIRS}
+  )
 
-target_link_libraries(aruco
-  ${OpenCV_LIBRARIES}
-)
+  add_library(aruco
+    src/aruco.cpp
+  )
 
-target_link_libraries(aruco_node
-  aruco
-  ${OpenCV_LIBRARIES}
-  Eigen3::Eigen
-)
+  target_include_directories(aruco PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+    $<INSTALL_INTERFACE:include>
+  )
+
+  target_link_libraries(aruco
+    ${OpenCV_LIBRARIES}
+  )
+
+  target_link_libraries(aruco_node
+    aruco
+    ${OpenCV_LIBRARIES}
+    Eigen3::Eigen
+  )
+else()
+  message(STATUS "Skipping aruco_node because NHK2026_BUILD_ARUCO_NODE is disabled")
+endif()
 
 # add install
 install(
