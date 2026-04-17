@@ -5,17 +5,21 @@ from ament_index_python.packages import get_package_share_directory
 from pathlib import Path
 
 def generate_launch_description():
+    name_space = "r1"
+
     unity_endpoint = Node(
         package="ros_tcp_endpoint",
         executable="default_server_endpoint",
         emulate_tty=True,
         parameters=[{"ROS_IP": "0.0.0.0"}, {"ROS_TCP_PORT": 10000}],
+        namespace=name_space,
     )
 
     zenoh_node = Node(
         package="rmw_zenoh_cpp",
         executable="rmw_zenohd",
         emulate_tty=True,
+        namespace=name_space,
     )
 
     set_zenoh_env = SetEnvironmentVariable(
