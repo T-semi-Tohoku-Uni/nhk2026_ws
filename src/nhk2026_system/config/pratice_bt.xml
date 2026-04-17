@@ -21,6 +21,10 @@
                       y="8.0"
                       theta="0.0"/>
       <follow_route/>
+      <generate_route x="-5.5"
+                      y="8.0"
+                      theta="1.57"/>
+      <follow_route/>
     </Sequence>
   </BehaviorTree>
 
