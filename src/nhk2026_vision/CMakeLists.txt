@@ -5,7 +5,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-option(IS_JETSON "Build on jetson" ON)
+option(IS_JETSON "Build on jetson" OFF)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 
