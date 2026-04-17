@@ -29,9 +29,16 @@
 
     <Action ID="takano_hand" editable="true">
       <input_port name="step"/>
-      <input_port name="pos" default="0.0"/>
+      <input_port name="pos" default="5.0"/>
     </Action>
 
-    <Condition ID="trigger_topic" editable="true"/>
+    <Action ID="step_move"
+            editable="true">
+      <input_port name="command"/>
+    </Action>
+
+    <Action ID="trigger_topic"
+            editable="true">
+    </Action>
   </TreeNodesModel>
 </root>
