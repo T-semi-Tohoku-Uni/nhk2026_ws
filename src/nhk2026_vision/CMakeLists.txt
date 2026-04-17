@@ -75,7 +75,7 @@ if(IS_JETSON)
     Eigen3::Eigen
   )
 else()
-  message(STATUS "Skipping aruco_node because NHK2026_BUILD_ARUCO_NODE is disabled")
+  message(STATUS "Skipping aruco_node because IS_JETSON is OFF")
 endif()
 
 # add install
