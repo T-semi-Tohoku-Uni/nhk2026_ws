@@ -39,6 +39,7 @@ public:
         rclcpp::QoS reliable_qos = rclcpp::QoS(10).reliability(rclcpp::ReliabilityPolicy::Reliable).durability(rclcpp::DurabilityPolicy::Volatile);
         
         zaxis_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("zaxis", 10);
+        cmd_feedback_pub_ = this->create_publisher<std_msgs::msg::Int32MultiArray>("feedback_type", 10);
         robomas_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("leg_robomas", reliable_qos);
         cmd_vel_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", reliable_qos);
         legs_pub_ = this->create_publisher<std_msgs::msg::Float32MultiArray>("step_legs", reliable_qos);
@@ -138,6 +139,7 @@ private:
                     case 1:
                         target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.57};
                         target_robomas = 0.3f;
+                        feedbacktype = 1;
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 2:
@@ -159,6 +161,7 @@ private:
                         break;
                     case 6:
                         target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, 0.0};
+                        feedbacktype = 0;
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 7:
@@ -220,6 +223,7 @@ private:
                         break;
                     case 4:
                         target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.57};
+                        feedbacktype = 1;
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 5:
@@ -237,6 +241,7 @@ private:
                     case 8:
                         target_robomas = 0.0f;
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
+                        feedbacktype = 0;
                         if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
                         break;
                     case 9:
@@ -290,6 +295,9 @@ private:
         std_msgs::msg::Int32MultiArray msg;
         msg.data.push_back(this->zaxics_count);
         zaxis_pub_->publish(msg);
+        std_msgs::msg::Int32MultiArray msg2;
+        msg2.data.push_back(this->feedbacktype);
+        cmd_feedback_pub_->publish(msg2);
     }
 
     // 判定は「最終目標値」に到達したかで見る
@@ -347,6 +355,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr robomas_pub_, legs_pub_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_pub_;
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr zaxis_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr cmd_feedback_pub_;
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_sub_;
     rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr lidar_sub_;
     rclcpp::TimerBase::SharedPtr zaxis_timer_;
@@ -355,6 +364,7 @@ private:
     std::mutex lidar_mutex_, joint_mutex_;
     int count, zaxics_count = 0;
     int nowzaxices = 0;
+    int feedbacktype = 0;
     sensor_msgs::msg::JointState now_joint_;
     bool joint_subscribe_flag_ = false;
     double kPosTolerance_, max_leg_vel_;
