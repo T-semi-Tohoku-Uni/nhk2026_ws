@@ -293,7 +293,7 @@ class FollowNode: public rclcpp::Node {
                 std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
             request->pose.position.x = target_x;
             request->pose.position.y = target_y;
-            request->pose.position.z = target_z + offset_z_; // 少し上にオフセットしてテレポート
+            request->pose.position.z = target_z; 
             request->pose.orientation = pose_.orientation;
             reset_pose_client_->async_send_request(
                 request,
