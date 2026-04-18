@@ -20,8 +20,19 @@
       <step_move command="step up"/>
       <generate_route x="-1.8"
                       y="3.8"
-                      theta="1.57"/>
+                      theta="0.0"/>
       <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-1.8"
+                      y="5.0"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step  down"/>
+      <generate_route x="-1.8"
+                      y="6.2"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step  down"/>
     </Sequence>
   </BehaviorTree>
 
