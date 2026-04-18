@@ -393,9 +393,9 @@ namespace mcl {
                     //     continue;
                     // }
 
-                    // if (std::abs(z_map - 0.00) <= 0.03){
-                    //     continue;
-                    // }
+                    if (std::abs(z_map - 0.00) <= 0.03){
+                        continue;
+                    }
 
                     Point3D pt;
                     pt.x = x;
