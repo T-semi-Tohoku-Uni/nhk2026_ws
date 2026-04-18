@@ -53,7 +53,7 @@ def generate_launch_description():
             "Kp_normal": 0.80,
             "Ki_normal": 0.0,
             "Kd_normal": 0.00,
-            "Kp_theta": 1.0,
+            "Kp_theta": 0.5,
             "Ki_theta": 0.00,
             "Kd_theta": 0.00,
             "x": 10,
