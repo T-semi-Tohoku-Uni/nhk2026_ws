@@ -260,8 +260,11 @@ def generate_launch_description():
                 "odomNoise2": 1.0,
                 "odomNoise3": 0.5,
                 "odomNoise4": 0.5,
+                
+                "mapFile":"src/nhk2026_localization/map/nhk2026_field.h5",
             },
         ],
+        namespace=name_space,
     )
     
     mcl_manage = Node(
