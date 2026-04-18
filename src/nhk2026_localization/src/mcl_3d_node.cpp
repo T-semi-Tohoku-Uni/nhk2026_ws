@@ -437,9 +437,13 @@ namespace mcl {
                     double z_map = *iter_z + mclPose_.position.z;
 
                     // 特定の高さ（床や特定の障害物）を除外
-                    if (std::abs(z_map - 0.00) <= 0.03 ||
-                        std::abs(z_map - 0.20) <= 0.03 ||
-                        std::abs(z_map - 0.40) <= 0.03) {
+                    // if (std::abs(z_map - 0.00) <= 0.03 ||
+                    //     std::abs(z_map - 0.20) <= 0.03 ||
+                    //     std::abs(z_map - 0.40) <= 0.03) {
+                    //     continue;
+                    // }
+
+                    if (std::abs(z_map - 0.00) <= 0.03 ) {
                         continue;
                     }
 
