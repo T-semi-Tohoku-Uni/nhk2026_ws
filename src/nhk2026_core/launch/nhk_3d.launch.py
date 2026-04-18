@@ -49,9 +49,9 @@ livox_ros2_params = [
 
 def generate_launch_description():
     x = -3.0
-    y = 6.2
-    z = 0.40
-    theata = 0.0
+    y = 5.0
+    z = 0.20
+    theata = -1.57
     frequency = 25.0
 
     package_dir = get_package_share_directory("nhk2026_sim")
