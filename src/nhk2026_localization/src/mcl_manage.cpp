@@ -104,6 +104,8 @@ class MclManage : public rclcpp::Node {
         int init_flag = 0;
         bool has_pose_;
         geometry_msgs::msg::Pose current_pose_;
+        std::vector<float>  initpose_x = {-1.8,-3.0,-4.2};
+        std::vector<float>  initpose_y = {2.6,3.8,5.0,6.2};
 
         rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr pub_mcl_select_;
         rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub_initial_pose_;

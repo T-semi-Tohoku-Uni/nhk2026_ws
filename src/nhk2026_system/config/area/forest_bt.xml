@@ -11,7 +11,7 @@
   <BehaviorTree ID="Forest">
     <Sequence>
       <generate_route x="-4.2"
-                      y="2.0"
+                      y="2.6"
                       theta="0.0"/>
       <follow_route/>
       <step_move command="step up"/>
