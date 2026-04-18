@@ -17,8 +17,6 @@ def generate_launch_description():
     zenoh_node = Node(
         package="rmw_zenoh_cpp",
         executable="rmw_zenohd",
-        emulate_tty=True,
-        namespace=name_space,
     )
 
     set_zenoh_env = SetEnvironmentVariable(
@@ -28,7 +26,7 @@ def generate_launch_description():
 
     zenoh_config = Path(
         get_package_share_directory("nhk2026_bridge")
-    ) / "config" / "rmw_zenoh_config_lxd.json5"
+    ) / "config" / "rmw_zenoh_config_lxc.json5"
 
     set_env_var = SetEnvironmentVariable(
         "ZENOH_SESSION_CONFIG_URI",
