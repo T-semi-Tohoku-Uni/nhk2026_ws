@@ -180,6 +180,10 @@ def generate_launch_description():
                 "particleNum": 100,
                 "mapResolution": 0.01,
                 "lfmSigma": 0.03,
+                "odomNoise1": 1.2,
+                "odomNoise2": 0.5,
+                "odomNoise3": 1.3,
+                "odomNoise4": 1.1,
             },
         ],
     )
