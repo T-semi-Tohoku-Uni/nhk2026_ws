@@ -387,15 +387,15 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    // if (std::abs(z_map - 0.00) <= 0.03 ||
-                    //     std::abs(z_map - 0.20) <= 0.03 ||
-                    //     std::abs(z_map - 0.40) <= 0.03) {
-                    //     continue;
-                    // }
+                     if (std::abs(z_map - 0.00) <= 0.03 ||
+                         std::abs(z_map - 0.20) <= 0.03 ||
+                         std::abs(z_map - 0.40) <= 0.03) {
+                         continue;
+                     }
 
-                    if (std::abs(z_map - 0.00) <= 0.03){
-                        continue;
-                    }
+                    //if (std::abs(z_map - 0.00) <= 0.03){
+                    //    continue;
+                    //}
 
                     Point3D pt;
                     pt.x = x;
@@ -456,7 +456,7 @@ namespace mcl {
                 // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
                 double noise_x = 0.3;           // xの標準偏差 [m]
                 double noise_y = 0.3;           // yの標準偏差 [m]
-                double noise_yaw = 30.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double noise_yaw = 20.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / static_cast<double>(particles_.size());
 
                 // 既存の散布関数を呼び出す（引数をシンプルに整理）
