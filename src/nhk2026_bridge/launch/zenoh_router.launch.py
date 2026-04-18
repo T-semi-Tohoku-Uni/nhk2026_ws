@@ -17,8 +17,6 @@ def generate_launch_description():
     zenoh_node = Node(
         package="rmw_zenoh_cpp",
         executable="rmw_zenohd",
-        emulate_tty=True,
-        namespace=name_space,
     )
 
     set_zenoh_env = SetEnvironmentVariable(
@@ -26,18 +24,34 @@ def generate_launch_description():
         "rmw_zenoh_cpp",
     )
 
-    zenoh_config = Path(
+    router_config = Path(
         get_package_share_directory("nhk2026_bridge")
     ) / "config" / "rmw_zenoh_config_router.json5"
 
-    set_env_var = SetEnvironmentVariable(
+    session_config = Path(
+        get_package_share_directory("nhk2026_bridge")
+    ) / "config" / "rmw_zenoh_config_local.json5"
+
+    set_router_config = SetEnvironmentVariable(
         "ZENOH_ROUTER_CONFIG_URI",
-        str(zenoh_config),
+        str(router_config),
+    )
+
+    set_session_config = SetEnvironmentVariable(
+        "ZENOH_SESSION_CONFIG_URI",
+        str(session_config),
+    )
+
+    disable_shm = SetEnvironmentVariable(
+        "ZENOH_CONFIG_OVERRIDE",
+        "transport/shared_memory/enabled=false",
     )
 
     return LaunchDescription([
         set_zenoh_env,
-        set_env_var,
-        debug_publisher,
+        set_router_config,
+        set_session_config,
+        disable_shm,
         zenoh_node,
+        debug_publisher,
     ])

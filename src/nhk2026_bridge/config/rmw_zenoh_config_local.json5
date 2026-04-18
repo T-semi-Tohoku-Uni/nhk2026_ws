@@ -1,0 +1,6 @@
+{
+  mode: "client",
+  connect: { endpoints: ["udp/127.0.0.1:7447"] },
+  scouting: { multicast: { enabled: false }, gossip: { enabled: true } },
+  timestamping: { enabled: { router: true, peer: true, client: true } }
+}

@@ -126,11 +126,16 @@ def generate_launch_description():
     ) / "config" / "rmw_zenoh_config_r1.json5"
 
     set_env_var = SetEnvironmentVariable(
-        "ZENOH_ROUTER_CONFIG_URI",
+        "ZENOH_SESSION_CONFIG_URI",
         str(zenoh_config),
+    )
+    disable_shm = SetEnvironmentVariable(
+        "ZENOH_CONFIG_OVERRIDE",
+        "transport/shared_memory/enabled=false",
     )
     ld.add_action(set_zenoh_env)
     ld.add_action(set_env_var)
+    ld.add_action(disable_shm)
 
     ld.add_action(canbridgenode)
 

@@ -14,11 +14,6 @@ def generate_launch_description():
         namespace=name_space,
     )
 
-    zenoh_node = Node(
-        package="rmw_zenoh_cpp",
-        executable="rmw_zenohd",
-    )
-
     set_zenoh_env = SetEnvironmentVariable(
         "RMW_IMPLEMENTATION",
         "rmw_zenoh_cpp",
@@ -33,9 +28,14 @@ def generate_launch_description():
         str(zenoh_config),
     )
 
+    disable_shm = SetEnvironmentVariable(
+        "ZENOH_CONFIG_OVERRIDE",
+        "transport/shared_memory/enabled=false",
+    )
+
     return LaunchDescription([
         set_zenoh_env,
         set_env_var,
-        zenoh_node,
+        disable_shm,
         debug_listener,
     ])
