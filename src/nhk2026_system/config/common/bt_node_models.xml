@@ -40,5 +40,12 @@
     <Action ID="trigger_topic"
             editable="true">
     </Action>
+
+    <SubTree ID="vel_tim">
+      <input_port name="vx"/>
+      <input_port name="vy"/>
+      <input_port name="omega"/>
+      <input_port name="pub_msec"/>
+    </SubTree>
   </TreeNodesModel>
 </root>
