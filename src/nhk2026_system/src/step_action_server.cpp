@@ -131,7 +131,7 @@ private:
 
                 switch (step) {
                     case 0:
-                        zaxics_count = nowzaxices;
+                        zaxics_count = count;
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
                         if (leg_reached()) { zaxics_count++; next_step(step, state_start_time); }
                         break;
@@ -202,7 +202,7 @@ private:
 
                 switch (step) {
                     case 0:
-                        zaxics_count = nowzaxices;
+                        zaxics_count = count;
                         target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, 0.0};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
