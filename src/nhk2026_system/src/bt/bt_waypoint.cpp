@@ -21,9 +21,11 @@ bool AddWaypoint::setRequest(inrof2025_ros_type::srv::Waypoint::Request::SharedP
 }
 
 BT::NodeStatus AddWaypoint::onResponseReceived(const inrof2025_ros_type::srv::Waypoint::Response::SharedPtr& response) {
+    static_cast<void>(response); // response is empty, so we just ignore it
     return BT::NodeStatus::SUCCESS;
 }
 
 BT::NodeStatus AddWaypoint::onFailure(BT::ServiceNodeErrorCode error) {
+    static_cast<void>(error); // we can log the error code here if needed
     return BT::NodeStatus::FAILURE;
 }
