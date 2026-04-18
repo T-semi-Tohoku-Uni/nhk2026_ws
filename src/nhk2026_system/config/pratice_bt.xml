@@ -27,12 +27,12 @@
                       y="5.0"
                       theta="3.14"/>
       <follow_route/>
-      <step_move command="step  down"/>
+      <step_move command="step down"/>
       <generate_route x="-1.8"
                       y="6.2"
                       theta="3.14"/>
       <follow_route/>
-      <step_move command="step  down"/>
+      <step_move command="step down"/>
     </Sequence>
   </BehaviorTree>
 
