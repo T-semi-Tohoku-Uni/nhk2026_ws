@@ -454,24 +454,24 @@ namespace mcl {
                             // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
                             //    "Extracted %zu points for MCL.", local_points_.size());
 
-                if (!local_points_.empty()) {
+                if (!last_pc_points_.empty()) {
                     sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
                     filtered_cloud_msg.header.stamp = msg->header.stamp; // 元のLiDARのタイムスタンプを使用
                     filtered_cloud_msg.header.frame_id = "base_footprint"; // 変換済みの座標系
                     filtered_cloud_msg.height = 1;
-                    filtered_cloud_msg.width = local_points_.size();
+                    filtered_cloud_msg.width = last_pc_points_.size();
                     filtered_cloud_msg.is_dense = true;
                     filtered_cloud_msg.is_bigendian = false;
 
                     sensor_msgs::PointCloud2Modifier modifier(filtered_cloud_msg);
                     modifier.setPointCloud2FieldsByString(1, "xyz");
-                    modifier.resize(local_points_.size());
+                    modifier.resize(last_pc_points_.size());
 
                     sensor_msgs::PointCloud2Iterator<float> out_x(filtered_cloud_msg, "x");
                     sensor_msgs::PointCloud2Iterator<float> out_y(filtered_cloud_msg, "y");
                     sensor_msgs::PointCloud2Iterator<float> out_z(filtered_cloud_msg, "z");
 
-                    for (const auto& pt : local_points_) {
+                    for (const auto& pt : last_pc_points_) {
                         *out_x = pt.x;
                         *out_y = pt.y;
                         *out_z = pt.z;
