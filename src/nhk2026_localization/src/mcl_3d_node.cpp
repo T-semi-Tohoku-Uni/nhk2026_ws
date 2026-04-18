@@ -149,8 +149,8 @@ namespace mcl {
                 // 2. パーティクル群の初期位置・重みのセットアップ
                 double initial_w = 1.0 / particleNum_;
                 geometry_msgs::msg::Pose initialNoise;
-                initialNoise.position.x = 0.5; // xの分散
-                initialNoise.position.y = 0.5; // yの分散
+                initialNoise.position.x = 0.3; // xの分散
+                initialNoise.position.y = 0.3; // yの分散
                 // quaternionのx,y,z,wを分散として流用するのは不適切なので、専用に渡す
                 resetParticlesDistribution(initialNoise.position.x, initialNoise.position.y, M_PI/18.0, initial_w);
 
@@ -393,9 +393,9 @@ namespace mcl {
                     //     continue;
                     // }
 
-                    if (std::abs(z_map - 0.00) <= 0.03){
-                        continue;
-                    }
+                    // if (std::abs(z_map - 0.00) <= 0.03){
+                    //     continue;
+                    // }
 
                     Point3D pt;
                     pt.x = x;
