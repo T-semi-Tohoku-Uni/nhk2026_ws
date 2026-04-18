@@ -50,15 +50,17 @@ class MclManage : public rclcpp::Node {
 
             if(new_level == 10){
                 if(init_flag != 10){
-                    if (has_pose_) {
-                        geometry_msgs::msg::Pose new_initial_pose = current_pose_;
-                        
-                        RCLCPP_INFO(this->get_logger(), "Publishing new initial_pose for node switch: x=%.2f, y=%.2f, z=%.2f", 
-                                    new_initial_pose.position.x, new_initial_pose.position.y, new_initial_pose.position.z);
-                        
-                        pub_initial_pose_->publish(new_initial_pose);
-                    } else {
-                        RCLCPP_WARN(this->get_logger(), "Z-axis");
+                    if(current_zaxis_level_ == 0){
+                        if (has_pose_) {
+                            geometry_msgs::msg::Pose new_initial_pose = current_pose_;
+                            
+                            RCLCPP_INFO(this->get_logger(), "Publishing new initial_pose for node switch: x=%.2f, y=%.2f, z=%.2f", 
+                                        new_initial_pose.position.x, new_initial_pose.position.y, new_initial_pose.position.z);
+                            
+                            pub_initial_pose_->publish(new_initial_pose);
+                        } else {
+                            RCLCPP_WARN(this->get_logger(), "Z-axis");
+                        }
                     }
                     init_flag = 10;
                 }

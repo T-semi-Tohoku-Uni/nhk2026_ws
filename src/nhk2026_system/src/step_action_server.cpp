@@ -174,7 +174,6 @@ private:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
-                        
                         break;
                     default:
                         count++;
