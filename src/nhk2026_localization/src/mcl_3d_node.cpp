@@ -356,7 +356,7 @@ namespace mcl {
             //     }
             // }
             
-            void MCL_3D::process2DScans(const nhk2026_msgs::msg::MultiLaserScan::SharedPtr& multi_scan, std::vector<Point3D>& points_out) {
+            void process2DScans(const nhk2026_msgs::msg::MultiLaserScan::SharedPtr& multi_scan, std::vector<Point3D>& points_out) {
                 if (!multi_scan) return;
 
                 for (const auto& scan : multi_scan->scans) {
