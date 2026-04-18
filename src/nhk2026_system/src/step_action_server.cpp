@@ -166,14 +166,15 @@ private:
                         if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                         break;
                     case 8:
+                        nowzaxices = zaxics_count;
+                        zaxics_count = 10;
+                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        break;
+                    case 9:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
                         target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
-                    case 9:
-                        nowzaxices = zaxics_count;
-                        zaxics_count = 10;
-                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                     default:
                         count++;
                         stop_all();
@@ -214,7 +215,7 @@ private:
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 3:
-                        target_robomas = -0.3f; target_cmd_vel.linear.y = -0.5;
+                        target_robomas = -0.2f; target_cmd_vel.linear.y = -0.3;
                         if (check_lidar(0, 1)) next_step(step, state_start_time);
                         break;
                     case 4:
@@ -247,6 +248,7 @@ private:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        break;
                     default:
                         stop_all();
                          RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス終了 (count: %d) ===", count);
