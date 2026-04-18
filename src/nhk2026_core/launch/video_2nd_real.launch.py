@@ -255,12 +255,13 @@ def generate_launch_description():
                 # MCLのパラメータ
                 "particleNum": 100,
                 "mapResolution": 0.01,
-                "lfmSigma": 0.03,
-                
-                "mapFile":"src/nhk2026_localization/map/nhk2026_field.h5",
+                "lfmSigma": 0.05,
+                "odomNoise1": 1.5,
+                "odomNoise2": 1.0,
+                "odomNoise3": 0.5,
+                "odomNoise4": 0.5,
             },
         ],
-        namespace=name_space,
     )
     
     mcl_manage = Node(
