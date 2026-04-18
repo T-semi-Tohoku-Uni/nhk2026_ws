@@ -44,6 +44,8 @@ namespace nhk2026_pursuit::blossom_path{
         this->get_parameter("theta_offset_", theta_offset_);
         this->get_parameter("start_shorten_", start_shorten_);
         this->get_parameter("end_shorten_", end_shorten_);
+
+         RCLCPP_INFO(this->get_logger(), "Initialize blossom path");
     };
 
 
