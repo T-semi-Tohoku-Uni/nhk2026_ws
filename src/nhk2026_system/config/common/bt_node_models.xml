@@ -41,6 +41,13 @@
             editable="true">
     </Action>
 
+    <Action ID="pub_cmd_vel"
+            editable="true">
+      <input_port name="vx"/>
+      <input_port name="vy"/>
+      <input_port name="omega"/>
+    </Action>
+
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
       <input_port name="vy"/>
