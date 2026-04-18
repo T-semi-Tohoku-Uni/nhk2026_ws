@@ -1020,7 +1020,7 @@ namespace mcl {
                         }
 
                         // 壁の中(マイナス)ならペナルティを付与
-                        double d = (sdf_val >= 0.0) ? sdf_val : (std::abs(sdf_val) + 1.0);
+                        double d = std::abs(sdf_val);
                         
                         double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
                         prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
