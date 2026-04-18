@@ -393,7 +393,6 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_rotating_) {
-                publishZero();
                 // 次の点があればその角度、なければ最終地点の角度をターゲットにする
                 double target_yaw = (current_waypoint_index_ + 1 < (int)path_.size()) ? 
                                     getYaw(path_[current_waypoint_index_+1].pose.orientation) : 
