@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="MainTree">
+  <include path="area/arena_bt.xml"/>
+
+  <include path="area/martial_club_bt.xml"/>
+
+  <include path="area/forest_bt.xml"/>
+
+  <include path="common/bt_node_models.xml"/>
+
+  <include path="common/wait_for_trigger.xml"/>
+
+  <include path="common/bt_vel_tim.xml"/>
+
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <SubTree ID="Forest"
+               _autoremap="false"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
