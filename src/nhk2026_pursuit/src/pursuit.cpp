@@ -239,8 +239,7 @@ class FollowNode: public rclcpp::Node {
                 if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                     RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
 
-                    // //action通信が終わったら回転するようにする。emergency treatment
-                    // is_rotating_ = true;
+                    
 
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
@@ -274,6 +273,43 @@ class FollowNode: public rclcpp::Node {
             current_waypoint_index_ = nearest_index;
         }
 
+
+        void resetRealPose(){
+            // zが変化しなくなるまでインデックスを進める
+            int index = current_waypoint_index_ + 1;   
+            
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+                index++;
+            }
+
+            // zが変化しなくなったindexの座標をteleport先に設定
+            double target_x = path_[index].pose.position.x;
+            double target_y = path_[index].pose.position.y;
+            double target_z = path_[index].pose.position.z;
+
+            std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
+                std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
+            request->pose.position.x = target_x;
+            request->pose.position.y = target_y;
+            request->pose.position.z = target_z + offset_z_; // 少し上にオフセットしてテレポート
+            request->pose.orientation = pose_.orientation;
+            reset_pose_client_->async_send_request(
+                request,
+                [this, request, index](rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedFuture future)
+                {
+                    auto response = future.get();
+                    RCLCPP_INFO(this->get_logger(),
+                                "Service call succeeded: %s",
+                                response->success ? "true" : "false");
+                    if (response->success){
+                        is_jump_ = false;
+                        current_waypoint_index_ = index; // ジャンプ後のインデックスに直接設定
+                        // resetWaypointIndex(request->pose.position.x, request->pose.position.y);
+                    }
+                }
+            );
+        }
 
         void rotate(double targetTheta) {
             double yaw = getYaw(pose_.orientation);
