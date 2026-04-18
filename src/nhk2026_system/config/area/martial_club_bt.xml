@@ -15,9 +15,17 @@
                  vx="0.0"
                  vy="-0.1"
                  omega="0"
-                 pub_msec="1000"
+                 pub_msec="2000"
                  _autoremap="true"/>
       </Delay>
+      <takano_hand step="2"
+                   pos="5.0"/>
+      <takano_hand step="3"
+                   pos="5.0"/>
+      <takano_hand step="4"
+                   pos="5.0"/>
+      <takano_hand step="5"
+                   pos="5.0"/>
     </Sequence>
   </BehaviorTree>
 
