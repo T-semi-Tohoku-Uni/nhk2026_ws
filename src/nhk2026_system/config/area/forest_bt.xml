@@ -17,11 +17,11 @@
       <step_move command="step up"/>
       <generate_route x="-4.2"
                       y="3.8"
-                      theta="3.14"/>
-      <generate_route x="-4.2"
-                      y="3.8"
                       theta="0.0"/>
       <follow_route/>
+      <generate_route x="-4.2"
+                      y="3.8"
+                      theta="3.14"/>
       <follow_route/>
       <step_move command="step down"/>
       <generate_route x="-4.2"
