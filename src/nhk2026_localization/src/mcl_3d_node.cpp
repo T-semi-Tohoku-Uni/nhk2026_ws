@@ -23,6 +23,8 @@
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp" 
 #include "nhk2026_msgs/msg/multi_laser_scan.hpp"
+#include <deque>
+#include <numeric>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -228,6 +230,12 @@ namespace mcl {
         private:
             // コールバック関数群
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
+                cmd_vel_history_.push_back(msg);
+
+                // 4件を超えたら古いものから消す
+                if (cmd_vel_history_.size() > MAX_HISTORY) {
+                    cmd_vel_history_.pop_front();
+                }
                 cmdVel_ = msg;
             }
 
@@ -555,41 +563,46 @@ namespace mcl {
 
             void loop() {
                 rclcpp::Time current_time = this->get_clock()->now();
-                if (!zaxics_) {
-                } 
-                else if (!zaxics_->data.empty()) {
-                    if (zaxics_->data[0] == 0) { 
-                        //RCLCPP_INFO(this->get_logger(), "MCL3d is disabled by mcl_select");
-                        return;
-                    }
-                }
-                
-                if (!cmdVel_) return;
 
-                // 尤度計算用の点群をクリアして集約
+                // 制御フラグのチェック
+                if (zaxics_ && !zaxics_->data.empty() && zaxics_->data[0] == 0) return;
+
+                // データが4件揃っていない場合は、精度確保のためスキップ（またはある分だけで計算）
+                if (cmd_vel_history_.size() < MAX_HISTORY) {
+                    return; 
+                }
+
+                // --- 4件の平均速度を計算 ---
+                geometry_msgs::msg::Twist avg_vel;
+                for (const auto& vel : cmd_vel_history_) {
+                    avg_vel.linear.x += vel->linear.x;
+                    avg_vel.linear.y += vel->linear.y;
+                    avg_vel.angular.z += vel->angular.z;
+                }
+                avg_vel.linear.x /= MAX_HISTORY;
+                avg_vel.linear.y /= MAX_HISTORY;
+                avg_vel.angular.z /= MAX_HISTORY;
+
+                // --- 点群処理 ---
                 local_points_.clear();
-                // 1. 保存されている3D点群 (Livox等) を追加
                 if (!last_pc_points_.empty()) {
                     local_points_.insert(local_points_.end(), last_pc_points_.begin(), last_pc_points_.end());
                 }
-
-                // 2. 最新の2Dスキャン (MultiLaserScan) を変換して追加
                 if (last_multi_scan_) {
                     process2DScans(last_multi_scan_, local_points_);
                 }
 
-                // 3. どちらかのセンサーデータがあれば尤度計算を実行
                 if (!local_points_.empty()) {
                     caculateMeasurementModel();
                 }
-                // --- 点群の集約終了 ---
 
-                // 予測ステップ (Motion Model)
+                // --- 予測ステップ (Motion Model) ---
+                // dtは100ms (0.1s)
                 double dt = 0.100;
                 geometry_msgs::msg::Twist delta_;
-                delta_.linear.x = cmdVel_->linear.x * dt;
-                delta_.linear.y = cmdVel_->linear.y * dt;
-                delta_.angular.z = cmdVel_->angular.z * dt;
+                delta_.linear.x = avg_vel.linear.x * dt;
+                delta_.linear.y = avg_vel.linear.y * dt;
+                delta_.angular.z = avg_vel.angular.z * dt;
 
                 updateParticles(delta_);
                 
@@ -1242,6 +1255,8 @@ namespace mcl {
             // privateメンバに追加
             std::vector<Point3D> last_pc_points_; // 3D LiDAR用の一時バッファ
             int scanStep_;                        // 2Dスキャンの間引き用
+            std::deque<geometry_msgs::msg::Twist::SharedPtr> cmd_vel_history_;
+            const size_t MAX_HISTORY = 4;
     };
 }
 
