@@ -3,16 +3,18 @@
   <include path="../common/bt_node_models.xml"/>
   <BehaviorTree ID="vel_tim">
     <Sequence>
-      <Script code="num_cycles:=pub_sec/0.05"/>
-      <Repeat num_cycles="{num_cycles}">
-        <Sequence>
-          <Delay delay_msec="50">
-            <pub_cmd_vel vx="{vx}"
-                         vy="{vy}"
-                         omega="{omega}"/>
-          </Delay>
-        </Sequence>
-      </Repeat>
+      <ForceSuccess>
+        <Timeout msec="{pub_msec}">
+          <KeepRunningUntilFailure>
+            <Delay delay_msec="50">
+              <pub_cmd_vel vx="{vx}"
+                          vy="{vy}"
+                          omega="{omega}"/>
+            </Delay>
+          </KeepRunningUntilFailure>
+        </Timeout>
+      </ForceSuccess>
+
       <pub_cmd_vel vx="0.0"
                    vy="0.0"
                    omega="0.0"/>
