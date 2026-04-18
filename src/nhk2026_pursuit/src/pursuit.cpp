@@ -421,6 +421,7 @@ class FollowNode: public rclcpp::Node {
         }
 
         void controlLoop() {
+            RCLCPP_INFO(this->get_logger(), "z: %.3f", pose_.position.z);
             if (!goal_handle_){
                 publishZero();
                 return;
@@ -445,6 +446,7 @@ class FollowNode: public rclcpp::Node {
             if(is_action_busy_){
                 return;
             }
+
 
 
             // publish goal position
