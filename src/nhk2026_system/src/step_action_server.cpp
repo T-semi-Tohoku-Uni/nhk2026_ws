@@ -177,6 +177,7 @@ private:
                     default:
                         count++;
                         stop_all();
+                        RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
                         result->success = true; result->msg = "Step up Completed!";
                         goal_handle->succeed(result);
                         return;
@@ -248,6 +249,7 @@ private:
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                     default:
                         stop_all();
+                         RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス終了 (count: %d) ===", count);
                         result->success = true; result->msg = "Step down Completed!";
                         goal_handle->succeed(result);
                         return;
