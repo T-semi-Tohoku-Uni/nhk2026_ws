@@ -179,7 +179,7 @@ def generate_launch_description():
                 # MCLのパラメータ
                 "particleNum": 100,
                 "mapResolution": 0.01,
-                "lfmSigma": 0.01,
+                "lfmSigma": 0.1,
                 "odomNoise1": 1.5,
                 "odomNoise2": 1.0,
                 "odomNoise3": 0.5,
