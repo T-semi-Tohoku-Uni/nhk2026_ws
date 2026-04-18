@@ -131,6 +131,7 @@ private:
 
                 switch (step) {
                     case 0:
+                        zaxics_count = nowzaxices;
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
                         if (leg_reached()) { zaxics_count++; next_step(step, state_start_time); }
                         break;
@@ -169,6 +170,10 @@ private:
                         target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
+                    case 9:
+                        nowzaxices = zaxics_count;
+                        zaxics_count = 10;
+                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                     default:
                         count++;
                         stop_all();
@@ -195,6 +200,7 @@ private:
 
                 switch (step) {
                     case 0:
+                        zaxics_count = nowzaxices;
                         target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, 0.0};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
@@ -236,6 +242,10 @@ private:
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
+                    case 10:
+                        nowzaxices = zaxics_count;
+                        zaxics_count = 10;
+                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
                     default:
                         stop_all();
                         result->success = true; result->msg = "Step down Completed!";
@@ -340,6 +350,7 @@ private:
     std::vector<int> lidar_data_;
     std::mutex lidar_mutex_, joint_mutex_;
     int count, zaxics_count = 0;
+    int nowzaxices = 0;
     sensor_msgs::msg::JointState now_joint_;
     bool joint_subscribe_flag_ = false;
     double kPosTolerance_, max_leg_vel_;
