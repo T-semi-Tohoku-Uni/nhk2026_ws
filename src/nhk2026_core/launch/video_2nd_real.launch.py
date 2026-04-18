@@ -330,6 +330,20 @@ def generate_launch_description():
         ],
         namespace=name_space,
     )
+    blossom_path_planner = Node(
+        package="nhk2026_pursuit",
+        executable="blossom_path_planner",
+        output="screen",
+        parameters=[{
+            "num_points_": 50,
+            "shorten_": 0.15,
+            "theta_offset_": 0.0,
+            "start_shorten_": 0.45,
+            "end_shorten_": 0.45,
+        }],
+        remappings=[('clock', '/world/nhk2026/clock')],
+        namespace=name_space,
+    )
     """pursuit nodes end"""
 
     """step leg nodes begin"""
@@ -363,5 +377,6 @@ def generate_launch_description():
         vacuum_server_node,
         vacuum_stack_server_node,
         path_planner,
+        blossom_path_planner,
         jsp_node,
     ])
