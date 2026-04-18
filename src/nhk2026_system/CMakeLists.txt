@@ -128,6 +128,7 @@ add_library(bt_library
   src/bt/bt_takano_hand.cpp
   src/bt/bt_move_step.cpp
   src/bt/bt_vel_pub.cpp
+  src/bt/bt_waypoint.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs

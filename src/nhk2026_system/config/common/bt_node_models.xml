@@ -47,6 +47,11 @@
       <input_port name="vy"/>
       <input_port name="omega"/>
     </Action>
+    
+    <Action ID="waypoint" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
