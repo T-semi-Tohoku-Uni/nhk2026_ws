@@ -34,6 +34,6 @@ BT::NodeStatus RotateSub::onTick(const std::shared_ptr<geometry_msgs::msg::Pose>
     if (error < tolerance) {
         return BT::NodeStatus::SUCCESS;
     } else {
-        return BT::NodeStatus::FAILURE;
+        return BT::NodeStatus::RUNNING;
     }
 }

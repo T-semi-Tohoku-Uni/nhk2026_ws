@@ -2,10 +2,23 @@
 <root BTCPP_format="4">
   <include path="../common/bt_node_models.xml"/>
   <BehaviorTree ID="rotate">
-    <Sequence>
-      <pub_cmd_vel vx="0.0"
-                   vy="0.0"
-                   omega="0.0"/>
-    </Sequence>
+    <Fallback>
+      <Sequence>
+        <Parallel success_count="1" failure_count="1">
+          <KeepRunningUntilFailure>
+            <Delay delay_msec="50">
+              <pub_cmd_vel vx="0.0" vy="0.0" omega="{omega}"/>
+            </Delay>
+          </KeepRunningUntilFailure>
+          <rotate_sub target_theta="{target_theta}"
+                      tolerance="0.05"/>
+        </Parallel>
+        <pub_cmd_vel vx="0.0" vy="0.0" omega="0.0"/>
+      </Sequence>
+      <Sequence>
+        <pub_cmd_vel vx="0.0" vy="0.0" omega="0.0"/>
+        <AlwaysFailure/>
+      </Sequence>
+    </Fallback>
   </BehaviorTree>
 </root>
