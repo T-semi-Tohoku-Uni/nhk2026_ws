@@ -239,7 +239,8 @@ class FollowNode: public rclcpp::Node {
                 if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
                     RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
 
-                    
+                    resetRealPose(); 
+                    RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
 
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
