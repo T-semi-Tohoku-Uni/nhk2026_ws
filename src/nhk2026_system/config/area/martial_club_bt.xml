@@ -4,6 +4,10 @@
 
   <BehaviorTree ID="MartialClub">
     <Sequence>
+      <generate_route x="-1.5"
+                      y="1.45"
+                      theta="3.142"/>
+      <follow_route/>
       <generate_route x="-0.490"
                       y="1.45"
                       theta="3.142"/>
