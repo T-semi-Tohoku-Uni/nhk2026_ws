@@ -5,7 +5,7 @@
 namespace nhk2026_pursuit::blossom_path{
     BlossomPathPlanner::BlossomPathPlanner(const rclcpp::NodeOptions & options): Node("blossom_path_planner", options){
         subPose_ = create_subscription<geometry_msgs::msg::Pose>(
-            "/pose", 10, std::bind(&BlossomPathPlanner::poseCallback, this, std::placeholders::_1)
+            "pose", 10, std::bind(&BlossomPathPlanner::poseCallback, this, std::placeholders::_1)
         );
     
         rclcpp::QoS pathQoS = rclcpp::QoS(rclcpp::KeepLast(10))
