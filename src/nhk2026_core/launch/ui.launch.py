@@ -27,18 +27,28 @@ def generate_launch_description():
         "rmw_zenoh_cpp",
     )
 
-    zenoh_config = Path(
+    router_config = Path(
         get_package_share_directory("nhk2026_bridge")
     ) / "config" / "rmw_zenoh_config_router.json5"
 
-    set_env_var = SetEnvironmentVariable(
+    set_router_config = SetEnvironmentVariable(
         "ZENOH_ROUTER_CONFIG_URI",
-        str(zenoh_config),
+        str(router_config),
+    )
+
+    session_config = Path(
+        get_package_share_directory("nhk2026_bridge")
+    ) / "config" / "rmw_zenoh_config_local.json5"
+
+    set_session_config = SetEnvironmentVariable(
+        "ZENOH_SESSION_CONFIG_URI",
+        str(session_config),
     )
 
     return LaunchDescription([
         set_zenoh_env,
-        set_env_var,
+        set_router_config,
+        set_session_config,
         unity_endpoint,
         zenoh_node,
     ])
