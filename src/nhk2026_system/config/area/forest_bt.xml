@@ -32,6 +32,10 @@
       <step_move command="step up"/>
       <generate_route x="-3.0"
                       y="6.2"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-3.0"
+                      y="6.2"
                       theta="3.14"/>
       <follow_route/>
       <step_move command="step down"/>
