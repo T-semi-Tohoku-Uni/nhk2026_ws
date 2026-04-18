@@ -173,7 +173,7 @@ private:
                     case 9:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
-                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
+                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                     default:
                         count++;
                         stop_all();
@@ -245,7 +245,7 @@ private:
                     case 10:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
-                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
+                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                     default:
                         stop_all();
                         result->success = true; result->msg = "Step down Completed!";
