@@ -107,10 +107,7 @@ namespace nhk2026_pursuit::path {
         };
 
         void odomCallback(geometry_msgs::msg::Pose msgs) {
-            // TODO lock
-            curOdom_.position.x = msgs.position.x;
-            curOdom_.position.y = msgs.position.y;
-            curOdom_.orientation = msgs.orientation; // null ok
+            curOdom_ = msgs;
         }
 
         // void poseCallback(inrof2025_ros_type::srv::GenRoute srvs) {
@@ -136,6 +133,31 @@ namespace nhk2026_pursuit::path {
             const std::shared_ptr<inrof2025_ros_type::srv::GenRoute::Response> response
         ) {
             RCLCPP_INFO(this->get_logger(), "%.4f %.4f", request->x, request->y);
+
+            if (curOdom_.position.z >= 0.1) {
+                RCLCPP_INFO(this->get_logger(), "Z >= 0.1: Publishing goal directly.");
+                
+                nav_msgs::msg::Path pathMsg;
+                pathMsg.header.frame_id = "map";
+                pathMsg.header.stamp = this->now();
+
+                geometry_msgs::msg::PoseStamped goal_pose;
+                goal_pose.header = pathMsg.header;
+                goal_pose.pose.position.x = request->x;
+                goal_pose.pose.position.y = request->y;
+                goal_pose.pose.position.z = curOdom_.position.z;
+
+                tf2::Quaternion q;
+                q.setRPY(0, 0, request->theta);
+                goal_pose.pose.orientation = tf2::toMsg(q);
+
+                pathMsg.poses.push_back(goal_pose);
+                pubPath_->publish(pathMsg);
+
+                // サービスのリクエストで追加されたかもしれないウェイポイントをクリアして終了
+                waypoint_array_.clear();
+                return; 
+            }
 
             // Add goal odom
             waypoint_array_.push_back(std::make_pair(request->x, request->y));

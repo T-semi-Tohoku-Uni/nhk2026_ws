@@ -108,10 +108,10 @@ namespace mcl {
 
                 this->declare_parameter<std::double_t>("zHit", 0.9);
                 this->declare_parameter<std::double_t>("zRand", 0.1);
-                this->declare_parameter<double>("odomNoise1", 1.5);
-                this->declare_parameter<double>("odomNoise2", 1.0);
-                this->declare_parameter<double>("odomNoise3", 2.0);
-                this->declare_parameter<double>("odomNoise4", 1.0);
+                this->declare_parameter<double>("odomNoise1", 1.0);
+                this->declare_parameter<double>("odomNoise2", 0.1);
+                this->declare_parameter<double>("odomNoise3", 0.5);
+                this->declare_parameter<double>("odomNoise4", 0.5);
                 this->declare_parameter<double>("resampleThreshold", 0.9);
 
                 this->mapFile_ = this->get_parameter("mapFile").as_string();
@@ -387,15 +387,15 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    if (std::abs(z_map - 0.00) <= 0.03 ||
-                        std::abs(z_map - 0.20) <= 0.03 ||
-                        std::abs(z_map - 0.40) <= 0.03) {
-                        continue;
-                    }
-
-                    // if (std::abs(z_map - 0.00) <= 0.03){
+                    // if (std::abs(z_map - 0.00) <= 0.03 ||
+                    //     std::abs(z_map - 0.20) <= 0.03 ||
+                    //     std::abs(z_map - 0.40) <= 0.03) {
                     //     continue;
                     // }
+
+                    if (std::abs(z_map - 0.00) <= 0.03){
+                        continue;
+                    }
 
                     Point3D pt;
                     pt.x = x;
@@ -454,9 +454,9 @@ namespace mcl {
 
                 // 2. パーティクルを再散布
                 // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
-                double noise_x = 0.1;           // xの標準偏差 [m]
-                double noise_y = 0.1;           // yの標準偏差 [m]
-                double noise_yaw = 5.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double noise_x = 0.3;           // xの標準偏差 [m]
+                double noise_y = 0.3;           // yの標準偏差 [m]
+                double noise_yaw = 30.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / static_cast<double>(particles_.size());
 
                 // 既存の散布関数を呼び出す（引数をシンプルに整理）
@@ -473,7 +473,7 @@ namespace mcl {
                     external_quat_.x = msg->data[1];
                     external_quat_.y = msg->data[2];
                     external_quat_.z = msg->data[3];
-                    //has_external_quat_ = true;
+                    has_external_quat_ = true;
 
                     
                     double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
@@ -1020,7 +1020,7 @@ namespace mcl {
                         }
 
                         // 壁の中(マイナス)ならペナルティを付与
-                        double d = (sdf_val >= 0.0) ? sdf_val : (std::abs(sdf_val) + 1.0);
+                        double d = std::abs(sdf_val);
                         
                         double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
                         prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);

@@ -49,9 +49,9 @@ livox_ros2_params = [
 
 def generate_launch_description():
     x = -3.0
-    y = 6.2
-    z = 0.40
-    theata = 0.0
+    y = 5.0
+    z = 0.20
+    theata = -1.57
     frequency = 25.0
 
     package_dir = get_package_share_directory("nhk2026_sim")
@@ -179,7 +179,11 @@ def generate_launch_description():
                 # MCLのパラメータ
                 "particleNum": 100,
                 "mapResolution": 0.01,
-                "lfmSigma": 0.03,
+                "lfmSigma": 0.05,
+                "odomNoise1": 1.5,
+                "odomNoise2": 1.0,
+                "odomNoise3": 0.5,
+                "odomNoise4": 0.5,
             },
         ],
     )

@@ -1,12 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <include path="../operation/arm_front_step.xml"/>
+
   <include path="../operation/arm_up_step.xml"/>
+
   <include path="../operation/arm_down_step.xml"/>
+
   <include path="../common/bt_node_models.xml"/>
+
   <BehaviorTree ID="Forest">
     <Sequence>
-    <step_move command="step up"/>
-    <step_move command="step down"/>
+      <generate_route x="-4.2"
+                      y="2.6"
+                      theta="0.0"/>
+      <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-4.2"
+                      y="3.8"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-4.2"
+                      y="3.8"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step down"/>
+      <generate_route x="-4.2"
+                      y="5.0"
+                      theta="-1.57"/>
+      <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-3.0"
+                      y="5.1"
+                      theta="0.0"/>
+      <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-3.0"
+                      y="6.2"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-3.0"
+                      y="6.2"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step down"/>
+      <generate_route x="-3.0"
+                      y="7.4"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step down"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
+    <Action ID="step_move"
+            editable="true">
+      <input_port name="command"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>

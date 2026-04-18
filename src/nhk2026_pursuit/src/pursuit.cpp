@@ -285,8 +285,10 @@ class FollowNode: public rclcpp::Node {
                 // 目標到達
                 publishZero();
                 is_rotating_ = false;
-                RCLCPP_INFO(this->get_logger(), "Rotation completed. Moving to next waypoint.");
-                current_waypoint_index_++;  // 回転完了後にwaypointを進める
+                RCLCPP_INFO(this->get_logger(), "Rotation completed.");
+                if (current_waypoint_index_ + 1 < (int)path_.size()) {
+                    current_waypoint_index_++; 
+                }
                 return;
             } else if (abs_err > accel_angle_) {
                 speed_cmd = max_rotate_speed_;
@@ -391,8 +393,11 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_rotating_) {
-                publishZero();  
-                double target_yaw = getYaw(path_[current_waypoint_index_+1].pose.orientation);
+                publishZero();
+                // 次の点があればその角度、なければ最終地点の角度をターゲットにする
+                double target_yaw = (current_waypoint_index_ + 1 < (int)path_.size()) ? 
+                                    getYaw(path_[current_waypoint_index_+1].pose.orientation) : 
+                                    getYaw(path_.back().pose.orientation);
                 rotate(target_yaw);
                 return;
             }
@@ -466,9 +471,7 @@ class FollowNode: public rclcpp::Node {
             double roll_goal, pitch_goal, yaw_goal;
             tf2::Matrix3x3(q_goal).getRPY(roll_goal, pitch_goal, yaw_goal);
 
-            double theta_goal = yaw_goal - getYaw(pose_.orientation);
-            while (theta_goal >= M_2_PI) theta_goal -= M_2_PI;
-            while (theta_goal < 0) theta_goal += M_2_PI;
+            double theta_goal = normalizePi(yaw_goal - getYaw(pose_.orientation));
 
             //error calculation theta
             double target_theta = yaw;
@@ -552,8 +555,13 @@ class FollowNode: public rclcpp::Node {
 
            
 
-            if ((linear_goal_distance < max_reaching_distance)){ //&& theta_goal < max_reaching_theta) {
-                //goal reached
+            // 位置はOKだが角度がまだの場合、回転モードに入れる
+            if (linear_goal_distance < max_reaching_distance && std::abs(theta_goal) >= max_reaching_theta) {
+                is_rotating_ = true;
+            }
+
+            // 位置と角度の両方が閾値未満なら完了
+            if (linear_goal_distance < max_reaching_distance && std::abs(theta_goal) < max_reaching_theta) {
                 RCLCPP_INFO(this->get_logger(), "Goal reached.");
                 publishZero();
                 auto result_msg = std::make_shared<inrof2025_ros_type::action::Follow::Result>();
@@ -597,7 +605,7 @@ class FollowNode: public rclcpp::Node {
             printCmdVelArrow(linear_speed_cmd_x, linear_speed_cmd_y, clipped_v_x_f, clipped_v_y_f);
 
             //test 
-            RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
+            //RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
