@@ -13,16 +13,13 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <generate_route x="-4.0"
-                      y="1.0"
+      <generate_route x="-1.8"
+                      y="2.0"
                       theta="0.0"/>
       <follow_route/>
-      <generate_route x="-5.5"
-                      y="8.0"
-                      theta="0.0"/>
-      <follow_route/>
-      <generate_route x="-5.5"
-                      y="8.0"
+      <step_move command="step  up"/>
+      <generate_route x="-1.8"
+                      y="3.8"
                       theta="1.57"/>
       <follow_route/>
     </Sequence>
@@ -38,6 +35,10 @@
       <input_port name="y"/>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="step_move"
+            editable="true">
+      <input_port name="command"/>
     </Action>
   </TreeNodesModel>
 
