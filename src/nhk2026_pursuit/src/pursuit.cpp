@@ -248,7 +248,7 @@ class FollowNode: public rclcpp::Node {
             };
 
             //実機でテストするためコメントアウト simulation real
-            this->action_client_->async_send_goal(goal_msg, send_goal_options);
+            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
         
 
@@ -519,8 +519,8 @@ class FollowNode: public rclcpp::Node {
                 if (std::abs(dz) > 0.0) {  
                     if (linear_error < max_reaching_distance) {
                         //simulation real
-                        // is_jump_ = true;
-                        send_step_goal(dz > 0.0 ? "step up" : "step down");
+                        is_jump_ = true;
+                        // send_step_goal(dz > 0.0 ? "step up" : "step down");
                     }
                     break;
                 }
