@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+  <BehaviorTree ID="rotate">
+    <Sequence>
+      <pub_cmd_vel vx="0.0"
+                   vy="0.0"
+                   omega="0.0"/>
+    </Sequence>
+  </BehaviorTree>
+</root>
