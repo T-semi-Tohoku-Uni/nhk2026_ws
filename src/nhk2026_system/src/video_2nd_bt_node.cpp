@@ -18,6 +18,7 @@
 #include "bt/bt_move_step.hpp"
 #include "bt/bt_takano_hand.hpp"
 #include "bt/bt_vel_pub.hpp"
+#include "bt/bt_rotate_sub.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -88,6 +89,10 @@ int main(int argc, char ** argv)
     waypoint_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
     waypoint_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
+    BT::RosNodeParams rotate_sub_params;
+    rotate_sub_params.nh = node;
+    rotate_sub_params.default_port_value = "pose";
+    
     factory.registerNodeType<FollowRoute>("follow_route", follow_route_params);
     factory.registerNodeType<GenerateRoute>("generate_route", generate_route_params);
     factory.registerNodeType<LinearPath>("linear_path", linear_path_params);
@@ -98,6 +103,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<StepMoveAction>("step_move", step_params);
     factory.registerNodeType<BtVelPub>("pub_cmd_vel", vel_params);
     factory.registerNodeType<AddWaypoint>("waypoint", waypoint_params);
+    factory.registerNodeType<RotateSub>("rotate_sub", rotate_sub_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     tree.tickWhileRunning();
 

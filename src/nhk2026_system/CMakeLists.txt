@@ -36,6 +36,7 @@ find_package(tf2_geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(urdf REQUIRED)
+find_package(angles REQUIRED)
 
 include_directories(
   include
@@ -129,6 +130,7 @@ add_library(bt_library
   src/bt/bt_move_step.cpp
   src/bt/bt_vel_pub.cpp
   src/bt/bt_waypoint.cpp
+  src/bt/bt_rotate_sub.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
@@ -137,6 +139,7 @@ ament_target_dependencies(bt_library
   inrof2025_ros_type
   tf2
   tf2_geometry_msgs
+  angles
 )
 target_link_libraries(bt_library behaviortree_ros2::behaviortree_ros2)
 
