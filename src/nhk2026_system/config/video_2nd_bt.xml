@@ -15,8 +15,11 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="Forest"
-               _autoremap="false"/>
+      <SubTree ID="MartialClub"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel/>
+
 </root>
