@@ -605,7 +605,7 @@ class FollowNode: public rclcpp::Node {
             printCmdVelArrow(linear_speed_cmd_x, linear_speed_cmd_y, clipped_v_x_f, clipped_v_y_f);
 
             //test 
-            RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
+            //RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
