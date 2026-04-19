@@ -9,13 +9,20 @@
 #include <nlohmann/json.hpp>
 #include <fstream>
 #include <ament_index_cpp/get_package_share_directory.hpp>
+#include <nhk2026_msgs/msg/path_with_box.hpp>
 
+using PathWithBox = nhk2026_msgs::msg::PathWithBox;
 
 namespace nhk2026_pursuit::blossom_path{
     struct GridIndex {
                 int u;
                 int v;
-            };
+    };
+
+    struct PoseWithBox{
+        geometry_msgs::msg::PoseStamped state;
+        bool flag;
+    };
     
     class BlossomPathPlanner : public rclcpp::Node{
         public:
@@ -24,19 +31,17 @@ namespace nhk2026_pursuit::blossom_path{
 
         private:
             rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subPose_;
-            rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+            rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr path_pub_;
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
             void poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg);
             geometry_msgs::msg::Pose::SharedPtr pose_;
             void loadJsonFile(const std::string& json_file_path);
-            std::vector<std::vector<geometry_msgs::msg::Pose>> grid_map_;
-            void StraightPath(
-                nav_msgs::msg::Path& path_msg,
-                double sx, double sy, double sz,
-                double gx, double gy, double gz,
-                double yaw
+            std::vector<std::vector<PoseWithBox>> grid_map_;
+            PathWithBox StraightPath(
+                PoseWithBox start,
+                PoseWithBox goal
             );
-            std::vector<geometry_msgs::msg::Pose> grid2World(const std::vector<GridIndex>& grids);
+            std::vector<PoseWithBox> grid2World(const std::vector<GridIndex>& grids);
             void planBlossomPath(
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Request> request,
                 const std::shared_ptr<inrof2025_ros_type::srv::BallPath::Response> response

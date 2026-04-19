@@ -1,7 +1,6 @@
 #include "nhk2026_pursuit/blossom_path_planner.hpp"
 
 
-
 namespace nhk2026_pursuit::blossom_path{
     BlossomPathPlanner::BlossomPathPlanner(const rclcpp::NodeOptions & options): Node("blossom_path_planner", options){
         subPose_ = create_subscription<geometry_msgs::msg::Pose>(
@@ -12,7 +11,7 @@ namespace nhk2026_pursuit::blossom_path{
                                     .reliable()
                                     .transient_local();
 
-        path_pub_ = create_publisher<nav_msgs::msg::Path>("route", pathQoS);
+        path_pub_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("route", pathQoS);
 
         srv_gen_route_ = this->create_service<inrof2025_ros_type::srv::BallPath>(
             "generate_ball_path",
@@ -76,31 +75,32 @@ namespace nhk2026_pursuit::blossom_path{
             int u = grid["u"];
             int v = grid["v"];
 
-            geometry_msgs::msg::Pose pose;
-
-            pose.position.x = grid["x"];
-            pose.position.y = grid["y"];
-            pose.position.z = grid["z"];
-
+            PoseWithBox pose;
+            pose.state.header.frame_id = "map";
+            pose.state.header.stamp = this->now();
+            pose.state.pose.position.x = grid["x"];
+            pose.state.pose.position.y = grid["y"];
+            pose.state.pose.position.z = grid["z"];
+            pose.flag = false;
             grid_map_[u][v] = pose;
         }
     };
 
 
-    void BlossomPathPlanner::StraightPath(
-        nav_msgs::msg::Path& path_msg,
-        double sx, double sy, double sz,
-        double gx, double gy, double gz,
-        double yaw
+    PathWithBox BlossomPathPlanner::StraightPath(
+        PoseWithBox start,
+        PoseWithBox goal
     ){        
+        PathWithBox path_msg;
+        path_msg.path.header = start.state.header;
         
-        double dx = gx - sx;
-        double dy = gy - sy;
-        double dz = gz - sz;
+        double dx = goal.state.pose.position.x - start.state.pose.position.x;
+        double dy = goal.state.pose.position.y - start.state.pose.position.y;
+        double dz = goal.state.pose.position.z - start.state.pose.position.z;
         double distance = sqrt(dx*dx + dy*dy + dz*dz);
 
         if(distance < 1e-6){
-            return;
+            return path_msg;
         }
 
         double ux = dx / distance;
@@ -109,58 +109,69 @@ namespace nhk2026_pursuit::blossom_path{
        
         //shorten path
         if (distance > shorten_){
-            gx -= shorten_ * ux;
-            gy -= shorten_ * uy;
-            gz -= shorten_ * uz;
+            goal.state.pose.position.x -= shorten_ * ux;
+            goal.state.pose.position.y -= shorten_ * uy;
+            goal.state.pose.position.z -= shorten_ * uz;
         }
+
+        double yaw = getYaw(goal.state.pose.orientation);
 
         //create path
         for (int i=0; i<=num_points_; ++i){
             double t = static_cast<double>(i) / num_points_;
-            geometry_msgs::msg::PoseStamped p;
-            p.header = path_msg.header;
 
-            p.pose.position.x = sx + t * (gx - sx);
-            p.pose.position.y = sy + t * (gy - sy);
-            p.pose.position.z = sz + t * (gz - sz);
+            geometry_msgs::msg::PoseStamped p;
+            p.header = path_msg.path.header;
+
+            p.pose.position.x = start.state.pose.position.x + t * (goal.state.pose.position.x - start.state.pose.position.x);
+            p.pose.position.y = start.state.pose.position.y + t * (goal.state.pose.position.y - start.state.pose.position.y);
+            p.pose.position.z = start.state.pose.position.z + t * (goal.state.pose.position.z - start.state.pose.position.z);
 
             //add theta information in the path
             tf2::Quaternion q;
             q.setRPY(0.0, 0.0, yaw);
             p.pose.orientation = tf2::toMsg(q);
 
-            path_msg.poses.push_back(p);
+            //add box flag information in the path
+
+
+            path_msg.path.poses.push_back(p);
         }
+
+        return path_msg;
     };
 
 
-    std::vector<geometry_msgs::msg::Pose> BlossomPathPlanner::grid2World(
+    std::vector<PoseWithBox> BlossomPathPlanner::grid2World(
         const std::vector<GridIndex>& grids)
     {
-        std::vector<geometry_msgs::msg::Pose> waypoints;
+        std::vector<PoseWithBox> waypoints;
 
         if(!pose_){
             RCLCPP_WARN(this->get_logger(), "no pose");
             return waypoints;
         }
 
-        geometry_msgs::msg::Pose init_pose;
-        init_pose.position.x = pose_->position.x;
-        init_pose.position.y = pose_->position.y;
-        init_pose.position.z = pose_->position.z;
+        PoseWithBox init_pose;
+        init_pose.state.header.frame_id = "map";
+        init_pose.state.header.stamp = this->now();
+        init_pose.state.pose.position.x = pose_->position.x;
+        init_pose.state.pose.position.y = pose_->position.y;
+        init_pose.state.pose.position.z = pose_->position.z;
 
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, getYaw(pose_->orientation));
-        init_pose.orientation = tf2::toMsg(q);
+        init_pose.state.pose.orientation = tf2::toMsg(q);
+        init_pose.flag = false;
 
         waypoints.push_back(init_pose);
 
-        double prev_z = init_pose.position.z;
+        double prev_z = init_pose.state.pose.position.z;
 
         for (int i = 0; i < static_cast<int>(grids.size()); ++i) {
 
             const GridIndex& grid = grids[i];
-            geometry_msgs::msg::Pose world_pose = grid_map_[grid.u][grid.v];
+            PoseWithBox world_pose = grid_map_[grid.u][grid.v];
 
 
             //ここで角度計算
@@ -175,7 +186,7 @@ namespace nhk2026_pursuit::blossom_path{
             }
             
             //角度再構築
-            double z_diff = world_pose.position.z - prev_z;
+            double z_diff = world_pose.state.pose.position.z - prev_z;
             if (z_diff < 0.0){
                 yaw += M_PI;
             }
@@ -189,33 +200,41 @@ namespace nhk2026_pursuit::blossom_path{
 
 
             //ここで中間地点からのoffsetを加味して経路生成 mid_start -> mid_end -> world_pose
-            double mid_x = (waypoints.back().position.x + world_pose.position.x) / 2.0;
-            double mid_y = (waypoints.back().position.y + world_pose.position.y) / 2.0;
+            double mid_x = (waypoints.back().state.pose.position.x + world_pose.state.pose.position.x) / 2.0;
+            double mid_y = (waypoints.back().state.pose.position.y + world_pose.state.pose.position.y) / 2.0;
             
-            double dx = world_pose.position.x - waypoints.back().position.x;
-            double dy = world_pose.position.y - waypoints.back().position.y;
+            double dx = world_pose.state.pose.position.x - waypoints.back().state.pose.position.x;
+            double dy = world_pose.state.pose.position.y - waypoints.back().state.pose.position.y;
             double distance_start = std::hypot(dx, dy);
             double ux = (distance_start > 1e-6) ? dx / distance_start : 0.0;
             double uy = (distance_start > 1e-6) ? dy / distance_start : 0.0;
 
-            geometry_msgs::msg::Pose mid_start, mid_end;
-            mid_start.position.x = mid_x - start_shorten_ * ux;
-            mid_start.position.y = mid_y - start_shorten_ * uy;
-            mid_start.position.z = waypoints.back().position.z;
-            mid_start.orientation = q_msg;
+            PoseWithBox mid_start, mid_end;
+            mid_start.state.header.frame_id = "map";
+            mid_start.state.header.stamp = this->now();
+            mid_start.state.pose.position.x = mid_x - start_shorten_ * ux;
+            mid_start.state.pose.position.y = mid_y - start_shorten_ * uy;
+            mid_start.state.pose.position.z = waypoints.back().state.pose.position.z;
+            mid_start.state.pose.orientation = q_msg;
+            mid_start.flag = false;
 
-            mid_end.position.x = mid_x + end_shorten_ * ux;
-            mid_end.position.y = mid_y + end_shorten_ * uy;
-            mid_end.position.z = world_pose.position.z;
-            mid_end.orientation = q_msg;
+            mid_start.state.header.frame_id = "map";
+            mid_start.state.header.stamp = this->now();
+            mid_end.state.pose.position.x = mid_x + end_shorten_ * ux;
+            mid_end.state.pose.position.y = mid_y + end_shorten_ * uy;
+            mid_end.state.pose.position.z = world_pose.state.pose.position.z;
+            mid_end.state.pose.orientation = q_msg;
+            mid_end.flag = false;
 
-            world_pose.orientation = q_msg;
+            world_pose.state.pose.orientation = q_msg;
+            world_pose.state.header.frame_id = "map";
+            world_pose.state.header.stamp = this->now();
 
             waypoints.push_back(mid_start);
             waypoints.push_back(mid_end);
             waypoints.push_back(world_pose);
 
-            prev_z = world_pose.position.z;
+            prev_z = world_pose.state.pose.position.z;
         }
 
         return waypoints;
@@ -236,9 +255,9 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         //generate path
-        nav_msgs::msg::Path path_msg;
-        path_msg.header.frame_id = "map";
-        path_msg.header.stamp = this->now();
+        PathWithBox path_msg;
+        path_msg.path.header.frame_id = "map";
+        path_msg.path.header.stamp = this->now();
 
         
         //後で強化学習の関数からグリッドの配列をもらう
@@ -262,22 +281,16 @@ namespace nhk2026_pursuit::blossom_path{
             {5,2},
         };
         
-        std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);
+        std::vector<PoseWithBox> waypoints = grid2World(grids);
         
         
         for(size_t i=0; i<waypoints.size()-1; ++i){
 
-            tf2::Quaternion q;
-            tf2::fromMsg(waypoints[i+1].orientation, q);
-            double roll, pitch, yaw;
-            tf2::Matrix3x3(q).getRPY(roll, pitch, yaw);
+            PathWithBox segment = StraightPath(waypoints[i], waypoints[i+1]);
 
-
-            StraightPath(path_msg, 
-                        waypoints[i].position.x, waypoints[i].position.y, waypoints[i].position.z,
-                        waypoints[i+1].position.x, waypoints[i+1].position.y, waypoints[i+1].position.z,
-                        yaw
-                    );
+            for(const auto& p : segment.path.poses){
+                path_msg.path.poses.push_back(p);
+            }
         }
         
         path_pub_->publish(path_msg);
@@ -292,8 +305,8 @@ namespace nhk2026_pursuit::blossom_path{
         arrow.id = 0;
         arrow.type = visualization_msgs::msg::Marker::ARROW;
         arrow.action = visualization_msgs::msg::Marker::ADD;
-        if (!path_msg.poses.empty()) {
-            arrow.pose = path_msg.poses.back().pose;
+        if (!path_msg.path.poses.empty()) {
+            arrow.pose = path_msg.path.poses.back().pose;
         }
         arrow.scale.x = 0.08;
         arrow.scale.y = 0.04;

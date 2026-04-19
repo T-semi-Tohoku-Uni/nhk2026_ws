@@ -18,6 +18,7 @@
 #include <ignition/msgs/boolean.pb.h>
 #include <nhk2026_msgs/srv/reset_pose.hpp>
 #include "nhk2026_msgs/action/step_move.hpp"
+#include <nhk2026_msgs/msg/path_with_box.hpp>
 
 using namespace std::chrono_literals; 
 
@@ -126,7 +127,7 @@ class FollowNode: public rclcpp::Node {
 
 
             rclcpp::QoS pathQos(rclcpp::KeepLast(5));
-            path_sub_ = this->create_subscription<nav_msgs::msg::Path> (
+            path_sub_ = this->create_subscription<nhk2026_msgs::msg::PathWithBox> (
                 "route", pathQos, std::bind(&FollowNode::pathCallback, this, std::placeholders::_1)
             );
             rclcpp::QoS odomQos(rclcpp::KeepLast(5));
@@ -197,9 +198,9 @@ class FollowNode: public rclcpp::Node {
             goal_handle_ = goal_handle;
         }
 
-        void pathCallback(nav_msgs::msg::Path msgs) {
+        void pathCallback(nhk2026_msgs::msg::PathWithBox msgs) {
             // std::lock_guard<std::mutex> lock(mutex_);
-            path_ = msgs.poses;
+            path_ = msgs.path.poses;
             current_waypoint_index_ = 0;
         }
         void odomCallback(geometry_msgs::msg::Pose msgs) {
@@ -248,7 +249,7 @@ class FollowNode: public rclcpp::Node {
             };
 
             //実機でテストするためコメントアウト simulation real
-            this->action_client_->async_send_goal(goal_msg, send_goal_options);
+            // this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
         
 
@@ -557,8 +558,8 @@ class FollowNode: public rclcpp::Node {
                 if (std::abs(dz) > 0.0) {  
                     if (linear_error < max_reaching_distance) {
                         //simulation real
-                        // is_jump_ = true;
-                        send_step_goal(dz > 0.0 ? "step up" : "step down");
+                        is_jump_ = true;
+                        // send_step_goal(dz > 0.0 ? "step up" : "step down");
                     }
                     break;
                 }
@@ -828,7 +829,7 @@ class FollowNode: public rclcpp::Node {
         float r_ = 0.14;
 
         // subscriber
-        rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
+        rclcpp::Subscription<nhk2026_msgs::msg::PathWithBox>::SharedPtr path_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
         rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr pose_sub_;
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
