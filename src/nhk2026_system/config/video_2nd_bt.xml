@@ -18,6 +18,10 @@
   <BehaviorTree ID="MainTree">
     <Sequence>
       <generate_route x="-1.85"
+                      y="1.8"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-1.85"
                       y="2.8"
                       theta="0.0"/>
       <follow_route/>
