@@ -400,9 +400,9 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                     if (std::abs(z_map - 0.00) <= 0.03 ||
+                     if (std::abs(z_map - 0.00) <= 0.04 ||
                          std::abs(z_map - 0.20) <= 0.04 ||
-                         std::abs(z_map - 0.40) <= 0.03) {
+                         std::abs(z_map - 0.40) <= 0.04) {
                          continue;
                      }
 
@@ -453,7 +453,10 @@ namespace mcl {
                 // 1. 推定位置 (mclPose_) を受信したメッセージで更新
                 // msgは Pose型なので、そのまま position と orientation をコピー
                 mclPose_.position = msg->position;
-                mclPose_.orientation = msg->orientation;
+                mclPose_.orientation.w = external_quat_.w;
+                mclPose_.orientation.x = external_quat_.x;
+                mclPose_.orientation.y = external_quat_.y;
+                mclPose_.orientation.z = external_quat_.z;
 
                 // クォータニオンからYaw角を抽出（パーティクル散布時の計算用）
                 tf2::Quaternion q(
@@ -468,8 +471,8 @@ namespace mcl {
                 anchor_x_ = msg->position.x;
                 anchor_y_ = msg->position.y;
 
-                double noise_x = 0.3;           // xの標準偏差 [m]
-                double noise_y = 0.3;           // yの標準偏差 [m]
+                double noise_x = 0.1;           // xの標準偏差 [m]
+                double noise_y = 0.1;           // yの標準偏差 [m]
                 double noise_yaw = 10.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / particleNum_;
 
@@ -1049,8 +1052,8 @@ namespace mcl {
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
                         // 動的障害物除外 (壁から遠すぎる点は無視)
-                        if (sdf_val > 0.5) {
-                            total_log_p += std::log(prob);
+                        if (sdf_val > 0.2) {
+                            //total_log_p += std::log(prob);
                             continue;
                         }
 
