@@ -57,8 +57,8 @@ public:
             "joint_states_step", reliable_qos, std::bind(&StepActionServer::joint_state_callback, this, _1), sub_opt
         );
 
-        zaxis_timer_ = this->create_wall_timer(
-            10ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
+        // zaxis_timer_ = this->create_wall_timer(
+        //     10ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
             
         this->declare_parameter<double>("kPosTolerance", 0.05);
         this->declare_parameter<double>("max_leg_rad_per_sec", 2.0); // 補間速度のパラメータ化
@@ -265,6 +265,7 @@ private:
                 }
                 update_interpolation(dt);
                 publish_all(target_robomas, target_cmd_vel);
+                publish_zaxis_periodic();
                 loop_rate.sleep();
             }
         } else {
