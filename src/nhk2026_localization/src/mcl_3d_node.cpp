@@ -1053,6 +1053,14 @@ namespace mcl {
                     double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
                     double map_z = pt.z + pose.position.z; 
 
+                    int u_target, v_target, w_target;
+                    xyz2uvw(map_x, map_y, map_z, &u_target, &v_target, &w_target);
+                    if (u_target < 0 || u_target >= static_cast<int>(dim_x_) || 
+                        v_target < 0 || v_target >= static_cast<int>(dim_y_) || 
+                        w_target < 0 || w_target >= static_cast<int>(dim_z_)) {
+                        continue; 
+                    }
+
                     bool occluded = false;
                     double dist_to_point = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
                     
