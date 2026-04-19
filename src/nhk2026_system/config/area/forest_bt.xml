@@ -61,13 +61,11 @@
                  z="0.4"
                  theta="0.0"/>
       <Delay delay_msec="5000">
-        <generate_route x="-3.0"
-                        y="6.2"
-                        theta="0.0"/>
+        <SubTree ID="rotate"
+                 target_theta="3.14"
+                 omega="1"
+                 _autoremap="true"/>
       </Delay>
-      <follow_route/>
-      <rotate_sub target_theta="3.14"
-                  tolerance="0.05"/>
       <step_move command="step  down"/>
       <reset_mcl x="-3.0"
                  y="7.4"
@@ -101,12 +99,10 @@
       <input_port name="z"/>
       <input_port name="theta"/>
     </Action>
-    <Action ID="rotate_sub"
-            editable="true">
+    <SubTree ID="rotate">
       <input_port name="target_theta"/>
-      <input_port name="tolerance"
-                  default="0.05"/>
-    </Action>
+      <input_port name="omega"/>
+    </SubTree>
     <Action ID="step_move"
             editable="true">
       <input_port name="command"/>
