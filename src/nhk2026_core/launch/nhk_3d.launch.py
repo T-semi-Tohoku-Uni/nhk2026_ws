@@ -179,13 +179,13 @@ def generate_launch_description():
                 "particleNum": 300,
                 "mapResolution": 0.01,
                 
-                "lfmSigma": 0.065, 
+                "lfmSigma": 0.055, 
              
                 "zHit": 0.95,
                 "zRand": 0.05,
 
-                "odomNoise1": 0.7, # 直進移動に対するx,yのノイズ
-                "odomNoise2": 0.5, # 回転移動に対するx,yのノイズ
+                "odomNoise1": 0.8, # 直進移動に対するx,yのノイズ
+                "odomNoise2": 0.8, # 回転移動に対するx,yのノイズ
                 "odomNoise3": 0.8, # 直進移動に対するθのノイズ
                 "odomNoise4": 0.5, # 回転移動に対するθのノイズ
 
