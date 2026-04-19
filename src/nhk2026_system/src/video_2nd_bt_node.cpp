@@ -35,6 +35,7 @@ int main(int argc, char ** argv)
     int wait_for_server_timeout_ms;
     node->get_parameter("bt_xml_file", bt_xml_file);
     node->get_parameter("wait_for_server_timeout_ms", wait_for_server_timeout_ms);
+    RCLCPP_INFO(node->get_logger(), "Loading BT XML: %s", bt_xml_file.c_str());
 
     BT::BehaviorTreeFactory factory;
     
@@ -117,6 +118,10 @@ int main(int argc, char ** argv)
     factory.registerNodeType<ResetMcl>("reset_mcl", reset_mcl_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     tree.tickWhileRunning();
+    RCLCPP_INFO(
+        node->get_logger(),
+        "BT finished with status: %s",
+        BT::toStr(tree.rootNode()->status(), false).c_str());
 
     rclcpp::shutdown();
     return 0;
