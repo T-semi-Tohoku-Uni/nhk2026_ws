@@ -146,6 +146,9 @@ namespace mcl {
                 mclPose_.orientation.z = init_q.z();
                 mclPose_.orientation.w = init_q.w();
 
+                this->anchor_x_ = initial_x;
+                this->anchor_y_ = initial_y;
+
                 // 2. パーティクル群の初期位置・重みのセットアップ
                 double initial_w = 1.0 / particleNum_;
                 geometry_msgs::msg::Pose initialNoise;
@@ -451,6 +454,9 @@ namespace mcl {
                 tf2::Matrix3x3 m(q);
                 double roll, pitch, yaw;
                 m.getRPY(roll, pitch, yaw);
+
+                anchor_x_ = msg->position.x;
+                anchor_y_ = msg->position.y;
 
                 // 2. パーティクルを再散布
                 // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
@@ -950,10 +956,18 @@ namespace mcl {
                 std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
-                // 1. 各パーティクルの対数尤度を直接計算
                 for (std::size_t i = 0; i < particles_.size(); i++) {
-                    // ここで vector を返さず、double を受け取る
-                    log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    // --- 追加：範囲チェック (2.5m = 250cm) ---
+                    double px = particles_[i].getX();
+                    double py = particles_[i].getY();
+
+                    if (std::abs(px - anchor_x_) > 2.5 || std::abs(py - anchor_y_) > 2.5) {
+                        // 範囲外なら存在確率を 0 にする（対数なので -inf）
+                        log_weights[i] = -std::numeric_limits<double>::infinity();
+                    } else {
+                        log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    }
+                    // --------------------------------------
                     
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
@@ -1165,6 +1179,8 @@ namespace mcl {
             std::mt19937 gen_; 
             std_msgs::msg::Int32MultiArray::SharedPtr zaxics_ = nullptr; 
 
+            double anchor_x_ = 0.0;
+            double anchor_y_ = 0.0;
 
            
             geometry_msgs::msg::Quaternion external_quat_;
