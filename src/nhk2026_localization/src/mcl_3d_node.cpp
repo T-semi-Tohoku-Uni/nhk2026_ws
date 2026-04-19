@@ -406,6 +406,29 @@ namespace mcl {
                     double y_map = x * sin_y + y * cos_y + mclPose_.position.y;
                     double z_map = z + mclPose_.position.z;
 
+                    int u, v, w;
+                    xyz2uvw(x_map, y_map, z_map, &u, &v, &w);
+
+                    // マップ範囲内かチェック
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
+                        float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                        
+                        // 閾値の設定（例：10cm以上壁から離れていたら無効化）
+                        // 自己位置推定に使用する「確かな壁の点」だけを残す
+                        const float sdf_threshold = 0.10f; 
+                        if (std::abs(sdf_val) > sdf_threshold) {
+                            continue; // 壁から遠い点（動的障害物やノイズ）なので除外
+                        }
+                    } else {
+                        // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
+                        continue;
+                    }
+
+                   
+
                     // --- X / Y 範囲フィルタリング ---
                     // 指定された範囲外の点は除外
                     if (x_map < -4.825 || x_map > -1.225 || y_map < 3.2 || y_map > 8.0) {
@@ -458,6 +481,8 @@ namespace mcl {
                     filtered_cloud_pub_->publish(filtered_cloud_msg);
                 }
             }
+
+
             void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
                 // 1. 推定位置 (mclPose_) を受信したメッセージで更新
                 // msgは Pose型なので、そのまま position と orientation をコピー

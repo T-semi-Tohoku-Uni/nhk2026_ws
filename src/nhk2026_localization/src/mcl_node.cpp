@@ -945,10 +945,13 @@ namespace mcl {
                             double sdf_val = distField_.at<double>(v, u);
                             
                             // 動的障害物除外ロジック
-                            if (sdf_val > 0.5) { // dynamic_obstacle_threshold
-                                total_log_p += std::log(p);
-                                continue;
-                            }
+                            // if (sdf_val > 0.5) { // dynamic_obstacle_threshold
+                            //     total_log_p += std::log(p);
+                            //     continue;
+                            // } // if (sdf_val > 0.5) { // dynamic_obstacle_threshold
+                            //     total_log_p += std::log(p);
+                            //     continue;
+                            // }
 
                             double d = (sdf_val >= 0) ? sdf_val : (std::abs(sdf_val) + 0.0); // penetration_penalty=1.0
                             double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
