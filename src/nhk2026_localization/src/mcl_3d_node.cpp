@@ -531,7 +531,7 @@ namespace mcl {
                     double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
                     double yaw_deg = yaw_rad * (180.0 / M_PI);
 
-                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+                    RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
                 }
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
@@ -733,7 +733,7 @@ namespace mcl {
                     if (has_external_quat_) {
                         // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
                         // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
-                        theta_new = ext_yaw + randNormal(0.05); // 0.005rad程度の微小ノイズ
+                        theta_new = ext_yaw + randNormal(0.01); // 0.005rad程度の微小ノイズ
                     } else {
                         // 外部姿勢がない場合は従来のオドメトリ
                         std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
