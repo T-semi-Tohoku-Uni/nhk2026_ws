@@ -179,7 +179,7 @@ def generate_launch_description():
                 "particleNum": 300,
                 "mapResolution": 0.01,
                 
-                "lfmSigma": 0.03, 
+                "lfmSigma": 0.065, 
              
                 "zHit": 0.95,
                 "zRand": 0.05,

@@ -471,8 +471,8 @@ namespace mcl {
                 anchor_x_ = msg->position.x;
                 anchor_y_ = msg->position.y;
 
-                double noise_x = 0.02;           // xの標準偏差 [m]
-                double noise_y = 0.02;           // yの標準偏差 [m]
+                double noise_x = 0.05;           // xの標準偏差 [m]
+                double noise_y = 0.05;           // yの標準偏差 [m]
                 double noise_yaw = 10.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / particleNum_;
 
