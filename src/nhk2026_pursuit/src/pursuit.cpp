@@ -89,7 +89,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
-            this->declare_parameter<double>("wait_time_", 0.20);
+            this->declare_parameter<double>("wait_time_", 5.0);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -890,7 +890,7 @@ class FollowNode: public rclcpp::Node {
         double offset_z_ = 0.02; 
 
         //wait
-        double wait_time_ = 0.5;
+        double wait_time_ = 5.0;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
