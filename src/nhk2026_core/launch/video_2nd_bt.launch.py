@@ -39,7 +39,7 @@ def generate_launch_description():
         executable="pursuit",
         output="screen",
         parameters=[{
-            "max_linear_speed": 1.0,
+            "max_linear_speed": 0.8,
             "max_angular_speed": 0.5,
             "max_linear_tolerance": 0.3,
             "max_theta_tolerance": 0.01,
@@ -53,7 +53,7 @@ def generate_launch_description():
             "Kp_normal": 0.80,
             "Ki_normal": 0.0,
             "Kd_normal": 0.00,
-            "Kp_theta": 1.0,
+            "Kp_theta": 0.8,
             "Ki_theta": 0.00,
             "Kd_theta": 0.00,
             "x": 10,
