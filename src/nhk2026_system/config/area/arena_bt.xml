@@ -18,6 +18,7 @@
                       y="9.0"
                       theta="-1.57"/>
       <follow_route/>
+      <SubTree ID="arm_put_shelf"/>
     </Sequence>
   </BehaviorTree>
 
