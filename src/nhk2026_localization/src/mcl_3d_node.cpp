@@ -961,7 +961,7 @@ namespace mcl {
                     double px = particles_[i].getX();
                     double py = particles_[i].getY();
 
-                    if (std::abs(px - anchor_x_) > 2.5 || std::abs(py - anchor_y_) > 2.5) {
+                    if (std::abs(px - anchor_x_) > 0.25 || std::abs(py - anchor_y_) > 0.25) {
                         // 範囲外なら存在確率を 0 にする（対数なので -inf）
                         log_weights[i] = -std::numeric_limits<double>::infinity();
                     } else {
