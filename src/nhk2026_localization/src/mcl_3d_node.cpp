@@ -385,9 +385,10 @@ namespace mcl {
                     double dist_sq = x*x + y*y + z*z;
                     if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
 
-                    if ( z > 1.5) continue;
+                    
 
                     double z_map = z + mclPose_.position.z;
+                    if ( z_map > 0.5) continue;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
                      if (std::abs(z_map - 0.00) <= 0.03 ||
@@ -1028,10 +1029,10 @@ namespace mcl {
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
                         // 動的障害物除外 (壁から遠すぎる点は無視)
-                        if (sdf_val > 0.5) {
-                            total_log_p += std::log(prob);
-                            continue;
-                        }
+                        // if (sdf_val > 0.5) {
+                        //     total_log_p += std::log(prob);
+                        //     continue;
+                        // }
 
                         // 壁の中(マイナス)ならペナルティを付与
                         double d = std::abs(sdf_val);
