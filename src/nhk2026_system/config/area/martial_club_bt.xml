@@ -11,7 +11,11 @@
       <generate_route x="-0.490"
                       y="1.45"
                       theta="3.142"/>
-      <follow_route/>
+      <ForceSuccess>
+        <Timeout msec="10000">
+          <follow_route/>
+        </Timeout>
+      </ForceSuccess>
       <takano_hand step="1"
                    pos="5.0"/>
       <Delay delay_msec="1000">
