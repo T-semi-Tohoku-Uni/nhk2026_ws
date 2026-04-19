@@ -101,7 +101,7 @@ namespace mcl {
             : Node("mcl_node", options), tf_buffer_(this->get_clock()), tf_listener_(tf_buffer_) {
                 this->declare_parameter<std::string>("mapFile", "src/nhk2026_localization/map/nhk2026_field_tamokuteki.h5"); 
                 this->declare_parameter<double>("mapResolution", 0.01); 
-                this->declare_parameter<std::double_t>("lfmSigma", 0.03);
+                this->declare_parameter<std::double_t>("lfmSigma", 0.1);
                 
                 this->declare_parameter<int>("particleNum", 100);
                 this->declare_parameter<std::float_t>("initial_x", -1.0);
@@ -437,15 +437,15 @@ namespace mcl {
                     double z_map = *iter_z + mclPose_.position.z;
 
                     // 特定の高さ（床や特定の障害物）を除外
-                    // if (std::abs(z_map - 0.00) <= 0.03 ||
-                    //     std::abs(z_map - 0.20) <= 0.03 ||
-                    //     std::abs(z_map - 0.40) <= 0.03) {
-                    //     continue;
-                    // }
-
-                    if (std::abs(z_map - 0.00) <= 0.03 ) {
+                    if (std::abs(z_map - 0.00) <= 0.02 ||
+                        std::abs(z_map - 0.20) <= 0.02 ||
+                        std::abs(z_map - 0.40) <= 0.03) {
                         continue;
                     }
+
+                    // if (std::abs(z_map - 0.00) <= 0.03 ) {
+                    //     continue;
+                    // }
 
                     Point3D pt;
                     pt.x = *iter_x; pt.y = *iter_y; pt.z = *iter_z;
@@ -504,9 +504,9 @@ namespace mcl {
 
                 // 2. パーティクルを再散布
                 // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
-                double noise_x = 0.3;           // xの標準偏差 [m]
-                double noise_y = 0.3;           // yの標準偏差 [m]
-                double noise_yaw = 20.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double noise_x = 0.2;           // xの標準偏差 [m]
+                double noise_y = 0.2;           // yの標準偏差 [m]
+                double noise_yaw = 10.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / static_cast<double>(particles_.size());
 
                 // 既存の散布関数を呼び出す（引数をシンプルに整理）
