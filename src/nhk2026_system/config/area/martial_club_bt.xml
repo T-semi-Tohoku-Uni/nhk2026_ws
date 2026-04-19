@@ -37,6 +37,10 @@
       <SubTree ID="WaitForTrigger"/>
       <takano_hand step="6"
                    pos="5.0"/>
+      <SubTree ID="WaitForTrigger"/>
+      <generate_route x="-2"
+                      y="1.45"
+                      theta="-1.57"/>
     </Sequence>
   </BehaviorTree>
 
