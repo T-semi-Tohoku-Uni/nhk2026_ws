@@ -166,7 +166,7 @@ private:
                         break;
                     case 7:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.5;
-                        if (elapsed_sec(state_start_time) > 0.5) next_step(step, state_start_time);
+                        if (elapsed_sec(state_start_time) > 0.4) next_step(step, state_start_time);
                         break;
                     case 8:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;

@@ -47,6 +47,7 @@ class MclManage : public rclcpp::Node {
                 return;
             }
             int new_level = msg->data[0];
+            RCLCPP_INFO(this->get_logger(), "Z-axics%d", new_level);
 
             if(new_level > 4){
                 
