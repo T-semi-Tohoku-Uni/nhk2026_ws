@@ -531,7 +531,7 @@ namespace mcl {
                     double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
                     double yaw_deg = yaw_rad * (180.0 / M_PI);
 
-                    RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
                 }
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
