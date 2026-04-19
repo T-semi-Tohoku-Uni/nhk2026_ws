@@ -1106,7 +1106,7 @@ namespace mcl {
                             
                             double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                             
-                            if (sdf_val > 0.2) continue;
+                            //if (sdf_val > 0.2) continue;
 
                             // 尤度計算自体は abs(sdf) で行うので、
                             // 遮蔽判定さえ抜ければ、数cmのめり込みは「高い尤度」として計算される
