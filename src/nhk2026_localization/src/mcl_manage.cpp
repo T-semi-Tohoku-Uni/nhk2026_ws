@@ -49,24 +49,7 @@ class MclManage : public rclcpp::Node {
             int new_level = msg->data[0];
             
 
-            if(new_level > 4){
-                RCLCPP_INFO(this->get_logger(), "Z-axics%d", new_level);
-                if(current_zaxis_level_ == 0){
-                    if (has_pose_) {
-                        geometry_msgs::msg::Pose new_initial_pose = current_pose_;
-                        
-                        RCLCPP_INFO(this->get_logger(), "Publishing new initial_pose for node switch: x=%.2f, y=%.2f, z=%.2f", 
-                        new_initial_pose.position.x, new_initial_pose.position.y, new_initial_pose.position.z);
-                        
-                        pub_initial_pose_->publish(new_initial_pose);
-                    } else {
-                        RCLCPP_WARN(this->get_logger(), "Z-axis");
-                    }
-                }
-                    
-
-                return;
-            }
+           
             // 3. 値が変化した時だけリセット処理（initial_pose発行）を行う
             if (new_level != current_zaxis_level_) {
                 RCLCPP_INFO(this->get_logger(), "Z-axis level changed: %d -> %d", current_zaxis_level_, new_level);
@@ -87,8 +70,23 @@ class MclManage : public rclcpp::Node {
                     
                     pub_initial_pose_->publish(new_initial_pose);
                 } else {
-                    RCLCPP_WARN(this->get_logger(), "Z-axis level changed, but no pose received yet. Cannot initialize position.");
+                    RCLCPP_INFO(this->get_logger(), "Z-axics%d", new_level);
+                    if(current_zaxis_level_ != 0){
+                        if (has_pose_) {
+                            geometry_msgs::msg::Pose new_initial_pose = current_pose_;
+                            
+                            RCLCPP_INFO(this->get_logger(), "Publishing new initial_pose for node switch: x=%.2f, y=%.2f, z=%.2f", 
+                            new_initial_pose.position.x, new_initial_pose.position.y, new_initial_pose.position.z);
+                            
+                            pub_initial_pose_->publish(new_initial_pose);
+                        } else {
+                            RCLCPP_WARN(this->get_logger(), "Z-axis");
+                        }
+                    }
                 }
+                // {
+                //     RCLCPP_WARN(this->get_logger(), "Z-axis level changed, but no pose received yet. Cannot initialize position.");
+                // }
 
                 current_zaxis_level_ = new_level;
             }
