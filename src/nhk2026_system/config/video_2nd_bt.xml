@@ -15,7 +15,8 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="Arena"/>
+      <SubTree ID="Forest"
+               _autoremap="true"/>
     </Sequence>
   </BehaviorTree>
 
