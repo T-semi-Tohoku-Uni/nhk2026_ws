@@ -11,13 +11,18 @@
                 max_acc="0.1"/>
       <service_vacuum value="true"/>
       <move_arm y="0.011076"
-                z="0.63"
+                z="0.68"
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.1"/>
       <move_arm y="0.011076"
                 z="0.852822"
                 roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.1"/>
+      <move_arm y="0.139777"
+                z="1.062562"
+                roll="0.17"
                 max_speed="0.2"
                 max_acc="0.1"/>
       <generate_route x="-0.5"
@@ -28,11 +33,6 @@
           <follow_route/>
         </Timeout>
       </ForceSuccess>
-      <move_arm y="0.139777"
-                z="1.042562"
-                roll="0.17"
-                max_speed="0.2"
-                max_acc="0.1"/>
       <move_arm y="0.404131"
                 z="1.028237"
                 roll="0.14"

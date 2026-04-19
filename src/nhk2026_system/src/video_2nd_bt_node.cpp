@@ -5,6 +5,8 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <behaviortree_cpp/behavior_tree.h>
 #include <behaviortree_cpp/bt_factory.h>
+#include <behaviortree_cpp/loggers/bt_cout_logger.h>
+
 #include <rclcpp/rclcpp.hpp>
 
 #include "behaviortree_ros2/ros_node_params.hpp"
@@ -117,6 +119,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<RotateSub>("rotate_sub", rotate_sub_params);
     factory.registerNodeType<ResetMcl>("reset_mcl", reset_mcl_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
+    BT::StdCoutLogger logger_cout(tree);
     tree.tickWhileRunning();
     RCLCPP_INFO(
         node->get_logger(),
