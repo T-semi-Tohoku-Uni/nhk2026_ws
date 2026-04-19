@@ -57,8 +57,8 @@ public:
             "joint_states_step", reliable_qos, std::bind(&StepActionServer::joint_state_callback, this, _1), sub_opt
         );
 
-        // zaxis_timer_ = this->create_wall_timer(
-        //     10ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
+        zaxis_timer_ = this->create_wall_timer(
+            100ms, std::bind(&StepActionServer::publish_zaxis_periodic, this));
             
         this->declare_parameter<double>("kPosTolerance", 0.05);
         this->declare_parameter<double>("max_leg_rad_per_sec", 2.0); // 補間速度のパラメータ化
@@ -172,10 +172,11 @@ private:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
                         target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
-                        break;
-                    case 9:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
+                        break;
+                    case 9:
+                        
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                         zaxics_count = nowzaxices;
                         break;
@@ -249,10 +250,11 @@ private:
                         leg_max_speed_ = 50.0; leg_max_acc_ = 20.0;
                         target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
                         if (leg_reached()) next_step(step, state_start_time);
-                        break;
-                    case 10:
                         nowzaxices = zaxics_count;
                         zaxics_count = 10;
+                        break;
+                    case 10:
+                        
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                         zaxics_count = nowzaxices;
                         break;
@@ -265,7 +267,6 @@ private:
                 }
                 update_interpolation(dt);
                 publish_all(target_robomas, target_cmd_vel);
-                publish_zaxis_periodic();
                 loop_rate.sleep();
             }
         } else {
