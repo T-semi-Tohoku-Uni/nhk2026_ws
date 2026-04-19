@@ -13,6 +13,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 #include <H5Cpp.h>
+#include <nhk2026_msgs/msg/path_with_box.hpp>
 
 using namespace H5;
 
@@ -53,8 +54,8 @@ namespace nhk2026_pursuit::path {
                 rclcpp::QoS test_pathQos = rclcpp::QoS(rclcpp::KeepLast(10))
                                   .reliable()
                                   .transient_local();
-                pubPath_ = create_publisher<nav_msgs::msg::Path>("route", pathQos);
-                pubSamplePath_ = create_publisher<nav_msgs::msg::Path>("test_route", test_pathQos);
+                pubPath_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("route", pathQos);
+                pubSamplePath_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("test_route", test_pathQos);
 
                 rclcpp::QoS markerQos = rclcpp::QoS(rclcpp::KeepLast(10))
                                   .reliable()
@@ -137,12 +138,12 @@ namespace nhk2026_pursuit::path {
             if (curOdom_.position.z >= 0.1) {
                 RCLCPP_INFO(this->get_logger(), "Z >= 0.1: Publishing goal directly.");
                 
-                nav_msgs::msg::Path pathMsg;
-                pathMsg.header.frame_id = "map";
-                pathMsg.header.stamp = this->now();
+                nhk2026_msgs::msg::PathWithBox pathMsg;
+                pathMsg.path.header.frame_id = "map";
+                pathMsg.path.header.stamp = this->now();
 
                 geometry_msgs::msg::PoseStamped goal_pose;
-                goal_pose.header = pathMsg.header;
+                goal_pose.header = pathMsg.path.header;
                 goal_pose.pose.position.x = request->x;
                 goal_pose.pose.position.y = request->y;
                 goal_pose.pose.position.z = curOdom_.position.z;
@@ -151,7 +152,7 @@ namespace nhk2026_pursuit::path {
                 q.setRPY(0, 0, request->theta);
                 goal_pose.pose.orientation = tf2::toMsg(q);
 
-                pathMsg.poses.push_back(goal_pose);
+                pathMsg.path.poses.push_back(goal_pose);
                 pubPath_->publish(pathMsg);
 
                 // サービスのリクエストで追加されたかもしれないウェイポイントをクリアして終了
@@ -174,12 +175,12 @@ namespace nhk2026_pursuit::path {
             path = splineSmoothEigen(path);
 
             // create path message
-            nav_msgs::msg::Path pathMsg;
-            pathMsg.header.frame_id = "map";
-            pathMsg.header.stamp    = this->now();
+            nhk2026_msgs::msg::PathWithBox pathMsg;
+            pathMsg.path.header.frame_id = "map";
+            pathMsg.path.header.stamp    = this->now();
             for (size_t i=0; i<path.size(); i++) {
                 geometry_msgs::msg::PoseStamped pose;
-                pose.header = pathMsg.header;
+                pose.header = pathMsg.path.header;
 
                 pose.pose.position.x = path[i].first;
                 pose.pose.position.y = path[i].second;
@@ -192,7 +193,7 @@ namespace nhk2026_pursuit::path {
                     q.setRPY(0, 0, getYaw(curOdom_.orientation));
                 }
                 pose.pose.orientation = tf2::toMsg(q);
-                pathMsg.poses.push_back(pose);
+                pathMsg.path.poses.push_back(pose);
             }
             pubPath_->publish(pathMsg);
 
@@ -204,14 +205,14 @@ namespace nhk2026_pursuit::path {
             del.action = visualization_msgs::msg::Marker::DELETEALL;
             markerArray.markers.push_back(del);
             // add marker
-            for (size_t i=0; i<pathMsg.poses.size(); i+=10) {
+            for (size_t i=0; i<pathMsg.path.poses.size(); i+=10) {
                 visualization_msgs::msg::Marker arrow;
-                arrow.header = pathMsg.header;
+                arrow.header = pathMsg.path.header;
                 arrow.ns = "path_orientations";
                 arrow.id = static_cast<int>(i);
                 arrow.type = visualization_msgs::msg::Marker::ARROW;
                 arrow.action = visualization_msgs::msg::Marker::ADD;
-                arrow.pose = pathMsg.poses[i].pose;
+                arrow.pose = pathMsg.path.poses[i].pose;
                 arrow.scale.x = 0.05;
                 arrow.scale.y = 0.01;
                 arrow.scale.z = 0.01;
@@ -646,8 +647,8 @@ namespace nhk2026_pursuit::path {
         cv::Mat mapImg_;
         cv::Mat distField_;
         int mapZIndex_;
-        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubPath_;
-        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubSamplePath_;        
+        rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr pubPath_;
+        rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr pubSamplePath_;        
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarker_;
         rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subOdom_;
         geometry_msgs::msg::Pose curOdom_;

@@ -55,7 +55,7 @@ ament_target_dependencies(path_planner
   nav_msgs
   geometry_msgs
   std_msgs
-  # nhk2026_msgs
+  nhk2026_msgs
   tf2
   tf2_geometry_msgs
   visualization_msgs
