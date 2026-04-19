@@ -395,7 +395,7 @@ namespace mcl {
                     double dist_sq = x*x + y*y + z*z;
                     if (dist_sq < 0.5*0.5 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
 
-                    if ( z > 1.5) continue;
+                    if ( z > 0.5) continue;
 
                     double z_map = z + mclPose_.position.z;
 
@@ -471,8 +471,8 @@ namespace mcl {
                 anchor_x_ = msg->position.x;
                 anchor_y_ = msg->position.y;
 
-                double noise_x = 0.1;           // xの標準偏差 [m]
-                double noise_y = 0.1;           // yの標準偏差 [m]
+                double noise_x = 0.02;           // xの標準偏差 [m]
+                double noise_y = 0.02;           // yの標準偏差 [m]
                 double noise_yaw = 10.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / particleNum_;
 
