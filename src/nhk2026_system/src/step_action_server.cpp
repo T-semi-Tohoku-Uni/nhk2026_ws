@@ -178,9 +178,10 @@ private:
                     case 9:
                         
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
-                        zaxics_count = nowzaxices;
+                        
                         break;
                     default:
+                        zaxics_count = nowzaxices;
                         count++;
                         stop_all();
                         RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
@@ -256,9 +257,10 @@ private:
                     case 10:
                         
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
-                        zaxics_count = nowzaxices;
+                        
                         break;
                     default:
+                        zaxics_count = nowzaxices;
                         stop_all();
                          RCLCPP_INFO(this->get_logger(), "=== 段降りシーケンス終了 (count: %d) ===", count);
                         result->success = true; result->msg = "Step down Completed!";
