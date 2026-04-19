@@ -1026,10 +1026,13 @@ namespace mcl {
                 const double scan_range_max = 30.0; 
                 const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
-                // レイサンプリングの間隔 (マップ解像度の2〜3倍程度が計算負荷とのバランスが良い)
-                const double ray_step = mapResolution_ * 10.0;
-                // 壁の判定しきい値 (少し余裕を持たせる)
-                const double obstacle_threshold = -mapResolution_; 
+                // --- パラメータ調整 ---
+                const double ray_step = mapResolution_ * 5.0; // 少しステップを荒くして計算節約
+                // 遮蔽と判定する深さを深くする（5cm〜10cm程度）
+                // これにより、数cmのめり込みやノイズを許容する
+                const double occlusion_depth_threshold = -0.05; 
+                // 計測点の直前どれくらいでチェックを止めるか
+                const double endpoint_grace_dist = 0.05; 
 
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
@@ -1039,17 +1042,17 @@ namespace mcl {
                 double sin_theta = std::sin(yaw);
 
                 for (const auto& pt : local_points) {
-                    // 1. ロボット座標系からマップ座標系への変換 (計測点)
                     double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
                     double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
                     double map_z = pt.z + pose.position.z; 
 
-                    // 2. 経路上の遮蔽チェック (Occlusion Check)
                     bool occluded = false;
                     double dist_to_point = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
                     
-                    // センサ直近すぎる点はスキップし、計測点の手前までチェック
-                    for (double d = 0.2; d < dist_to_point - mapResolution_; d += ray_step) {
+                    // 2. 経路上の遮蔽チェック
+                    // dの開始を 0.2m にして自分の機体への衝突を回避
+                    // 終了を dist_to_point - endpoint_grace_dist にして計測点付近のめり込みを許容
+                    for (double d = 0.2; d < dist_to_point - endpoint_grace_dist; d += ray_step) {
                         double ratio = d / dist_to_point;
                         double check_x = pose.position.x + (map_x - pose.position.x) * ratio;
                         double check_y = pose.position.y + (map_y - pose.position.y) * ratio;
@@ -1062,8 +1065,10 @@ namespace mcl {
                             v >= 0 && v < static_cast<int>(dim_y_) && 
                             w >= 0 && w < static_cast<int>(dim_z_)) {
                             
-                            // SDFが負（障害物内部）であれば、そこは通れないはず
-                            if (distField3D_[getIdx3D(u, v, w)] < obstacle_threshold) {
+                            float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                            // 表面付近（-5cmなど）のめり込みは「通過可能」とみなす
+                            // 明らかに壁の芯（深いマイナス）を通る場合だけ遮蔽とする
+                            if (sdf_val < occlusion_depth_threshold) {
                                 occluded = true;
                                 break; 
                             }
@@ -1073,10 +1078,10 @@ namespace mcl {
                     double prob = zRand_ * pRand_const; 
 
                     if (occluded) {
-                        // 遮蔽されている場合、尤度を極端に下げる（ペナルティ）
-                        prob = 1e-12; 
+                        // 遮蔽ペナルティを少しマイルドにする（完全に0にしない）
+                        // IMUが正しいなら、遮蔽点は無視するだけでも良い
+                        prob = 1e-9; 
                     } else {
-                        // 遮蔽されていない場合、通常の尤度計算
                         int u, v, w;
                         xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
 
@@ -1086,20 +1091,17 @@ namespace mcl {
                             
                             double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                             
-                            // 動的障害物除外 (壁から遠すぎる点は無視)
-                            if (sdf_val > 0.3) {
-                                continue;
-                            }
+                            if (sdf_val > 0.3) continue;
 
+                            // 尤度計算自体は abs(sdf) で行うので、
+                            // 遮蔽判定さえ抜ければ、数cmのめり込みは「高い尤度」として計算される
                             double d = std::abs(sdf_val);
                             double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
                             prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
                         }
                     }
-                    
-                    total_log_p += std::log(std::max(prob, 1e-12));
+                    total_log_p += std::log(std::max(prob, 1e-10));
                 }
-
                 return total_log_p;
             }
 
