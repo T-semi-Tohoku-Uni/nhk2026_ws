@@ -47,11 +47,30 @@ class MclManage : public rclcpp::Node {
                 return;
             }
             int new_level = msg->data[0];
-            
+
+            if(new_level == 10){
+                if(init_flag != 10){
+                    if(current_zaxis_level_ == 0){
+                        if (has_pose_) {
+                            geometry_msgs::msg::Pose new_initial_pose = current_pose_;
+                            
+                            RCLCPP_INFO(this->get_logger(), "Publishing new initial_pose for node switch: x=%.2f, y=%.2f, z=%.2f", 
+                            new_initial_pose.position.x, new_initial_pose.position.y, new_initial_pose.position.z);
+                            
+                            pub_initial_pose_->publish(new_initial_pose);
+                        } else {
+                            RCLCPP_WARN(this->get_logger(), "Z-axis");
+                        }
+                    }
+                    init_flag = 10;
+                }
+
+                return;
+            }
             // 3. 値が変化した時だけリセット処理（initial_pose発行）を行う
             if (new_level != current_zaxis_level_) {
                 RCLCPP_INFO(this->get_logger(), "Z-axis level changed: %d -> %d", current_zaxis_level_, new_level);
-                
+                init_flag  = new_level;
                 if (has_pose_) {
                     geometry_msgs::msg::Pose new_initial_pose = current_pose_;
                     
@@ -82,8 +101,11 @@ class MclManage : public rclcpp::Node {
         }
 
         int current_zaxis_level_;
+        int init_flag = 0;
         bool has_pose_;
         geometry_msgs::msg::Pose current_pose_;
+        std::vector<float>  initpose_x = {-1.8,-3.0,-4.2};
+        std::vector<float>  initpose_y = {2.6,3.8,5.0,6.2};
 
         rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr pub_mcl_select_;
         rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub_initial_pose_;

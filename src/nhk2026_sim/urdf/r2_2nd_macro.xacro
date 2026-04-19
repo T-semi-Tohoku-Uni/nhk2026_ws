@@ -4,7 +4,7 @@
 <xacro:include filename="$(find nhk2026_sim)/urdf/r2_2nd.trans" />
 
 <xacro:macro name="r2_2nd" params="prefix:=''">
-  <link name="base_root"/>
+  <link name="base_footprint"/>
 
   <link name="base_link">
     <inertial>
@@ -90,8 +90,11 @@
     </collision>
   </link>
 
+  <link name="lidar_front"/>
+  <link name="lidar_back"/>
+
   <joint name="root" type="fixed">
-    <parent link="base_root"/>
+    <parent link="base_footprint"/>
     <child link="base_link"/>
   </joint>
 
@@ -116,6 +119,142 @@
     <axis xyz="-1.0 0.0 0.0"/>
     <limit upper="6.283185" lower="3.141593" effort="100" velocity="100"/>
   </joint>
+
+  <joint name="base_link_to_lidar_front" type="fixed">
+    <origin xyz="-0.157 0.2885 0.0755" rpy="3.14159 0 1.5707"/>
+    <parent link="base_link"/>
+    <child link="lidar_front"/>
+  </joint>
+
+  <joint name="base_link_to_lidar_back" type="fixed">
+    <origin xyz="0.270 -0.3615 0.0755" rpy="3.14159 0 0"/>
+    <parent link="base_link"/>
+    <child link="lidar_back"/>
+  </joint>
+  
+  <gazebo>
+    <plugin filename="libignition-gazebo-velocity-control-system.so"
+            name="ignition::gazebo::systems::VelocityControl">
+      <topic>/cmd_vel</topic>
+    </plugin>
+    
+    <plugin filename="libignition-gazebo-odometry-publisher-system.so"
+          name="ignition::gazebo::systems::OdometryPublisher">
+
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_footprint</robot_base_frame>
+      <odom_publish_frequency>40</odom_publish_frequency>
+      <odom_topic>/odom</odom_topic>
+      <tf_topic>/tf</tf_topic>
+      <dimensions>3</dimensions>
+      <gaussian_noise>0.0</gaussian_noise>
+    </plugin>
+  </gazebo>
+
+  <gazebo reference="lidar_front">
+    <sensor type="gpu_lidar" name="lidar_sensor_front">
+      <ignition_frame_id>lidar_front</ignition_frame_id>
+      <topic>/scan_front</topic>
+      <alwaysOn>1</alwaysOn>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1080</samples>
+            <resolution>1</resolution> 
+            <min_angle>-2.35619</min_angle>
+            <max_angle> 2.35619</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>0.0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>30.0</max>
+          <resolution>0.001</resolution>
+        </range>
+      </ray>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="lidar_back">
+    <sensor type="gpu_lidar" name="lidar_sensor_back">
+      <ignition_frame_id>lidar_back</ignition_frame_id>
+      <topic>/scan_back</topic>
+      <alwaysOn>1</alwaysOn>
+      <visualize>true</visualize>
+      <update_rate>40</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>1080</samples>
+            <resolution>1</resolution>
+            <min_angle>-2.35619</min_angle>
+            <max_angle> 2.35619</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>1</samples>
+            <resolution>1</resolution>
+            <min_angle>0.0</min_angle>
+            <max_angle>0.0</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>30.0</max>
+          <resolution>0.001</resolution>
+        </range>
+      </ray>
+    </sensor>
+  </gazebo>
+
+  <gazebo reference="base_link">
+    <mu1>0.0</mu1>
+    <mu2>0.0</mu2>
+    <kp>1000000.0</kp>
+    <kd>100.0</kd>
+  </gazebo>
+
+  <link name="livox_frame"/>
+
+  <joint name="base_link_to_livox" type="fixed">
+    <origin xyz="-0.325 -0.03 0.423" rpy="3.14159 0 -1.57"/>
+    <parent link="base_link"/>
+    <child link="livox_frame"/>
+  </joint>
+
+  <gazebo reference="livox_frame">
+    <sensor type="gpu_lidar" name="livox_mid360_sensor">
+      <ignition_frame_id>livox_frame</ignition_frame_id>
+      <topic>/livox</topic>
+      <alwaysOn>1</alwaysOn>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate> <ray>
+        <scan>
+          <horizontal>
+            <samples>1000</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159</min_angle>
+            <max_angle>3.14159</max_angle>
+          </horizontal>
+          <vertical>
+            <samples>64</samples> <resolution>1</resolution>
+            <min_angle>-0.12217</min_angle>
+            <max_angle>0.90757</max_angle>
+          </vertical>
+        </scan>
+        <range>
+          <min>0.1</min>
+          <max>40.0</max> <resolution>0.003</resolution>
+        </range>
+      </ray>
+    </sensor>
+  </gazebo>
 </xacro:macro>
 
 </robot>

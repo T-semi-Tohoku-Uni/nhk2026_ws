@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="MainTree">
+  <include path="area/arena_bt.xml"/>
+
+  <include path="area/martial_club_bt.xml"/>
+
+  <include path="area/forest_bt.xml"/>
+
+  <include path="common/bt_node_models.xml"/>
+
+  <include path="common/wait_for_trigger.xml"/>
+
+  <BehaviorTree ID="MainTree">
+    <Sequence>
+      <generate_route x="-1.8"
+                      y="2.0"
+                      theta="0.0"/>
+      <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-1.8"
+                      y="3.8"
+                      theta="0.0"/>
+      <follow_route/>
+      <step_move command="step up"/>
+      <generate_route x="-1.8"
+                      y="5.0"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step down"/>
+      <generate_route x="-1.8"
+                      y="6.2"
+                      theta="3.14"/>
+      <follow_route/>
+      <step_move command="step down"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
+    <Action ID="step_move"
+            editable="true">
+      <input_port name="command"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

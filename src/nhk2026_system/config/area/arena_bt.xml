@@ -1,0 +1,10 @@
+<root BTCPP_format="4">
+  <include path="../operation/arm_put_shelf.xml"/>
+  <include path="../common/bt_node_models.xml"/>
+  <BehaviorTree ID="Arena">
+    <Sequence>
+      <SubTree ID="WaitForTrigger"
+               _autoremap="false"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

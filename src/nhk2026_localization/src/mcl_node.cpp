@@ -950,7 +950,7 @@ namespace mcl {
                                 continue;
                             }
 
-                            double d = (sdf_val >= 0) ? sdf_val : (std::abs(sdf_val) + 1.0); // penetration_penalty=1.0
+                            double d = (sdf_val >= 0) ? sdf_val : (std::abs(sdf_val) + 0.0); // penetration_penalty=1.0
                             double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
                             p = std::min(1.0, zHit_ * pHit + zRand_ * pRand);
                         }

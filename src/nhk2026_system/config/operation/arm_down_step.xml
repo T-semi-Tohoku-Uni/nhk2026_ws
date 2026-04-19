@@ -1,0 +1,9 @@
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+  <BehaviorTree ID="arm_down_step">
+    <Sequence>
+      <SubTree ID="WaitForTrigger"
+               _autoremap="false"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

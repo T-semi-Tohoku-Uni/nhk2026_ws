@@ -177,10 +177,10 @@ def generate_launch_description():
             "initial_x": x,
             "initial_y": y,
             "initial_theta": theta,
-            "odomNoise1": 1.2,
-            "odomNoise2": 0.5,
-            "odomNoise3": 1.3,
-            "odomNoise4": 1.1,
+            "odomNoise1": 1.4,
+            "odomNoise2": 0.6,
+            "odomNoise3": 1.5,
+            "odomNoise4": 1.2,
             "resampleThreshold": 0.9,
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
@@ -370,24 +370,24 @@ def generate_launch_description():
         # rviz,
         # bridge,
         node_robot_state_publisher,
-        static_from_map_to_odom,
+        static_from_map_to_odom,#
         # joy_node,
-        mcl_3d_node,
-        map_publisher,
-        livox_driver,
-        mcl_node,
-        urg_node_front,
-        urg_node_rear,
-        lidar_filter_node,
-        joy_controller_node,
+        mcl_3d_node,#
+        map_publisher,#
+        livox_driver,#
+        mcl_node,#
+        urg_node_front,#
+        urg_node_rear,#
+        lidar_filter_node,#
+        # joy_controller_node,
         vel_feedback_node,
-        # blossom_path_planner,
-        # path_planner,
-        # pursuit,
-        # bt_node,
+        blossom_path_planner,
+        path_planner,
+        pursuit,
+        bt_node,
         step_leg_worker,
         step_leg_sequencer,
         jsp_node,
-        mcl_manage,
+        mcl_manage,#
         takano_hand_sequencer,
     ])

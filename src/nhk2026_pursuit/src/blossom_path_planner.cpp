@@ -5,7 +5,7 @@
 namespace nhk2026_pursuit::blossom_path{
     BlossomPathPlanner::BlossomPathPlanner(const rclcpp::NodeOptions & options): Node("blossom_path_planner", options){
         subPose_ = create_subscription<geometry_msgs::msg::Pose>(
-            "/pose", 10, std::bind(&BlossomPathPlanner::poseCallback, this, std::placeholders::_1)
+            "pose", 10, std::bind(&BlossomPathPlanner::poseCallback, this, std::placeholders::_1)
         );
     
         rclcpp::QoS pathQoS = rclcpp::QoS(rclcpp::KeepLast(10))
@@ -44,6 +44,8 @@ namespace nhk2026_pursuit::blossom_path{
         this->get_parameter("theta_offset_", theta_offset_);
         this->get_parameter("start_shorten_", start_shorten_);
         this->get_parameter("end_shorten_", end_shorten_);
+
+         RCLCPP_INFO(this->get_logger(), "Initialize blossom path");
     };
 
 
@@ -242,11 +244,18 @@ namespace nhk2026_pursuit::blossom_path{
         //後で強化学習の関数からグリッドの配列をもらう
         //仮にグリッドの配列を入れる
         std::vector<GridIndex> grids = {
-            {0,1},
-            {0,0},
-            {1,0},
-            {1,1},
-            {2,1},
+            // {0,1},
+            // {0,0},
+            // {1,0},
+            // {1,1},
+            // {2,1},
+            // {2,2},
+            // {3,2},
+            // {4,2},
+            // {5,2},
+
+            {0,2},
+            {1,2},
             {2,2},
             {3,2},
             {4,2},

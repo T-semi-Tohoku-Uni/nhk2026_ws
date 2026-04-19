@@ -1,0 +1,39 @@
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+  <BehaviorTree ID="arm_front_step">
+    <Sequence>
+      <move_arm y="0.920573"
+                z="0.152092"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <service_vacuum value="true"/>
+      <move_arm y="1.123158"
+                z="0.151863"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="0.9"
+                z="0.151863"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="1.012603"
+                z="0.6"
+                roll="0.0"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="0.855850"
+                z="0.377388"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <move_arm y="0.095582"
+                z="0.676967"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

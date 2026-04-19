@@ -43,22 +43,6 @@ include_directories(
 )
 
 # -----------------------------------------------------------------------------
-# system_1st_video
-# -----------------------------------------------------------------------------
-add_executable(system_1st_video
-  src/system_1st_video.cpp
-)
-ament_target_dependencies(system_1st_video
-  rclcpp
-  rclcpp_lifecycle
-  std_msgs
-  geometry_msgs
-  lifecycle_msgs
-  nhk2026_msgs
-)
-install(TARGETS system_1st_video DESTINATION lib/${PROJECT_NAME})
-
-# -----------------------------------------------------------------------------
 # ide_arm_action_server
 # -----------------------------------------------------------------------------
 add_executable(ide_arm_action_server
@@ -141,6 +125,9 @@ add_library(bt_library
   src/bt/bt_generate_route.cpp
   src/bt/bt_linear_path.cpp
   src/bt/bt_follow_route.cpp
+  src/bt/bt_takano_hand.cpp
+  src/bt/bt_move_step.cpp
+  src/bt/bt_vel_pub.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs
@@ -190,6 +177,24 @@ target_link_libraries(path_bt_node
   bt_library
 )
 install(TARGETS path_bt_node DESTINATION lib/${PROJECT_NAME})
+
+# -----------------------------------------------------------------------------
+# video_2nd_bt_node
+# -----------------------------------------------------------------------------
+add_executable(video_2nd_bt_node
+  src/video_2nd_bt_node.cpp
+)
+ament_target_dependencies(video_2nd_bt_node
+  rclcpp
+  rclcpp_action
+  inrof2025_ros_type
+  ament_index_cpp
+)
+target_link_libraries(video_2nd_bt_node
+  behaviortree_ros2::behaviortree_ros2
+  bt_library
+)
+install(TARGETS video_2nd_bt_node DESTINATION lib/${PROJECT_NAME})
 
 # -----------------------------------------------------------------------------
 # Install other directories

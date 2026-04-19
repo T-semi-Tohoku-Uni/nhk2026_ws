@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+
+  <BehaviorTree ID="arm_put_shelf">
+    <Sequence>
+      <move_arm y="0.011076"
+                z="0.711455"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.011076"
+                z="0.611455"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <service_vacuum value="true"/>
+      <move_arm y="0.011076"
+                z="0.852822"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.139777"
+                z="1.032562"
+                roll="0.15"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="0.404131"
+                z="1.028237"
+                roll="0.14"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

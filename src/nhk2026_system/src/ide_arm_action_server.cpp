@@ -101,7 +101,7 @@ IdeArmActionServer::IdeArmActionServer()
     );
 
     this->joint_states_subscriber = this->create_subscription<sensor_msgs::msg::JointState>(
-        std::string("/joint_states"),
+        std::string("joint_states"),
         device,
         std::bind(&IdeArmActionServer::joint_state_callback, this, _1)
     );

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <TreeNodesModel>
+    <Action ID="move_arm" editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+
+    <Action ID="service_vacuum" editable="true">
+      <input_port name="value"/>
+    </Action>
+
+    <Action ID="linear_path" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="is_return"/>
+    </Action>
+
+    <Action ID="follow_route" editable="true"/>
+
+    <Action ID="generate_route" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta" default="0.0"/>
+    </Action>
+
+    <Action ID="takano_hand" editable="true">
+      <input_port name="step"/>
+      <input_port name="pos" default="5.0"/>
+    </Action>
+
+    <Action ID="step_move"
+            editable="true">
+      <input_port name="command"/>
+    </Action>
+
+    <Action ID="trigger_topic"
+            editable="true">
+    </Action>
+
+    <Action ID="pub_cmd_vel"
+            editable="true">
+      <input_port name="vx"/>
+      <input_port name="vy"/>
+      <input_port name="omega"/>
+    </Action>
+
+    <SubTree ID="vel_tim">
+      <input_port name="vx"/>
+      <input_port name="vy"/>
+      <input_port name="omega"/>
+      <input_port name="pub_msec"/>
+    </SubTree>
+  </TreeNodesModel>
+</root>
