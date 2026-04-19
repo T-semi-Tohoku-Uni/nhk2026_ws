@@ -14,7 +14,7 @@ bool ResetMcl::setMessage(geometry_msgs::msg::Pose & msg)
 {
     auto x = getInput<double>("x");
     auto y = getInput<double>("y");
-    auto y = getInput<double>("z");
+    auto z = getInput<double>("z");
     auto theta = getInput<double>("theta");
 
     if (!x) return false;
