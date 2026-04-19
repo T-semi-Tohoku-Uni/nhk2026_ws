@@ -47,10 +47,10 @@ class MclManage : public rclcpp::Node {
                 return;
             }
             int new_level = msg->data[0];
-            RCLCPP_INFO(this->get_logger(), "Z-axics%d", new_level);
+            
 
             if(new_level > 4){
-                
+                RCLCPP_INFO(this->get_logger(), "Z-axics%d", new_level);
                 if(current_zaxis_level_ == 0){
                     if (has_pose_) {
                         geometry_msgs::msg::Pose new_initial_pose = current_pose_;

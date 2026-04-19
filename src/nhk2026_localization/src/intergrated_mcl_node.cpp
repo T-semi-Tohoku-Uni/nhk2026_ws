@@ -191,7 +191,7 @@ namespace mcl {
                     "cmd_vel_feedback", qos_default, std::bind(&IntegratedMCLNode::cmdVelCallback, this, std::placeholders::_1));
                 
                 subZaxis_ = this->create_subscription<std_msgs::msg::Int32MultiArray>(
-                    "zaxis", qos_default, std::bind(&IntegratedMCLNode::zaxisCallback, this, std::placeholders::_1));
+                    "", qos_default, std::bind(&IntegratedMCLNode::zaxisCallback, this, std::placeholders::_1));
                 
                 subInitialPose_ = this->create_subscription<geometry_msgs::msg::Pose>(
                     "initial_pose", qos_default, std::bind(&IntegratedMCLNode::initialPoseCallback, this, std::placeholders::_1));
