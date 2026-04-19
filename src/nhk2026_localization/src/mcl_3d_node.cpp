@@ -406,26 +406,26 @@ namespace mcl {
                     double y_map = x * sin_y + y * cos_y + mclPose_.position.y;
                     double z_map = z + mclPose_.position.z;
 
-                    // int u, v, w;
-                    // xyz2uvw(x_map, y_map, z_map, &u, &v, &w);
+                    int u, v, w;
+                    xyz2uvw(x_map, y_map, z_map, &u, &v, &w);
 
-                    // // マップ範囲内かチェック
-                    // if (u >= 0 && u < static_cast<int>(dim_x_) && 
-                    //     v >= 0 && v < static_cast<int>(dim_y_) && 
-                    //     w >= 0 && w < static_cast<int>(dim_z_)) {
+                    // マップ範囲内かチェック
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
                         
-                    //     float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                        float sdf_val = distField3D_[getIdx3D(u, v, w)];
                         
-                    //     // 閾値の設定（例：10cm以上壁から離れていたら無効化）
-                    //     // 自己位置推定に使用する「確かな壁の点」だけを残す
-                    //     const float sdf_threshold = 0.10f; 
-                    //     if (std::abs(sdf_val) > sdf_threshold) {
-                    //         continue; // 壁から遠い点（動的障害物やノイズ）なので除外
-                    //     }
-                    // } else {
-                    //     // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
-                    //     continue;
-                    // }
+                        // 閾値の設定（例：10cm以上壁から離れていたら無効化）
+                        // 自己位置推定に使用する「確かな壁の点」だけを残す
+                        const float sdf_threshold = 0.10f; 
+                        if (std::abs(sdf_val) > sdf_threshold) {
+                            continue; // 壁から遠い点（動的障害物やノイズ）なので除外
+                        }
+                    } else {
+                        // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
+                        continue;
+                    }
 
                    
 
@@ -1071,11 +1071,11 @@ namespace mcl {
                         
                         double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                         
-                        //動的障害物除外 (壁から遠すぎる点は無視)
-                        if (sdf_val > 0.2) {
-                            total_log_p += std::log(prob);
-                            continue;
-                        }
+                        // 動的障害物除外 (壁から遠すぎる点は無視)
+                        // if (sdf_val > 0.5) {
+                        //     total_log_p += std::log(prob);
+                        //     continue;
+                        // }
 
                         // 壁の中(マイナス)ならペナルティを付与
                         double d = std::abs(sdf_val);
