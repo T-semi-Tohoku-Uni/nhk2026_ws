@@ -665,7 +665,7 @@ namespace mcl {
                     if (has_external_quat_) {
                         // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
                         // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
-                        theta_new = ext_yaw + randNormal(0.005); // 0.005rad程度の微小ノイズ
+                        theta_new = ext_yaw + randNormal(0.000); // 0.005rad程度の微小ノイズ
                     } else {
                         // 外部姿勢がない場合は従来のオドメトリ
                         std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
