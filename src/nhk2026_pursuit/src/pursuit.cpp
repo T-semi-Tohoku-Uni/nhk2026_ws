@@ -244,7 +244,8 @@ class FollowNode: public rclcpp::Node {
 
                     resetRealPose(); 
                     RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
-                    rclcpp::WallRate rate(1.0 / wait_time_); 
+                    rclcpp::WallRate rate(1.0 / wait_time_);
+                    rate.sleep(); 
                     RCLCPP_INFO(this->get_logger(), "waittime");
 
                 } else {
