@@ -396,16 +396,15 @@ namespace mcl {
                     double dist_sq = x*x + y*y + z*z;
                     if (dist_sq < 0.5*0.5 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
 
-                    if ( z > 0.5) continue;
-
                     double z_map = z + mclPose_.position.z;
+                    if ( z_map > 0.36) continue;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
                      if (std::abs(z_map - 0.00) <= 0.04 ||
-                         std::abs(z_map - 0.20) <= 0.04 ||
-                         std::abs(z_map - 0.40) <= 0.04) {
+                         std::abs(z_map - 0.20) <= 0.04 ) {
                          continue;
                      }
+                     
 
                     //if (std::abs(z_map - 0.00) <= 0.03){
                     //    continue;
@@ -1028,7 +1027,7 @@ namespace mcl {
                 const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
                 // レイサンプリングの間隔 (マップ解像度の2〜3倍程度が計算負荷とのバランスが良い)
-                const double ray_step = mapResolution_ * 2.0;
+                const double ray_step = mapResolution_ * 10.0;
                 // 壁の判定しきい値 (少し余裕を持たせる)
                 const double obstacle_threshold = -mapResolution_; 
 
