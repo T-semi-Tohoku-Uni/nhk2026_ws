@@ -10,44 +10,53 @@
 
   <BehaviorTree ID="Forest">
     <Sequence>
-      <generate_route x="-4.2"
+      <generate_route x="-1.8"
                       y="2.6"
                       theta="0.0"/>
       <follow_route/>
+      <reset_mcl x="-1.8"
+                 y="2.6"
+                 theta="0.0"/>
       <step_move command="step up"/>
-      <generate_route x="-4.2"
-                      y="3.8"
-                      theta="0.0"/>
+      <Delay delay_msec="5000">
+        <generate_route x="-1.8"
+                        y="3.8"
+                        theta="0.0"/>
+      </Delay>
       <follow_route/>
-      <generate_route x="-4.2"
-                      y="3.8"
-                      theta="3.14"/>
+      <step_move command="step up"/>
+      <reset_mcl x="-1.8"
+                 y="5.0"
+                 theta="0.0"/>
+      <Delay delay_msec="5000">
+        <generate_route x="-1.8"
+                        y="5.0"
+                        theta="0.0"/>
+      </Delay>
       <follow_route/>
+      <SubTree ID="rotate"
+               target_theta="3.14"
+               omega="0.1"
+               _autoremap="true"/>
+      <step_move command="step  down"/>
+      <SubTree ID="rotate"
+               target_theta="0.0"
+               omega="0.1"
+               _autoremap="true"/>
+      <reset_mcl x="-1.8"
+                 y="6.2"
+                 theta="0.0"/>
+      <Delay delay_msec="5000">
+        <SubTree ID="rotate"
+                 target_theta="3.14"
+                 omega="0.1"
+                 _autoremap="true"/>
+      </Delay>
       <step_move command="step down"/>
-      <generate_route x="-4.2"
-                      y="5.0"
-                      theta="-1.57"/>
-      <follow_route/>
-      <step_move command="step up"/>
-      <generate_route x="-3.0"
-                      y="5.1"
-                      theta="0.0"/>
-      <follow_route/>
-      <step_move command="step up"/>
-      <generate_route x="-3.0"
-                      y="6.2"
-                      theta="0.0"/>
-      <follow_route/>
-      <generate_route x="-3.0"
-                      y="6.2"
-                      theta="3.14"/>
-      <follow_route/>
-      <step_move command="step down"/>
-      <generate_route x="-3.0"
+      <generate_route x="-1.8"
                       y="7.4"
                       theta="3.14"/>
       <follow_route/>
-      <step_move command="step down"/>
     </Sequence>
   </BehaviorTree>
 
@@ -62,6 +71,16 @@
       <input_port name="theta"
                   default="0.0"/>
     </Action>
+    <Action ID="reset_mcl"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"/>
+    </Action>
+    <SubTree ID="rotate">
+      <input_port name="target_theta"/>
+      <input_port name="omega"/>
+    </SubTree>
     <Action ID="step_move"
             editable="true">
       <input_port name="command"/>
