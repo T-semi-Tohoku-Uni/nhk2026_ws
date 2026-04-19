@@ -183,7 +183,7 @@ private:
                     case 10:
                         zaxics_count = nowzaxices;
                         if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
-                        break:
+                        break;
                     default:
                         
                         count++;
@@ -266,6 +266,7 @@ private:
                     case 11:
                         zaxics_count = nowzaxices;
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
+                        break;
                     default:
                         zaxics_count = nowzaxices;
                         stop_all();
