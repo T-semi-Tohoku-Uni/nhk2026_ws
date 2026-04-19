@@ -1019,6 +1019,13 @@ namespace mcl {
 
             
             double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
+                int pu, pv, pw;
+                xyz2uvw(pose.position.x, pose.position.y, pose.position.z, &pu, &pv, &pw);
+                if (pu < 0 || pu >= static_cast<int>(dim_x_) || 
+                    pv < 0 || pv >= static_cast<int>(dim_y_) || 
+                    pw < 0 || pw >= static_cast<int>(dim_z_)) {
+                    return -1e18; // フィールド外のパーティクルは即脱落
+                }
                 double total_log_p = 0.0;
                 double var = lfmSigma_ * lfmSigma_;
                 double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
@@ -1030,9 +1037,9 @@ namespace mcl {
                 const double ray_step = mapResolution_ * 5.0; // 少しステップを荒くして計算節約
                 // 遮蔽と判定する深さを深くする（5cm〜10cm程度）
                 // これにより、数cmのめり込みやノイズを許容する
-                const double occlusion_depth_threshold = -0.05; 
+                const double occlusion_depth_threshold = -0.1; 
                 // 計測点の直前どれくらいでチェックを止めるか
-                const double endpoint_grace_dist = 0.05; 
+                const double endpoint_grace_dist = 0.1; 
 
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
@@ -1091,7 +1098,7 @@ namespace mcl {
                             
                             double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
                             
-                            if (sdf_val > 0.3) continue;
+                            if (sdf_val > 0.2) continue;
 
                             // 尤度計算自体は abs(sdf) で行うので、
                             // 遮蔽判定さえ抜ければ、数cmのめり込みは「高い尤度」として計算される
