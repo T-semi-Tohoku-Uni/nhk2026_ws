@@ -9,20 +9,28 @@
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.1"/>
+      <service_vacuum value="true"/>
       <move_arm y="0.011076"
-                z="0.64"
+                z="0.63"
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.1"/>
-      <service_vacuum value="true"/>
       <move_arm y="0.011076"
                 z="0.852822"
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.1"/>
+      <generate_route x="-0.5"
+                      y="11.3"
+                      theta="-1.57"/>
+      <ForceSuccess>
+        <Timeout msec="8000">
+          <follow_route/>
+        </Timeout>
+      </ForceSuccess>
       <move_arm y="0.139777"
-                z="1.032562"
-                roll="0.15"
+                z="1.042562"
+                roll="0.17"
                 max_speed="0.2"
                 max_acc="0.1"/>
       <move_arm y="0.404131"
@@ -36,6 +44,15 @@
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
     <Action ID="move_arm"
             editable="true">
       <input_port name="y"/>

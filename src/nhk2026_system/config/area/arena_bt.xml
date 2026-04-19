@@ -16,7 +16,7 @@
                 y="11.0"/>
       <waypoint x="-2"
                 y="11"/>
-      <generate_route x="-0.5"
+      <generate_route x="-0.7"
                       y="11.3"
                       theta="-1.57"/>
       <ForceSuccess>
@@ -28,7 +28,9 @@
       <generate_route x="-2"
                       y="11"
                       theta="-1.57"/>
-      <follow_route/>
+      <Delay delay_msec="3000">
+        <follow_route/>
+      </Delay>
       <move_arm y="0.1"
                 z="0.7"
                 roll="-1.57"
