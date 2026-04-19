@@ -14,10 +14,10 @@
                       y="2.6"
                       theta="0.0"/>
       <follow_route/>
-      <reset_mcl x="-1.8"
-                 y="2.6"
-                 theta="0.0"/>
       <step_move command="step up"/>
+      <reset_mcl x="-1.8"
+                 y="3.8"
+                 theta="0.0"/>
       <Delay delay_msec="5000">
         <generate_route x="-1.8"
                         y="3.8"
@@ -38,7 +38,7 @@
                target_theta="3.14"
                omega="0.1"
                _autoremap="true"/>
-      <step_move command="step  down"/>
+      <step_move command="step down"/>
       <SubTree ID="rotate"
                target_theta="0.0"
                omega="0.1"
