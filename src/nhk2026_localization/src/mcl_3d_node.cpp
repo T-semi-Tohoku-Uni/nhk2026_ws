@@ -22,6 +22,9 @@
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp" 
+#include <deque> 
+#include <numeric>
+#include <mutex>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -170,7 +173,7 @@ namespace mcl {
                 filtered_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan3d_cloud", qos_default);
 
                 // サブスクライバの処理
-                rclcpp::QoS cmdVelQos(rclcpp::KeepLast(10));
+                rclcpp::QoS cmdVelQos(rclcpp::KeepLast(100));
                 subCmdVel_ = create_subscription<geometry_msgs::msg::Twist>(
                     "cmd_vel_feedback", cmdVelQos, std::bind(&MCL_3D::cmdVelCallback, this, std::placeholders::_1)
                 );
@@ -219,7 +222,14 @@ namespace mcl {
         private:
             // コールバック関数群
             void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) {
-                cmdVel_ = msg;
+                std::lock_guard<std::mutex> lock(vel_mutex_);
+                
+                cmd_vel_history_.push_back(*msg);
+                
+                // 100件を超えたら古いものから削除
+                if (cmd_vel_history_.size() > MAX_HISTORY) {
+                    cmd_vel_history_.pop_front();
+                }
             }
 
             // void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
@@ -383,7 +393,7 @@ namespace mcl {
                     if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
                     
                     double dist_sq = x*x + y*y + z*z;
-                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
+                    if (dist_sq < 0.5*0.5 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
 
                     if ( z > 1.5) continue;
 
@@ -530,18 +540,31 @@ namespace mcl {
                     }
                 }
                 
-                if (!cmdVel_) return;
+                geometry_msgs::msg::Twist avg_vel;
+                {
+                    std::lock_guard<std::mutex> lock(vel_mutex_);
+                    if (cmd_vel_history_.empty()) return;
+
+                    double sum_vx = 0.0, sum_vy = 0.0, sum_omega = 0.0;
+                    for (const auto& v : cmd_vel_history_) {
+                        sum_vx += v.linear.x;
+                        sum_vy += v.linear.y;
+                        sum_omega += v.angular.z;
+                    }
+                    
+                    size_t n = cmd_vel_history_.size();
+                    avg_vel.linear.x = sum_vx / n;
+                    avg_vel.linear.y = sum_vy / n;
+                    avg_vel.angular.z = sum_omega / n;
+                }
 
                 double dt = 0.100; // 100ms
-                            
-                std::double_t vx_ = cmdVel_->linear.x;
-                std::double_t vy_ = cmdVel_->linear.y;
-                std::double_t omega_ = cmdVel_->angular.z;
                 
+                // 平均速度を使用してデルタ（移動量）を計算
                 geometry_msgs::msg::Twist delta_;
-                delta_.linear.x = vx_ * dt;
-                delta_.linear.y = vy_ * dt;
-                delta_.angular.z = omega_ * dt;
+                delta_.linear.x = avg_vel.linear.x * dt;
+                delta_.linear.y = avg_vel.linear.y * dt;
+                delta_.angular.z = avg_vel.angular.z * dt;
 
                 updateParticles(delta_);
                 printParticlesMakerOnRviz2();
@@ -551,7 +574,7 @@ namespace mcl {
                 estimatePose();
                 resampleParticles();
                 printTrajectoryOnRviz2();
-                publishVelocityMarker();
+                publishVelocityMarker(avg_vel);
                 
             }
 
@@ -771,8 +794,8 @@ namespace mcl {
             }
           
             
-            void publishVelocityMarker() {
-                if (!cmdVel_) return;
+            void publishVelocityMarker(const geometry_msgs::msg::Twist& v_avg) {
+                //if (!cmdVel_) return;
 
                 visualization_msgs::msg::Marker marker;
                 marker.header.frame_id = "map";
@@ -786,8 +809,8 @@ namespace mcl {
                 marker.pose.position.y = mclPose_.position.y;
                 marker.pose.position.z = mclPose_.position.z; 
 
-                double vel_angle = std::atan2(cmdVel_->linear.y, cmdVel_->linear.x);
-                double speed = std::sqrt(cmdVel_->linear.x * cmdVel_->linear.x + cmdVel_->linear.y * cmdVel_->linear.y);
+                double vel_angle = std::atan2(v_avg.linear.y, v_avg.linear.x);
+                double speed = std::sqrt(v_avg.linear.x * v_avg.linear.x + v_avg.linear.y * v_avg.linear.y);
 
                 tf2::Quaternion q_mcl(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
                 tf2::Matrix3x3 m(q_mcl);
@@ -957,7 +980,7 @@ namespace mcl {
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
                 for (std::size_t i = 0; i < particles_.size(); i++) {
-                    // --- 追加：範囲チェック (2.5m = 250cm) ---
+                    // --- 追加：範囲チェック (m = 25cm) ---
                     double px = particles_[i].getX();
                     double py = particles_[i].getY();
 
@@ -1192,6 +1215,10 @@ namespace mcl {
             double odomNoise1_, odomNoise2_, odomNoise3_, odomNoise4_;
             double resampleThreshold_;
             bool is_sim_; 
+
+            std::deque<geometry_msgs::msg::Twist> cmd_vel_history_;
+            std::mutex vel_mutex_;
+            const size_t MAX_HISTORY = 100;
     };
 }
 
