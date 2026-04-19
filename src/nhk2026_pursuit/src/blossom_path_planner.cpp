@@ -254,12 +254,12 @@ namespace nhk2026_pursuit::blossom_path{
             // {4,2},
             // {5,2},
 
-            {0,2},
-            {1,2},
-            {2,2},
-            {3,2},
-            {4,2},
-            {5,2},
+            {0,1},
+            {1,1},
+            {2,1},
+            {3,1},
+            {4,1},
+            {5,1},
         };
         
         std::vector<geometry_msgs::msg::Pose> waypoints = grid2World(grids);
