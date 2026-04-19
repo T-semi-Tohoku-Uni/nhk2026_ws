@@ -138,6 +138,7 @@ class FollowNode: public rclcpp::Node {
                 "pose", poseQos, std::bind(&FollowNode::odomCallback, this, std::placeholders::_1)
             );
             cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+            pub_initial_pose_ = this->create_publisher<geometry_msgs::msg::Pose>("initial_pose", 10);
 
             timer_ = rclcpp::create_timer(
                 this,
@@ -310,6 +311,12 @@ class FollowNode: public rclcpp::Node {
                     }
                 }
             );
+            geometry_msgs::msg::Pose initpose;
+            initpose.position.x = target_x;
+            initpose.position.y = target_y;
+            initpose.position.z = target_z;
+            initpose.orientation = pose_.orientation;
+            pub_initial_pose_->publish(initpose);
         }
 
         void rotate(double targetTheta) {
@@ -836,6 +843,7 @@ class FollowNode: public rclcpp::Node {
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmd_vel_arrow_pub;
+        rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub_initial_pose_;
         rclcpp::TimerBase::SharedPtr timer_;
         std::vector<geometry_msgs::msg::PoseStamped> path_;
         std::mutex mutex_;
