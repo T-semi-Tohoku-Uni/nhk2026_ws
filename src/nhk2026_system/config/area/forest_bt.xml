@@ -52,7 +52,7 @@
       </Delay>
       <follow_route/>
       <generate_route x="-3.0"
-                      y="5.0"
+                      y="5.1"
                       theta="0.0"/>
       <follow_route/>
       <step_move command="step up"/>
@@ -66,10 +66,8 @@
                         theta="0.0"/>
       </Delay>
       <follow_route/>
-      <generate_route x="-3.0"
-                      y="6.2"
-                      theta="3.14"/>
-      <follow_route/>
+      <rotate_sub target_theta="3.14"
+                  tolerance="0.05"/>
       <step_move command="step  down"/>
       <reset_mcl x="-3.0"
                  y="7.4"
@@ -102,6 +100,12 @@
       <input_port name="y"/>
       <input_port name="z"/>
       <input_port name="theta"/>
+    </Action>
+    <Action ID="rotate_sub"
+            editable="true">
+      <input_port name="target_theta"/>
+      <input_port name="tolerance"
+                  default="0.05"/>
     </Action>
     <Action ID="step_move"
             editable="true">
