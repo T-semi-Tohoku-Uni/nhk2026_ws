@@ -89,7 +89,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
-            this->declare_parameter<double>("wait_time_", 0.20);
+            this->declare_parameter<double>("wait_time_", 10.0);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -238,19 +238,26 @@ class FollowNode: public rclcpp::Node {
             
             // アクション完了時のコールバックを登録
             send_goal_options.result_callback = [this](const GoalHandleStepMove::WrappedResult & result) {
-                is_action_busy_ = false; // アクションが終わったらフラグを下ろす
+                // ここで即座に false にせず、待機が終わるまで true を維持するのがコツ！
+                // is_action_busy_ = false; // ← ここでは消す
+
                 if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                    RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
-
+                    RCLCPP_INFO(this->get_logger(), "Step completed. Teleporting and waiting 5s...");
                     resetRealPose(); 
-                    RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
-                    rclcpp::WallRate rate(1.0 / wait_time_); 
 
+                    // 5秒後にフラグを下ろす予約だけして、コールバックはすぐ抜ける
+                    this->wait_timer_ = this->create_wall_timer(
+                        std::chrono::duration<double>(wait_time_), // 5.0
+                        [this]() {
+                            this->is_action_busy_ = false; // 5秒経ってから制御再開を許可
+                            this->wait_timer_->cancel();   // タイマーを止める
+                            RCLCPP_INFO(this->get_logger(), "Ready to move again!");
+                        }
+                    );
                 } else {
-                    RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
+                    is_action_busy_ = false; 
                 }
             };
-
             //実機でテストするためコメントアウト simulation real
             this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
@@ -851,6 +858,7 @@ class FollowNode: public rclcpp::Node {
         std::vector<geometry_msgs::msg::PoseStamped> path_;
         std::mutex mutex_;
         geometry_msgs::msg::Pose pose_;
+        rclcpp::TimerBase::SharedPtr wait_timer_;
 
         rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedPtr reset_pose_client_;
 
@@ -882,7 +890,7 @@ class FollowNode: public rclcpp::Node {
         double offset_z_ = 0.02; 
 
         //wait
-        double wait_time_ = 0.5;
+        double wait_time_ = 5.0;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
