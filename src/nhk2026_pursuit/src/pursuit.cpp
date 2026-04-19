@@ -245,6 +245,7 @@ class FollowNode: public rclcpp::Node {
                     resetRealPose(); 
                     RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
                     rclcpp::WallRate rate(1.0 / wait_time_); 
+                    RCLCPP_INFO(this->get_logger(), "waittime");
 
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
