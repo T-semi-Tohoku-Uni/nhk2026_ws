@@ -25,6 +25,7 @@
 #include <deque> 
 #include <numeric>
 #include <mutex>
+#include <omp.h>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -979,7 +980,7 @@ namespace mcl {
                 // 各パーティクルの合計対数尤度を格納する配列 (サイズはパーティクル数のみ)
                 std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
-
+                #pragma omp parallel for reduction(max: max_log_weight)
                 for (std::size_t i = 0; i < particles_.size(); i++) {
                     // --- 追加：範囲チェック (m = 25cm) ---
                     double px = particles_[i].getX();
