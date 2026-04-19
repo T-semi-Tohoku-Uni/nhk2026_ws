@@ -8,29 +8,46 @@
                 z="0.711455"
                 roll="-1.57"
                 max_speed="0.2"
-                max_acc="0.01"/>
+                max_acc="0.1"/>
       <move_arm y="0.011076"
-                z="0.611455"
+                z="0.64"
                 roll="-1.57"
                 max_speed="0.2"
-                max_acc="0.01"/>
+                max_acc="0.1"/>
       <service_vacuum value="true"/>
       <move_arm y="0.011076"
                 z="0.852822"
                 roll="-1.57"
                 max_speed="0.2"
-                max_acc="0.01"/>
+                max_acc="0.1"/>
       <move_arm y="0.139777"
                 z="1.032562"
                 roll="0.15"
                 max_speed="0.2"
-                max_acc="0.01"/>
+                max_acc="0.1"/>
       <move_arm y="0.404131"
                 z="1.028237"
                 roll="0.14"
                 max_speed="0.2"
-                max_acc="0.01"/>
+                max_acc="0.1"/>
       <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>

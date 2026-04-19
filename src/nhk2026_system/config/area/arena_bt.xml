@@ -7,18 +7,33 @@
   <BehaviorTree ID="Arena">
     <Sequence>
       <generate_route x="-3.0"
-                      y="7.0"
-                      theta="-1.57"/>
-      <follow_route/>
-      <waypoint x="-4.5"
-                y="7.7"/>
-      <waypoint x="-4.5"
-                y="9.0"/>
-      <generate_route x="-2"
                       y="9.0"
                       theta="-1.57"/>
       <follow_route/>
+      <waypoint x="-5.5"
+                y="9.7"/>
+      <waypoint x="-5.5"
+                y="11.0"/>
+      <waypoint x="-2"
+                y="11"/>
+      <generate_route x="-0.5"
+                      y="11.3"
+                      theta="-1.57"/>
+      <ForceSuccess>
+        <Timeout msec="120000">
+          <follow_route/>
+        </Timeout>
+      </ForceSuccess>
       <SubTree ID="arm_put_shelf"/>
+      <generate_route x="-2"
+                      y="11"
+                      theta="-1.57"/>
+      <follow_route/>
+      <move_arm y="0.1"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.1"/>
     </Sequence>
   </BehaviorTree>
 
@@ -32,6 +47,14 @@
       <input_port name="y"/>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
     </Action>
     <Action ID="waypoint"
             editable="true">
