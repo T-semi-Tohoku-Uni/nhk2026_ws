@@ -57,6 +57,10 @@
       <input_port name="target_theta"/>
       <input_port name="tolerance" default="0.05"/>
     </Action>
+    
+    <Action ID="service_vacuum_stack" editable="true">
+      <input_port name="value"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
