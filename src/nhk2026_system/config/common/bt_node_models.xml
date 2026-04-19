@@ -64,5 +64,10 @@
       <input_port name="omega"/>
       <input_port name="pub_msec"/>
     </SubTree>
+    
+    <SubTree ID="rotate">
+      <input_port name="target_theta"/>
+      <input_port name="omega"/>
+    </SubTree>
   </TreeNodesModel>
 </root>
