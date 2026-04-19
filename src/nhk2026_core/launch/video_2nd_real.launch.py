@@ -306,6 +306,13 @@ def generate_launch_description():
         output="screen",
         namespace=name_space,
     )
+    vacuum_stack_server_node = Node(
+        package="nhk2026_control",
+        executable="vacuum_stack_server",
+        name="vacuum_stack_server",
+        output="screen",
+        namespace=name_space,
+    )
     """ide arm nodes end"""
 
     """pursuit nodes begin"""
@@ -354,6 +361,7 @@ def generate_launch_description():
         joint_state_publisher_ide_arm_node,
         arm_path_plan_node,
         vacuum_server_node,
+        vacuum_stack_server_node,
         path_planner,
         jsp_node,
     ])

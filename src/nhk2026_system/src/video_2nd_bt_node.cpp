@@ -70,6 +70,10 @@ int main(int argc, char ** argv)
     service_params.nh = node;
     service_params.default_port_value = "vacuum";
 
+    BT::RosNodeParams stack_service_params;
+    stack_service_params.nh = node;
+    stack_service_params.default_port_value = "vacuum_stack";
+
     BT::RosNodeParams trigger_params;
     trigger_params.nh = node;
     trigger_params.default_port_value = "trigger";
@@ -98,6 +102,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<LinearPath>("linear_path", linear_path_params);
     factory.registerNodeType<MoveArmAction>("move_arm", action_params);
     factory.registerNodeType<ServiceVacuum>("service_vacuum", service_params);
+    factory.registerNodeType<ServiceVacuum>("service_vacuum_stack", stack_service_params);
     factory.registerNodeType<TriggerTopic>("trigger_topic", trigger_params);
     factory.registerNodeType<TakanoHandAction>("takano_hand", takano_hand_params);
     factory.registerNodeType<StepMoveAction>("step_move", step_params);
