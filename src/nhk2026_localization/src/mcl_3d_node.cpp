@@ -390,15 +390,15 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    // if (std::abs(z_map - 0.00) <= 0.03 ||
-                    //     std::abs(z_map - 0.20) <= 0.03 ||
-                    //     std::abs(z_map - 0.40) <= 0.03) {
-                    //     continue;
-                    // }
+                     if (std::abs(z_map - 0.00) <= 0.03 ||
+                         std::abs(z_map - 0.20) <= 0.03 ||
+                         std::abs(z_map - 0.40) <= 0.03) {
+                         continue;
+                     }
 
-                    if (std::abs(z_map - 0.00) <= 0.03){
-                        continue;
-                    }
+                    //if (std::abs(z_map - 0.00) <= 0.03){
+                    //    continue;
+                    //}
 
                     Point3D pt;
                     pt.x = x;
@@ -665,7 +665,7 @@ namespace mcl {
                     if (has_external_quat_) {
                         // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
                         // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
-                        theta_new = ext_yaw + randNormal(0.000); // 0.005rad程度の微小ノイズ
+                        theta_new = ext_yaw + randNormal(0.001); // 0.005rad程度の微小ノイズ
                     } else {
                         // 外部姿勢がない場合は従来のオドメトリ
                         std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
@@ -961,7 +961,7 @@ namespace mcl {
                     double px = particles_[i].getX();
                     double py = particles_[i].getY();
 
-                    if (std::abs(px - anchor_x_) > 0.25 || std::abs(py - anchor_y_) > 0.25) {
+                    if (std::abs(px - anchor_x_) > 0.35 || std::abs(py - anchor_y_) > 0.35) {
                         // 範囲外なら存在確率を 0 にする（対数なので -inf）
                         log_weights[i] = -std::numeric_limits<double>::infinity();
                     } else {
