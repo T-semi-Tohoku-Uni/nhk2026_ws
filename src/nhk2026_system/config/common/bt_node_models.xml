@@ -61,6 +61,12 @@
     <Action ID="service_vacuum_stack" editable="true">
       <input_port name="value"/>
     </Action>
+    
+    <Action ID="reset_mcl" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
