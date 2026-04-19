@@ -48,7 +48,7 @@ class MclManage : public rclcpp::Node {
             }
             int new_level = msg->data[0];
 
-            if(new_level == 10){
+            if(new_level > 4){
                 
                 if(current_zaxis_level_ == 0){
                     if (has_pose_) {
