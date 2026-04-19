@@ -242,7 +242,7 @@ private:
                         target_robomas = 0.0f;
                         target_leg_pos_ = {3.14 + count * 6.28, 3.14 + count * 6.28, 0.0};
                         feedbacktype = 0;
-                        if (leg_reached()) { zaxics_count--; next_step(step, state_start_time); }
+                        if (leg_reached()) {next_step(step, state_start_time); }
                         break;
                     case 9:
                         leg_max_speed_ = 50.0; leg_max_acc_ = 20.0;
