@@ -48,7 +48,7 @@ livox_ros2_params = [
 ]
 
 def generate_launch_description():
-    x = -4.4
+    x = -4.2
     y = 6.2
     z = 0.20
     theata = 0.0
@@ -179,7 +179,7 @@ def generate_launch_description():
                 # MCLのパラメータ
                 "particleNum": 300,
                 "mapResolution": 0.01,
-                "lfmSigma": 0.1,
+                "lfmSigma": 0.05,
                 "odomNoise1": 0.7,
                 "odomNoise2": 0.5,
                 "odomNoise3": 0.8,

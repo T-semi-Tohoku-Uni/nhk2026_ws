@@ -401,7 +401,7 @@ namespace mcl {
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
                      if (std::abs(z_map - 0.00) <= 0.03 ||
-                         std::abs(z_map - 0.20) <= 0.03 ||
+                         std::abs(z_map - 0.20) <= 0.04 ||
                          std::abs(z_map - 0.40) <= 0.03) {
                          continue;
                      }
