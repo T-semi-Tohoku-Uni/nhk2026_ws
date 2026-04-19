@@ -13,6 +13,8 @@
 
   <include path="common/bt_vel_tim.xml"/>
 
+  <include path="common/bt_rotate.xml"/>
+
   <BehaviorTree ID="MainTree">
     <Sequence>
       <SubTree ID="Forest"
