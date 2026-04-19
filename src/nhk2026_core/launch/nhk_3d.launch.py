@@ -169,21 +169,27 @@ def generate_launch_description():
         output="screen",
         parameters=[
             {
-                # ロボットの初期位置(x, y, theta)とMCLの初期位置を一致させる
+                # --- 初期位置設定 ---
                 "initial_x": x,
                 "initial_y": y,
                 "initial_z": z,
                 "initial_theta": theata,
                 
-                
-                # MCLのパラメータ
+              
                 "particleNum": 300,
                 "mapResolution": 0.01,
-                "lfmSigma": 0.05,
-                "odomNoise1": 0.7,
-                "odomNoise2": 0.5,
-                "odomNoise3": 0.8,
-                "odomNoise4": 0.5,
+                
+                "lfmSigma": 0.03, 
+             
+                "zHit": 0.95,
+                "zRand": 0.05,
+
+                "odomNoise1": 0.7, # 直進移動に対するx,yのノイズ
+                "odomNoise2": 0.5, # 回転移動に対するx,yのノイズ
+                "odomNoise3": 0.8, # 直進移動に対するθのノイズ
+                "odomNoise4": 0.5, # 回転移動に対するθのノイズ
+
+                "resampleThreshold": 0.5,
             },
         ],
     )
