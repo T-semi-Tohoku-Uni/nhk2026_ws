@@ -308,7 +308,7 @@ def generate_launch_description():
     )
     vacuum_stack_server_node = Node(
         package="nhk2026_control",
-        executable="vacuum_stack_server",
+        executable="vacuum_stack_servier",
         name="vacuum_stack_server",
         output="screen",
         namespace=name_space,

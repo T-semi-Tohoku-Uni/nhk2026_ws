@@ -15,7 +15,7 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="Arena"/>
+      <SubTree ID="MartialClub"/>
     </Sequence>
   </BehaviorTree>
 
