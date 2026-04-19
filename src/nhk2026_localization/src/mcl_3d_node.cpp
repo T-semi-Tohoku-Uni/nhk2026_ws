@@ -339,6 +339,7 @@ namespace mcl {
             //     }
             // }
             
+            
             void pointCloudCallback(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
                 // 古い点群データをクリア
                 local_points_.clear();
@@ -346,13 +347,14 @@ namespace mcl {
                 sensor_msgs::msg::PointCloud2 cloud_out;
 
                 try {
+                    // base_footprint（ロボット中心座標系）への変換を取得
                     geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
                         "base_footprint", 
                         msg->header.frame_id, 
                         tf2::TimePointZero
                     );
 
-                    
+                    // 点群を base_footprint 座標系に変換
                     tf2::doTransform(*msg, cloud_out, transform);
 
                 } catch (const tf2::TransformException & ex) {
@@ -362,12 +364,24 @@ namespace mcl {
                     return;
                 }
 
-                
+                // ロボットの現在の姿勢（mclPose_）からYaw角を取得し、回転行列の準備をする
+                tf2::Quaternion q(
+                    mclPose_.orientation.x,
+                    mclPose_.orientation.y,
+                    mclPose_.orientation.z,
+                    mclPose_.orientation.w);
+                tf2::Matrix3x3 m(q);
+                double roll, pitch, yaw;
+                m.getRPY(roll, pitch, yaw);
+
+                double cos_y = std::cos(yaw);
+                double sin_y = std::sin(yaw);
+
+                // イテレータの準備
                 sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
                 sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
 
-            
                 int step = 1; 
                 int count = 0;
 
@@ -379,28 +393,36 @@ namespace mcl {
                     float y = *iter_y;
                     float z = *iter_z;
 
-                    
+                    // NaNチェック
                     if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
                     
+                    // ロボットからの距離によるフィルタ
                     double dist_sq = x*x + y*y + z*z;
-                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; // 0.2m以下、30m以上は無視
+                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; 
 
-                    
-
+                    // --- マップ座標系への変換 ---
+                    // ロボットの向き(Yaw)を考慮して回転させ、ロボットの現在位置を足す
+                    double x_map = x * cos_y - y * sin_y + mclPose_.position.x;
+                    double y_map = x * sin_y + y * cos_y + mclPose_.position.y;
                     double z_map = z + mclPose_.position.z;
-                    if ( z_map > 0.5) continue;
 
-                    // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                     if (std::abs(z_map - 0.00) <= 0.03 ||
-                         std::abs(z_map - 0.20) <= 0.03 ||
-                         std::abs(z_map - 0.40) <= 0.03) {
-                         continue;
-                     }
+                    // --- X / Y 範囲フィルタリング ---
+                    // 指定された範囲外の点は除外
+                    if (x_map < -4.825 || x_map > -1.225 || y_map < 3.2 || y_map > 8.0) {
+                        continue;
+                    }
 
-                    //if (std::abs(z_map - 0.00) <= 0.03){
-                    //    continue;
-                    //}
+                    // --- Z軸（高さ）フィルタリング ---
+                    if (z_map > 0.5) continue;
 
+                    // 特定の高さ（床や段差の面など）を誤差考慮(±3cm)で除外
+                    if (std::abs(z_map - 0.00) <= 0.03 ||
+                        std::abs(z_map - 0.20) <= 0.03 ||
+                        std::abs(z_map - 0.40) <= 0.03) {
+                        continue;
+                    }
+
+                    // 通過した点を保存
                     Point3D pt;
                     pt.x = x;
                     pt.y = y;
@@ -408,14 +430,11 @@ namespace mcl {
                     local_points_.push_back(pt);
                 }
 
-                // デバッグ用: 何点抽出されたか表示
-                // RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, 
-                //    "Extracted %zu points for MCL.", local_points_.size());
-
+                // 抽出された点がある場合、デバッグ用にPointCloud2として再パブリッシュ
                 if (!local_points_.empty()) {
                     sensor_msgs::msg::PointCloud2 filtered_cloud_msg;
-                    filtered_cloud_msg.header.stamp = msg->header.stamp; // 元のLiDARのタイムスタンプを使用
-                    filtered_cloud_msg.header.frame_id = "base_footprint"; // 変換済みの座標系
+                    filtered_cloud_msg.header.stamp = msg->header.stamp;
+                    filtered_cloud_msg.header.frame_id = "base_footprint"; 
                     filtered_cloud_msg.height = 1;
                     filtered_cloud_msg.width = local_points_.size();
                     filtered_cloud_msg.is_dense = true;
@@ -439,7 +458,6 @@ namespace mcl {
                     filtered_cloud_pub_->publish(filtered_cloud_msg);
                 }
             }
-
             void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
                 // 1. 推定位置 (mclPose_) を受信したメッセージで更新
                 // msgは Pose型なので、そのまま position と orientation をコピー
