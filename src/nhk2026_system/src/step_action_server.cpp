@@ -180,8 +180,12 @@ private:
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                         
                         break;
-                    default:
+                    case 10:
                         zaxics_count = nowzaxices;
+                        if (elapsed_sec(state_start_time) > 1.0) next_step(step, state_start_time);
+                        break:
+                    default:
+                        
                         count++;
                         stop_all();
                         RCLCPP_INFO(this->get_logger(), "=== 段上りシーケンス開始 (count: %d) ===", count);
@@ -259,6 +263,9 @@ private:
                         if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                         
                         break;
+                    case 11:
+                        zaxics_count = nowzaxices;
+                        if (elapsed_sec(state_start_time) > 2.0) next_step(step, state_start_time);
                     default:
                         zaxics_count = nowzaxices;
                         stop_all();
