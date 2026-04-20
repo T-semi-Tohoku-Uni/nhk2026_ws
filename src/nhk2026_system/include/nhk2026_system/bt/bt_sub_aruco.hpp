@@ -17,6 +17,7 @@ public:
 
     static BT::PortsList providedPorts();
     BT::NodeStatus onTick(const std::shared_ptr<nhk2026_msgs::msg::ArucoPose>& msg) override;
-    bool latchLastMessage() const override { return true; }
-    
+    bool latchLastMessage() const override { return false; }
+private:
+    bool armed_ = false;
 };
