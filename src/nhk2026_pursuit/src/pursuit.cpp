@@ -200,7 +200,7 @@ class FollowNode: public rclcpp::Node {
 
         void pathCallback(nhk2026_msgs::msg::PathWithBox msgs) {
             // std::lock_guard<std::mutex> lock(mutex_);
-            path_ = msgs.path.poses;
+            path_ = msgs;
             current_waypoint_index_ = 0;
         }
         void odomCallback(geometry_msgs::msg::Pose msgs) {
@@ -226,8 +226,8 @@ class FollowNode: public rclcpp::Node {
 
             //実機でしっかりとwaypointが先に進むように simulation real
             int index = current_waypoint_index_ + 1;
-            while (index + 1 < static_cast<int>(path_.size()) &&
-                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+            while (index + 1 < static_cast<int>(path_.path.poses.size()) &&
+                std::abs(path_.path.poses[index].pose.position.z - path_.path.poses[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
             current_waypoint_index_ = index;
@@ -254,17 +254,17 @@ class FollowNode: public rclcpp::Node {
         
 
         void resetWaypointIndex(double reset_x, double reset_y) {
-            if (path_.empty()) return;
+            if (path_.path.poses.empty()) return;
 
             int nearest_index = 0;
 
-            for (int i = 0; i < static_cast<int>(path_.size()); i++) {
-                double dx = path_[i].pose.position.x - reset_x;
-                double dy = path_[i].pose.position.y - reset_y;
+            for (int i = 0; i < static_cast<int>(path_.path.poses.size()); i++) {
+                double dx = path_.path.poses[i].pose.position.x - reset_x;
+                double dy = path_.path.poses[i].pose.position.y - reset_y;
                 double dist = std::hypot(dx, dy);
 
                 if (dist < max_linear_tolerance) {
-                    if (std::abs(getYaw(path_[i+1].pose.orientation) - getYaw(path_[i].pose.orientation)) > 1e-2){
+                    if (std::abs(getYaw(path_.path.poses[i+1].pose.orientation) - getYaw(path_.path.poses[i].pose.orientation)) > 1e-2){
                         current_waypoint_index_ = i;
                         return; 
                     }
@@ -280,15 +280,15 @@ class FollowNode: public rclcpp::Node {
             // zが変化しなくなるまでインデックスを進める
             int index = current_waypoint_index_ + 1;   
             
-            while (index + 1 < static_cast<int>(path_.size()) &&
-                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+            while (index + 1 < static_cast<int>(path_.path.poses.size()) &&
+                std::abs(path_.path.poses[index].pose.position.z - path_.path.poses[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
 
             // zが変化しなくなったindexの座標をteleport先に設定
-            double target_x = path_[index].pose.position.x;
-            double target_y = path_[index].pose.position.y;
-            double target_z = path_[index].pose.position.z;
+            double target_x = path_.path.poses[index].pose.position.x;
+            double target_y = path_.path.poses[index].pose.position.y;
+            double target_z = path_.path.poses[index].pose.position.z;
 
             std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
                 std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
@@ -324,7 +324,7 @@ class FollowNode: public rclcpp::Node {
                 publishZero();
                 is_rotating_ = false;
                 RCLCPP_INFO(this->get_logger(), "Rotation completed.");
-                if (current_waypoint_index_ + 1 < (int)path_.size()) {
+                if (current_waypoint_index_ + 1 < (int)path_.path.poses.size()) {
                     current_waypoint_index_++; 
                 }
                 return;
@@ -357,15 +357,15 @@ class FollowNode: public rclcpp::Node {
             //あとでジャンプ前と後の姿勢を同じようにする。
             // geometry_msgs::msg::Pose init_pose = path_[index].pose;
 
-            while (index + 1 < static_cast<int>(path_.size()) &&
-                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
+            while (index + 1 < static_cast<int>(path_.path.poses.size()) &&
+                std::abs(path_.path.poses[index].pose.position.z - path_.path.poses[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
 
             // zが変化しなくなったindexの座標をteleport先に設定
-            double target_x = path_[index].pose.position.x;
-            double target_y = path_[index].pose.position.y;
-            double target_z = path_[index].pose.position.z;
+            double target_x = path_.path.poses[index].pose.position.x;
+            double target_y = path_.path.poses[index].pose.position.y;
+            double target_z = path_.path.poses[index].pose.position.z;
 
             ignition::msgs::Pose req;
             ignition::msgs::Boolean rep;
@@ -426,15 +426,15 @@ class FollowNode: public rclcpp::Node {
                 publishZero();
                 return;
             }
-            if (path_.empty()){
+            if (path_.path.poses.empty()){
                 publishZero();
                 return;
             }
             if (is_rotating_) {
                 // 次の点があればその角度、なければ最終地点の角度をターゲットにする
-                double target_yaw = (current_waypoint_index_ + 1 < (int)path_.size()) ? 
-                                    getYaw(path_[current_waypoint_index_+1].pose.orientation) : 
-                                    getYaw(path_.back().pose.orientation);
+                double target_yaw = (current_waypoint_index_ + 1 < (int)path_.path.poses.size()) ? 
+                                    getYaw(path_.path.poses[current_waypoint_index_+1].pose.orientation) : 
+                                    getYaw(path_.path.poses.back().pose.orientation);
                 rotate(target_yaw);
                 return;
             }
@@ -451,23 +451,23 @@ class FollowNode: public rclcpp::Node {
 
             // publish goal position
             geometry_msgs::msg::Pose target_pose;
-            target_pose.position.x = path_[current_waypoint_index_].pose.position.x;
-            target_pose.position.y = path_[current_waypoint_index_].pose.position.y;
+            target_pose.position.x = path_.path.poses[current_waypoint_index_].pose.position.x;
+            target_pose.position.y = path_.path.poses[current_waypoint_index_].pose.position.y;
             //goal_pose.theta = path_[]
 
             target_pub_ ->publish(target_pose);
 
             //error calculation linear
-            double dx = path_[current_waypoint_index_].pose.position.x - pose_.position.x;
-            double dy = path_[current_waypoint_index_].pose.position.y - pose_.position.y;
-            double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
-            double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
+            double dx = path_.path.poses[current_waypoint_index_].pose.position.x - pose_.position.x;
+            double dy = path_.path.poses[current_waypoint_index_].pose.position.y - pose_.position.y;
+            double tx = path_.path.poses[current_waypoint_index_+1].pose.position.x - path_.path.poses[current_waypoint_index_].pose.position.x;
+            double ty = path_.path.poses[current_waypoint_index_+1].pose.position.y - path_.path.poses[current_waypoint_index_].pose.position.y;
             double norm = std::hypot(tx, ty);
 
             //if norm == 0.0 then use the previous segment to calculate the tangent vector. This is for the case when there are consecutive waypoints with the same position but different orientations.
             if (norm < 1e-6 && current_waypoint_index_ > 0) {
-                tx = path_[current_waypoint_index_].pose.position.x - path_[current_waypoint_index_-1].pose.position.x;
-                ty = path_[current_waypoint_index_].pose.position.y - path_[current_waypoint_index_-1].pose.position.y;
+                tx = path_.path.poses[current_waypoint_index_].pose.position.x - path_.path.poses[current_waypoint_index_-1].pose.position.x;
+                ty = path_.path.poses[current_waypoint_index_].pose.position.y - path_.path.poses[current_waypoint_index_-1].pose.position.y;
                 norm = std::hypot(tx, ty);
             }
             if (norm > 0) {
@@ -479,17 +479,17 @@ class FollowNode: public rclcpp::Node {
             double error_tan = dx * tx + dy * ty;
             double error_norm = dx * nx + dy * ny;
             double linear_error = std::hypot(dx, dy);
-            double linear_goal_x = path_[path_.size() -1].pose.position.x - pose_.position.x;
-            double linear_goal_y = path_[path_.size() -1].pose.position.y - pose_.position.y;
+            double linear_goal_x = path_.path.poses[path_.path.poses.size() -1].pose.position.x - pose_.position.x;
+            double linear_goal_y = path_.path.poses[path_.path.poses.size() -1].pose.position.y - pose_.position.y;
             double linear_goal_distance = std::hypot(linear_goal_x, linear_goal_y);
 
 
             //quoternion to yaw
             tf2::Quaternion q(
-                path_[current_waypoint_index_].pose.orientation.x,
-                path_[current_waypoint_index_].pose.orientation.y,
-                path_[current_waypoint_index_].pose.orientation.z,
-                path_[current_waypoint_index_].pose.orientation.w
+                path_.path.poses[current_waypoint_index_].pose.orientation.x,
+                path_.path.poses[current_waypoint_index_].pose.orientation.y,
+                path_.path.poses[current_waypoint_index_].pose.orientation.z,
+                path_.path.poses[current_waypoint_index_].pose.orientation.w
             );
 
             double roll, pitch, yaw;
@@ -500,10 +500,10 @@ class FollowNode: public rclcpp::Node {
             while (theta_error < -M_PI) theta_error += 2*M_PI;
 
             tf2::Quaternion q_goal(
-                path_[path_.size() - 1].pose.orientation.x,
-                path_[path_.size() - 1].pose.orientation.y,
-                path_[path_.size() - 1].pose.orientation.z,
-                path_[path_.size() - 1].pose.orientation.w
+                path_.path.poses[path_.path.poses.size() - 1].pose.orientation.x,
+                path_.path.poses[path_.path.poses.size() - 1].pose.orientation.y,
+                path_.path.poses[path_.path.poses.size() - 1].pose.orientation.z,
+                path_.path.poses[path_.path.poses.size() - 1].pose.orientation.w
             );
 
             double roll_goal, pitch_goal, yaw_goal;
@@ -513,7 +513,7 @@ class FollowNode: public rclcpp::Node {
 
             //error calculation theta
             double target_theta = yaw;
-            printWayPointArrow(path_[current_waypoint_index_].pose, path_[path_.size()-1].pose);
+            printWayPointArrow(path_.path.poses[current_waypoint_index_].pose, path_.path.poses[path_.path.poses.size()-1].pose);
 
            // --- ★ここから修正版：RVizに表示するためのMarker publish ---
             visualization_msgs::msg::Marker marker;
@@ -524,9 +524,9 @@ class FollowNode: public rclcpp::Node {
             marker.type = visualization_msgs::msg::Marker::SPHERE;
             marker.action = visualization_msgs::msg::Marker::ADD;
 
-            marker.pose.position.x = path_[current_waypoint_index_].pose.position.x;
-            marker.pose.position.y = path_[current_waypoint_index_].pose.position.y;
-            marker.pose.position.z = path_[current_waypoint_index_].pose.position.z;
+            marker.pose.position.x = path_.path.poses[current_waypoint_index_].pose.position.x;
+            marker.pose.position.y = path_.path.poses[current_waypoint_index_].pose.position.y;
+            marker.pose.position.z = path_.path.poses[current_waypoint_index_].pose.position.z;
             marker.pose.orientation.w = 1.0;
 
             // 点の大きさ
@@ -548,11 +548,11 @@ class FollowNode: public rclcpp::Node {
 
 
             while (max_linear_tolerance > linear_error) {
-                if (current_waypoint_index_+1 >= static_cast<int>(path_.size())) break;
+                if (current_waypoint_index_+1 >= static_cast<int>(path_.path.poses.size())) break;
 
                 // zの変化があればジャンプアクションを呼び出す
-                double dz = path_[current_waypoint_index_ +1].pose.position.z
-                        - path_[current_waypoint_index_].pose.position.z;
+                double dz = path_.path.poses[current_waypoint_index_ +1].pose.position.z
+                        - path_.path.poses[current_waypoint_index_].pose.position.z;
 
                 if (std::abs(dz) > 0.0) {  
                     if (linear_error < max_reaching_distance) {
@@ -564,7 +564,7 @@ class FollowNode: public rclcpp::Node {
                 }
 
                 //角で止まってほしかったが、角になる直前の直線の点で止まるようになっている。（num_pointの数を増やしてごまかしている。）
-                if (std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) > 1e-2) {
+                if (std::abs(getYaw(path_.path.poses[current_waypoint_index_].pose.orientation) - getYaw(path_.path.poses[current_waypoint_index_+1].pose.orientation)) > 1e-2) {
 
                     if(linear_error < max_reaching_distance){
                         RCLCPP_INFO(this->get_logger(), "Approaching rotation point. Initiating rotation.");
@@ -575,16 +575,16 @@ class FollowNode: public rclcpp::Node {
 
                 current_waypoint_index_++;
                 linear_error = std::hypot(
-                    path_[current_waypoint_index_].pose.position.x - pose_.position.x, 
-                    path_[current_waypoint_index_].pose.position.y - pose_.position.y
+                    path_.path.poses[current_waypoint_index_].pose.position.x - pose_.position.x, 
+                    path_.path.poses[current_waypoint_index_].pose.position.y - pose_.position.y
                 );        
             }
 
-            while (current_waypoint_index_+1 < static_cast<int>(path_.size())) {
-                double tx = path_[current_waypoint_index_+1].pose.position.x - path_[current_waypoint_index_].pose.position.x;
-                double ty = path_[current_waypoint_index_+1].pose.position.y - path_[current_waypoint_index_].pose.position.y;
+            while (current_waypoint_index_+1 < static_cast<int>(path_.path.poses.size())) {
+                double tx = path_.path.poses[current_waypoint_index_+1].pose.position.x - path_.path.poses[current_waypoint_index_].pose.position.x;
+                double ty = path_.path.poses[current_waypoint_index_+1].pose.position.y - path_.path.poses[current_waypoint_index_].pose.position.y;
                 if (tx == 0 && ty == 0
-                    && std::abs(getYaw(path_[current_waypoint_index_].pose.orientation) - getYaw(path_[current_waypoint_index_+1].pose.orientation)) < 1e-2) {
+                    && std::abs(getYaw(path_.path.poses[current_waypoint_index_].pose.orientation) - getYaw(path_.path.poses[current_waypoint_index_+1].pose.orientation)) < 1e-2) {
                     current_waypoint_index_++;
                 } else {
                     break;
@@ -838,7 +838,7 @@ class FollowNode: public rclcpp::Node {
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmd_vel_arrow_pub;
         rclcpp::TimerBase::SharedPtr timer_;
-        std::vector<geometry_msgs::msg::PoseStamped> path_;
+        nhk2026_msgs::msg::PathWithBox path_;
         std::mutex mutex_;
         geometry_msgs::msg::Pose pose_;
 
