@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+
+  <BehaviorTree ID="kfs_stack">
+    <Sequence>
+      <move_arm y="-0.1"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <move_arm y="-0.1"
+                z="0.65"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.01"/>
+      <service_vacuum value="false"/>
+      <move_arm y="-0.1"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.1"/>
+    </Sequence>
+  </BehaviorTree>
+</root>

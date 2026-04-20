@@ -20,22 +20,6 @@
                 roll="0.0"
                 max_speed="0.2"
                 max_acc="0.01"/>
-      <move_arm y="-0.1"
-                z="0.7"
-                roll="-1.57"
-                max_speed="0.2"
-                max_acc="0.01"/>
-      <move_arm y="-0.1"
-                z="0.65"
-                roll="-1.57"
-                max_speed="0.2"
-                max_acc="0.01"/>
-      <service_vacuum value="false"/>
-      <move_arm y="-0.1"
-                z="0.7"
-                roll="-1.57"
-                max_speed="0.2"
-                max_acc="0.1"/>
     </Sequence>
   </BehaviorTree>
 
