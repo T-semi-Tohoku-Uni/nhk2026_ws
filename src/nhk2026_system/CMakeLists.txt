@@ -133,6 +133,7 @@ add_library(bt_library
   src/bt/bt_rotate_sub.cpp
   src/bt/bt_reset_mcl.cpp
   src/bt/bt_leg_pub.cpp
+  src/bt/bt_sub_aruco.cpp
 )
 ament_target_dependencies(bt_library
   nhk2026_msgs

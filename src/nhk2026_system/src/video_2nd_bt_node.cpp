@@ -23,6 +23,7 @@
 #include "bt/bt_rotate_sub.hpp"
 #include "bt/bt_reset_mcl.hpp"
 #include "bt/bt_leg_pub.hpp"
+#include "bt/bt_sub_aruco.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -106,6 +107,10 @@ int main(int argc, char ** argv)
     reset_mcl_params.nh = node;
     reset_mcl_params.default_port_value = "initial_pose";
 
+    BT::RosNodeParams bt_sub_aruco_params;
+    bt_sub_aruco_params.nh = node;
+    bt_sub_aruco_params.default_port_value = "aruco_pose";
+
     BT::RosNodeParams leg_pub_params;
     leg_pub_params.nh = node;
     leg_pub_params.default_port_value = "step_legs";
@@ -124,6 +129,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<RotateSub>("rotate_sub", rotate_sub_params);
     factory.registerNodeType<ResetMcl>("reset_mcl", reset_mcl_params);
     factory.registerNodeType<BtLegPub>("pub_step_legs", leg_pub_params);
+    factory.registerNodeType<ArucoPoseSub>("sub_aruco_pose", bt_sub_aruco_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     BT::StdCoutLogger logger_cout(tree);
     tree.tickWhileRunning();
