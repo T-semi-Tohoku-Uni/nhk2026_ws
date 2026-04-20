@@ -8,9 +8,9 @@ class ArucoPoseSub
 {
 public:
     ArucoPoseSub(
-    const std::string & name,
-    const BT::NodeConfig & conf,
-    const BT::RosNodeParams & params)
+        const std::string & name,
+        const BT::NodeConfig & conf,
+        const BT::RosNodeParams & params)
     : BT::RosTopicSubNode<nhk2026_msgs::msg::ArucoPose>(name, conf, params)
     {
     }
