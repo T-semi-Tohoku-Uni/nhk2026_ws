@@ -17,6 +17,7 @@ namespace nhk2026_pursuit::blossom_path{
     struct GridIndex {
                 int u;
                 int v;
+                bool flag;
     };
 
     struct PoseWithBox{

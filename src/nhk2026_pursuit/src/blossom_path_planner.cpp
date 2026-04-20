@@ -116,6 +116,7 @@ namespace nhk2026_pursuit::blossom_path{
         }
 
         double yaw = getYaw(goal.state.pose.orientation);
+        bool is_box = goal.flag;
 
         //create path
         for (int i=0; i<=num_points_; ++i){
@@ -133,10 +134,10 @@ namespace nhk2026_pursuit::blossom_path{
             q.setRPY(0.0, 0.0, yaw);
             p.pose.orientation = tf2::toMsg(q);
 
-            //add box flag information in the path
-
-
             path_msg.path.poses.push_back(p);
+
+            //add box flag information in the path
+            path_msg.flags.push_back(is_box);
         }
 
         return path_msg;
@@ -159,11 +160,11 @@ namespace nhk2026_pursuit::blossom_path{
         init_pose.state.pose.position.x = pose_->position.x;
         init_pose.state.pose.position.y = pose_->position.y;
         init_pose.state.pose.position.z = pose_->position.z;
+        init_pose.flag = false;
 
         tf2::Quaternion q;
         q.setRPY(0.0, 0.0, getYaw(pose_->orientation));
         init_pose.state.pose.orientation = tf2::toMsg(q);
-        init_pose.flag = false;
 
         waypoints.push_back(init_pose);
 
@@ -173,6 +174,7 @@ namespace nhk2026_pursuit::blossom_path{
 
             const GridIndex& grid = grids[i];
             PoseWithBox world_pose = grid_map_[grid.u][grid.v];
+            world_pose.flag = grid.flag;
 
 
             //ここで角度計算
@@ -217,7 +219,7 @@ namespace nhk2026_pursuit::blossom_path{
             mid_start.state.pose.position.y = mid_y - start_shorten_ * uy;
             mid_start.state.pose.position.z = waypoints.back().state.pose.position.z;
             mid_start.state.pose.orientation = q_msg;
-            mid_start.flag = false;
+            mid_start.flag = grid.flag;
 
             mid_start.state.header.frame_id = "map";
             mid_start.state.header.stamp = this->now();
@@ -225,7 +227,7 @@ namespace nhk2026_pursuit::blossom_path{
             mid_end.state.pose.position.y = mid_y + end_shorten_ * uy;
             mid_end.state.pose.position.z = world_pose.state.pose.position.z;
             mid_end.state.pose.orientation = q_msg;
-            mid_end.flag = false;
+            mid_end.flag = grid.flag;
 
             world_pose.state.pose.orientation = q_msg;
             world_pose.state.header.frame_id = "map";
@@ -264,22 +266,15 @@ namespace nhk2026_pursuit::blossom_path{
         //後で強化学習の関数からグリッドの配列をもらう
         //仮にグリッドの配列を入れる
         std::vector<GridIndex> grids = {
-            // {0,1},
-            // {0,0},
-            // {1,0},
-            // {1,1},
-            // {2,1},
-            // {2,2},
-            // {3,2},
-            // {4,2},
-            // {5,2},
-
-            {0,2},
-            {1,2},
-            {2,2},
-            {3,2},
-            {4,2},
-            {5,2},
+            {0,1,false},
+            {0,0,false},
+            {1,0,false},
+            {1,1,false},
+            {2,1,false},
+            {2,2,false},
+            {3,2,false},
+            {4,2,false},
+            {5,2,false},
         };
         
         std::vector<PoseWithBox> waypoints = grid2World(grids);
