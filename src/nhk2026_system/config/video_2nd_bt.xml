@@ -26,6 +26,7 @@
                       theta="0.0"/>
       <follow_route/>
       <SubTree ID="arm_up_step"/>
+      <SubTree ID="kfs_stack"/>
     </Sequence>
   </BehaviorTree>
 

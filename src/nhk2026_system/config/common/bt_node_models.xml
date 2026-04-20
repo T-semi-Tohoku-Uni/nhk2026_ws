@@ -69,7 +69,7 @@
       <input_port name="theta"/>
     </Action>
     
-    <Action ID="reset_mcl" editable="true">
+    <Action ID="pub_step_legs" editable="true">
       <input_port name="angles"/>
     </Action>
 

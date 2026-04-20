@@ -14,12 +14,45 @@
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.01"/>
+      <pub_step_legs angles="1.0"/>
       <service_vacuum value="false"/>
       <move_arm y="-0.1"
                 z="0.7"
                 roll="-1.57"
                 max_speed="0.2"
                 max_acc="0.1"/>
+      <pub_step_legs angles="1.57"/>
+      <service_vacuum_stack value="true"/>
+      <move_arm y="-0.1"
+                z="0.63"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.1"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="pub_step_legs"
+            editable="true">
+      <input_port name="angles"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+    <Action ID="service_vacuum_stack"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>
