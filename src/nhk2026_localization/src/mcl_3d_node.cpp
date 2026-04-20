@@ -146,6 +146,9 @@ namespace mcl {
                 mclPose_.orientation.z = init_q.z();
                 mclPose_.orientation.w = init_q.w();
 
+                this->anchor_x_ = initial_x;
+                this->anchor_y_ = initial_y;
+
                 // 2. パーティクル群の初期位置・重みのセットアップ
                 double initial_w = 1.0 / particleNum_;
                 geometry_msgs::msg::Pose initialNoise;
@@ -387,15 +390,15 @@ namespace mcl {
                     double z_map = z + mclPose_.position.z;
 
                     // z_mapが 0.0m, 0.20m, 0.40m の +-0.01m (1cm) の範囲内なら除外
-                    // if (std::abs(z_map - 0.00) <= 0.03 ||
-                    //     std::abs(z_map - 0.20) <= 0.03 ||
-                    //     std::abs(z_map - 0.40) <= 0.03) {
-                    //     continue;
-                    // }
+                     if (std::abs(z_map - 0.00) <= 0.03 ||
+                         std::abs(z_map - 0.20) <= 0.03 ||
+                         std::abs(z_map - 0.40) <= 0.03) {
+                         continue;
+                     }
 
-                    if (std::abs(z_map - 0.00) <= 0.03){
-                        continue;
-                    }
+                    //if (std::abs(z_map - 0.00) <= 0.03){
+                    //    continue;
+                    //}
 
                     Point3D pt;
                     pt.x = x;
@@ -452,11 +455,14 @@ namespace mcl {
                 double roll, pitch, yaw;
                 m.getRPY(roll, pitch, yaw);
 
+                anchor_x_ = msg->position.x;
+                anchor_y_ = msg->position.y;
+
                 // 2. パーティクルを再散布
                 // ここでの数値（0.1m, 5度など）は、初期位置の「確信度」に合わせて調整してください
                 double noise_x = 0.3;           // xの標準偏差 [m]
                 double noise_y = 0.3;           // yの標準偏差 [m]
-                double noise_yaw = 30.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
+                double noise_yaw = 20.0 * M_PI / 180.0; // yawの標準偏差 [rad] (5度)
                 double initial_w = 1.0 / static_cast<double>(particles_.size());
 
                 // 既存の散布関数を呼び出す（引数をシンプルに整理）
@@ -659,7 +665,7 @@ namespace mcl {
                     if (has_external_quat_) {
                         // 外部姿勢に、パーティクルごとの微小なバラつき(ノイズ)を乗せる
                         // これにより、IMUに僅かな誤差があってもスキャンマッチングで補正しやすくなる
-                        theta_new = ext_yaw + randNormal(0.005); // 0.005rad程度の微小ノイズ
+                        theta_new = ext_yaw + randNormal(0.001); // 0.005rad程度の微小ノイズ
                     } else {
                         // 外部姿勢がない場合は従来のオドメトリ
                         std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
@@ -950,10 +956,18 @@ namespace mcl {
                 std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
-                // 1. 各パーティクルの対数尤度を直接計算
                 for (std::size_t i = 0; i < particles_.size(); i++) {
-                    // ここで vector を返さず、double を受け取る
-                    log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    // --- 追加：範囲チェック (2.5m = 250cm) ---
+                    double px = particles_[i].getX();
+                    double py = particles_[i].getY();
+
+                    if (std::abs(px - anchor_x_) > 0.35 || std::abs(py - anchor_y_) > 0.35) {
+                        // 範囲外なら存在確率を 0 にする（対数なので -inf）
+                        log_weights[i] = -std::numeric_limits<double>::infinity();
+                    } else {
+                        log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
+                    }
+                    // --------------------------------------
                     
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
@@ -1165,6 +1179,8 @@ namespace mcl {
             std::mt19937 gen_; 
             std_msgs::msg::Int32MultiArray::SharedPtr zaxics_ = nullptr; 
 
+            double anchor_x_ = 0.0;
+            double anchor_y_ = 0.0;
 
            
             geometry_msgs::msg::Quaternion external_quat_;

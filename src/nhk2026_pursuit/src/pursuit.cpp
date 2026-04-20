@@ -89,6 +89,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
+            this->declare_parameter<double>("wait_time_", 0.20);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -111,6 +112,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("accel_angle_", accel_angle_);
             this->get_parameter("stop_angle_", stop_angle_);
             this->get_parameter("offset_z_", offset_z_);
+            this->get_parameter("wait_time", wait_time_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -138,6 +140,7 @@ class FollowNode: public rclcpp::Node {
                 "pose", poseQos, std::bind(&FollowNode::odomCallback, this, std::placeholders::_1)
             );
             cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+            pub_initial_pose_ = this->create_publisher<geometry_msgs::msg::Pose>("initial_pose", 10);
 
             timer_ = rclcpp::create_timer(
                 this,
@@ -241,6 +244,7 @@ class FollowNode: public rclcpp::Node {
 
                     resetRealPose(); 
                     RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
+                    rclcpp::WallRate rate(1.0 / wait_time_); 
 
                 } else {
                     RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
@@ -310,6 +314,12 @@ class FollowNode: public rclcpp::Node {
                     }
                 }
             );
+            geometry_msgs::msg::Pose initpose;
+            initpose.position.x = target_x;
+            initpose.position.y = target_y;
+            initpose.position.z = target_z;
+            initpose.orientation = pose_.orientation;
+            pub_initial_pose_->publish(initpose);
         }
 
         void rotate(double targetTheta) {
@@ -836,6 +846,7 @@ class FollowNode: public rclcpp::Node {
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
         rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr cmd_vel_arrow_pub;
+        rclcpp::Publisher<geometry_msgs::msg::Pose>::SharedPtr pub_initial_pose_;
         rclcpp::TimerBase::SharedPtr timer_;
         std::vector<geometry_msgs::msg::PoseStamped> path_;
         std::mutex mutex_;
@@ -869,6 +880,9 @@ class FollowNode: public rclcpp::Node {
         bool is_jump_ = false;
         bool is_action_busy_ = false;
         double offset_z_ = 0.02; 
+
+        //wait
+        double wait_time_ = 0.5;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
