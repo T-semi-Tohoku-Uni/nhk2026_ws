@@ -22,6 +22,9 @@ if(IS_JETSON)
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
   find_package(std_msgs REQUIRED)
   find_package(backward_ros REQUIRED)
+  include(CheckIncludeFileCXX)
+  set(CMAKE_REQUIRED_INCLUDES ${OpenCV_INCLUDE_DIRS})
+  check_include_file_cxx("opencv2/objdetect/aruco_detector.hpp" NHK2026_VISION_HAS_ARUCO_DETECTOR_HPP)
 
   add_executable(aruco_node
     src/aruco_node.cpp
