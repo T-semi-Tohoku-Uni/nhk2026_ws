@@ -6,6 +6,8 @@
 
   <include path="../operation/arm_down_step.xml"/>
 
+  <include path="../operation/kfs_stack.xml"/>
+
   <include path="../common/bt_node_models.xml"/>
 
   <BehaviorTree ID="Forest">
