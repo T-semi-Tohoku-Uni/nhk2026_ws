@@ -19,7 +19,7 @@
                  y="3.8"
                  z="0.2"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000４">
         <generate_route x="-1.8"
                         y="3.9"
                         theta="0.0"/>
@@ -30,7 +30,7 @@
                  y="5.0"
                  z="0.4"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000">
         <generate_route x="-1.8"
                         y="5.0"
                         theta="0.0"/>
@@ -45,7 +45,7 @@
                  y="5.0"
                  z="0.2"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000">
         <generate_route x="-3.0"
                         y="5.0"
                         theta="-1.57"/>
@@ -63,7 +63,7 @@
                  y="6.2"
                  z="0.4"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000">
         <SubTree ID="rotate"
                  target_theta="3.14"
                  omega="1"
@@ -77,6 +77,10 @@
       <Delay delay_msec="1000">
         <step_move command="step down"/>
       </Delay>
+      <reset_mcl x="-3.0"
+                 y="8.6"
+                 z="0.0"
+                 theta="0.0"/>
     </Sequence>
   </BehaviorTree>
 
