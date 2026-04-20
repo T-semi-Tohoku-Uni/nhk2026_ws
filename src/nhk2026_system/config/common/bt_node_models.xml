@@ -68,6 +68,10 @@
       <input_port name="z"/>
       <input_port name="theta"/>
     </Action>
+    
+    <Action ID="reset_mcl" editable="true">
+      <input_port name="angles"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
