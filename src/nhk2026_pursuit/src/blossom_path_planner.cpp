@@ -268,7 +268,7 @@ namespace nhk2026_pursuit::blossom_path{
         std::vector<GridIndex> grids = {
             {0,1,false},
             {0,0,false},
-            {1,0,false},
+            {1,0,true},
             {1,1,false},
             {2,1,false},
             {2,2,false},
@@ -284,9 +284,11 @@ namespace nhk2026_pursuit::blossom_path{
 
             PathWithBox segment = StraightPath(waypoints[i], waypoints[i+1]);
 
-            for(const auto& p : segment.path.poses){
-                path_msg.path.poses.push_back(p);
+            for(size_t j = 0; j < segment.path.poses.size(); ++j){
+                path_msg.path.poses.push_back(segment.path.poses[j]);
+                path_msg.flags.push_back(segment.flags[j]);
             }
+
         }
         
         path_pub_->publish(path_msg);

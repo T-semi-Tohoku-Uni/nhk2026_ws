@@ -644,7 +644,8 @@ class FollowNode: public rclcpp::Node {
 
             //test 
             //RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
-            // RCLCPP_INFO(this->get_logger(), "box ", );
+            RCLCPP_INFO(this->get_logger(), "is_box %d", (int)(bool)path_.flags[current_waypoint_index_]);
+            
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();

@@ -154,6 +154,8 @@ namespace nhk2026_pursuit::path {
                 goal_pose.pose.orientation = tf2::toMsg(q);
 
                 pathMsg.path.poses.push_back(goal_pose);
+                pathMsg.flags.resize(pathMsg.path.poses.size(), false);
+
                 pubPath_->publish(pathMsg);
                 path_rviz_pub_->publish(pathMsg.path);
 
@@ -197,6 +199,8 @@ namespace nhk2026_pursuit::path {
                 pose.pose.orientation = tf2::toMsg(q);
                 pathMsg.path.poses.push_back(pose);
             }
+            pathMsg.flags.resize(pathMsg.path.poses.size(), false);
+
             pubPath_->publish(pathMsg);
             path_rviz_pub_->publish(pathMsg.path);
 
