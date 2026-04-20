@@ -72,6 +72,10 @@
     <Action ID="pub_step_legs" editable="true">
       <input_port name="angles"/>
     </Action>
+    
+    <Action ID="sub_aruco_pose" editable="true">
+      <input_port name="id"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
@@ -83,6 +87,10 @@
     <SubTree ID="rotate">
       <input_port name="target_theta"/>
       <input_port name="omega"/>
+    </SubTree>
+
+    <SubTree ID="WaitForArUco">
+      <input_port name="id"/>
     </SubTree>
   </TreeNodesModel>
 </root>
