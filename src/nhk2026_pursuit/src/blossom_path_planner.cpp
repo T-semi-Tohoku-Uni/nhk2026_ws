@@ -12,6 +12,7 @@ namespace nhk2026_pursuit::blossom_path{
                                     .transient_local();
 
         path_pub_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("route", pathQoS);
+        path_rviz_pub_ = create_publisher<nav_msgs::msg::Path>("rviz_route", pathQoS);
 
         srv_gen_route_ = this->create_service<inrof2025_ros_type::srv::BallPath>(
             "generate_ball_path",
@@ -294,6 +295,7 @@ namespace nhk2026_pursuit::blossom_path{
         }
         
         path_pub_->publish(path_msg);
+        path_rviz_pub_->publish(path_msg.path);
 
         //visualization
         visualization_msgs::msg::Marker arrow;

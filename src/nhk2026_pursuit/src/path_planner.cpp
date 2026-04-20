@@ -55,6 +55,7 @@ namespace nhk2026_pursuit::path {
                                   .reliable()
                                   .transient_local();
                 pubPath_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("route", pathQos);
+                path_rviz_pub_ = create_publisher<nav_msgs::msg::Path>("rviz_route", pathQos);
                 pubSamplePath_ = create_publisher<nhk2026_msgs::msg::PathWithBox>("test_route", test_pathQos);
 
                 rclcpp::QoS markerQos = rclcpp::QoS(rclcpp::KeepLast(10))
@@ -154,6 +155,7 @@ namespace nhk2026_pursuit::path {
 
                 pathMsg.path.poses.push_back(goal_pose);
                 pubPath_->publish(pathMsg);
+                path_rviz_pub_->publish(pathMsg.path);
 
                 // サービスのリクエストで追加されたかもしれないウェイポイントをクリアして終了
                 waypoint_array_.clear();
@@ -196,6 +198,7 @@ namespace nhk2026_pursuit::path {
                 pathMsg.path.poses.push_back(pose);
             }
             pubPath_->publish(pathMsg);
+            path_rviz_pub_->publish(pathMsg.path);
 
             // create arrow message
 
@@ -276,89 +279,7 @@ namespace nhk2026_pursuit::path {
             return smoothed_path;
         }
 
-        // std::vector<std::pair<double, double>> generator(std::pair<double, double> start_point, std::pair<double, double> goal_point) {
-        //     double sx = start_point.first;
-        //     double sy = start_point.second;
-        //     double gx = goal_point.first;
-        //     double gy = goal_point.second;
-
-        //     std::priority_queue<Cell, std::vector<Cell>, std::greater<Cell>> q;
-        //     std::map<std::pair<int, int> ,double> distances;
-        //     for (int v = 0; v < this->mapHeight_; v++) {
-        //         for (int u = -mapWidth_; u < this->mapWidth_; u++) {
-        //             distances[{v, u}] = std::numeric_limits<double>::infinity();
-        //         }
-        //     }
-
-        //     // std::vector<std::vector<std::pair<int, int>>> previous(
-        //     //     this->mapHeight_, std::vector<std::pair<int, int>>(this->mapWidth_, {-1, -1})
-        //     // );
-        //     std::map<std::pair<int, int>, std::pair<int, int>> previous;
-        //     for (int v = 0; v < this->mapHeight_; v++) {
-        //         for (int u = -mapWidth_; u < this->mapWidth_; u++) {
-        //             previous[{v, u}] = std::make_pair(std::numeric_limits<int>::infinity(), std::numeric_limits<int>::infinity());
-        //         }
-        //     }
-
-        //     int su, sv, gu, gv;
-        //     std::pair<int, int> uv_start = xy2uv(sx, sy);
-        //     std::pair<int, int> uv_goal  = xy2uv(gx, gy);
-        //     su = uv_start.first;
-        //     sv = uv_start.second;
-        //     gu = uv_goal.first;
-        //     gv = uv_goal.second;
-
-
-        //     // RCLCPP_INFO(this->get_logger(), "start %d %d", su, sv);
-
-        //     distances[{sv,su}] = 0;
-        //     q.push({su, sv, 0});
-
-        //     const int du[4] = {-1, 1, 0, 0};
-        //     const int dv[4] = {0, 0, -1, 1};
-
-        //     while(!q.empty()) { 
-        //         Cell cur = q.top(); q.pop();
-        //         if (cur.u == gu && cur.v == gv) break;
-
-        //         for (int dir = 0; dir < 4; dir++ ) {
-        //             int nu = cur.u + du[dir];
-        //             int nv = cur.v + dv[dir];
-
-        //             if (nu >= -mapWidth_ && nu < this->mapWidth_ && nv >= 0 && nv < this->mapHeight_) {
-        //                 double cost = cur.cost + distField_.at<double>(nv, std::abs(nu));
-        //                 if (cost < distances[{nv,nu}]) {
-        //                     distances[{nv,nu}] = cost;
-        //                     previous[{nv,nu}] = std::make_pair(cur.u, cur.v);
-        //                     q.push({nu, nv, cost});
-        //                 }
-        //             }
-        //         }
-        //     }
-
-        //     // 経路再構築
-        //     std::vector<std::pair<int, int>> path_g;
-        //     int idx=0;
-        //     for (int u = gu, v = gv; u != std::numeric_limits<int>::infinity() && v != std::numeric_limits<int>::infinity();) {
-        //         path_g.push_back({u, v});
-        //         std::tie(u, v) = previous[{v,u}];
-        //     }
-
-        //     std::reverse(path_g.begin(), path_g.end());
-
-        //     // convert grid -> field
-        //     std::vector<std::pair<double, double>> path_f;
-        //     for (std::pair<int, int> &p: path_g) {
-        //         path_f.push_back(
-        //             std::make_pair(
-        //                 (p.first + 0.5) * mapResolution_,
-        //                 (static_cast<double>(mapHeight_ - p.second - 1) + 0.5) * mapResolution_
-        //             )
-        //         );
-        //     }
-
-        //     return path_f;
-        // }
+    
 
         std::vector<std::pair<double, double>> generator(std::pair<double, double> start_point, std::pair<double, double> goal_point) {
             double sx = start_point.first;
@@ -648,7 +569,8 @@ namespace nhk2026_pursuit::path {
         cv::Mat distField_;
         int mapZIndex_;
         rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr pubPath_;
-        rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr pubSamplePath_;        
+        rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr pubSamplePath_; 
+        rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_rviz_pub_;       
         rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr pubMarker_;
         rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subOdom_;
         geometry_msgs::msg::Pose curOdom_;

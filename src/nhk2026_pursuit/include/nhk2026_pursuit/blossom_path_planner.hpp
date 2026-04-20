@@ -32,6 +32,7 @@ namespace nhk2026_pursuit::blossom_path{
         private:
             rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr subPose_;
             rclcpp::Publisher<nhk2026_msgs::msg::PathWithBox>::SharedPtr path_pub_;
+            rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_rviz_pub_;
             rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pose_arrow_pub_;
             void poseCallback(const geometry_msgs::msg::Pose::SharedPtr msg);
             geometry_msgs::msg::Pose::SharedPtr pose_;

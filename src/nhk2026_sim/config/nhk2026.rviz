@@ -13,8 +13,9 @@ Panels:
         - /Marker2/Topic1
         - /Path2/Topic1
         - /Path2/Offset1
+        - /Path3
       Splitter Ratio: 0.5
-    Tree Height: 407
+    Tree Height: 413
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
@@ -252,7 +253,6 @@ Visualization Manager:
       Name: Marker
       Namespaces:
         waypoint_marker: true
-        waypoint_marker: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -370,6 +370,34 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /waypoint_marker
       Value: true
+    - Alpha: 1
+      Buffer Length: 3
+      Class: rviz_default_plugins/Path
+      Color: 167; 255; 236
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Billboards
+      Line Width: 0.07000000029802322
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /rviz_route
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -452,5 +480,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1296
-  X: 38
-  Y: -5
+  X: 110
+  Y: -32
