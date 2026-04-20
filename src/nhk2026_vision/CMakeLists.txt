@@ -22,12 +22,10 @@ if(IS_JETSON)
   find_package(Eigen3 3.3 REQUIRED NO_MODULE)
   find_package(std_msgs REQUIRED)
   find_package(backward_ros REQUIRED)
-  include(CheckIncludeFileCXX)
-  set(CMAKE_REQUIRED_INCLUDES ${OpenCV_INCLUDE_DIRS})
-  check_include_file_cxx("opencv2/objdetect/aruco_detector.hpp" NHK2026_VISION_HAS_ARUCO_DETECTOR_HPP)
+  message(STATUS "Building aruco_node from aruco_node_opencv410.cpp because IS_JETSON is ON")
 
   add_executable(aruco_node
-    src/aruco_node.cpp
+    src/aruco_node_opencv410.cpp
   )
 
   ament_target_dependencies(aruco_node
@@ -59,21 +57,7 @@ if(IS_JETSON)
     ${OpenCV_INCLUDE_DIRS}
   )
 
-  add_library(aruco
-    src/aruco.cpp
-  )
-
-  target_include_directories(aruco PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
-    $<INSTALL_INTERFACE:include>
-  )
-
-  target_link_libraries(aruco
-    ${OpenCV_LIBRARIES}
-  )
-
   target_link_libraries(aruco_node
-    aruco
     ${OpenCV_LIBRARIES}
     Eigen3::Eigen
   )
