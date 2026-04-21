@@ -319,7 +319,7 @@ namespace mcl {
             // }
 
             void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
-                // 1. URDFの取り付け角度 (base_link -> livox_frame) をクォータニオンとして定義
+                // 1. URDFの取り付け角度 (base_link -> livox_frame)
                 tf2::Quaternion q_base_to_livox;
                 q_base_to_livox.setRPY(3.14159, 0.0, -1.57);
 
@@ -328,8 +328,15 @@ namespace mcl {
                 tf2::fromMsg(msg->orientation, q_livox_world);
 
                 // 3. ロボット本体のワールド姿勢を計算
-                // Q_robot_world = Q_livox_world * (Q_base_to_livox)^-1
                 tf2::Quaternion q_robot_world = q_livox_world * q_base_to_livox.inverse();
+
+                // --- 追加：Yaw角を反時計回りに90度回転 ---
+                tf2::Quaternion q_rot_90;
+                q_rot_90.setRPY(0.0, 0.0, 1.5708); // 90度 = 1.5708 rad
+                // 左側から掛けることで、ワールド座標系の軸に対して回転させます
+                q_robot_world = q_rot_90 * q_robot_world; 
+                // ---------------------------------------
+
                 q_robot_world.normalize();
 
                 // 4. MCL内部の状態変数を更新
@@ -339,7 +346,7 @@ namespace mcl {
                 external_quat_.w = q_robot_world.w();
                 has_external_quat_ = true;
 
-                // 5. Yaw角を抽出して imu_yaw_ に保存
+                // 5. Yaw角を抽出
                 double roll, pitch, yaw;
                 tf2::Matrix3x3(q_robot_world).getRPY(roll, pitch, yaw);
                 imu_yaw_ = yaw;
