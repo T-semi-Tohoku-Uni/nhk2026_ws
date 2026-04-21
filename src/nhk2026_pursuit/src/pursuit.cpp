@@ -442,11 +442,11 @@ class FollowNode: public rclcpp::Node {
         void controlLoop() {
             //RCLCPP_INFO(this->get_logger(), "z: %.3f", pose_.position.z);
             if (!goal_handle_){
-                publishZero();
+                // publishZero();
                 return;
             }
             if (path_.empty()){
-                publishZero();
+                // publishZero();
                 return;
             }
             if (is_rotating_) {
@@ -458,7 +458,7 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_jump_){
-                publishZero();
+                // publishZero();
                 jumpZ();
                 return;
             }
