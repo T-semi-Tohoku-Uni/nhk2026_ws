@@ -404,6 +404,19 @@ namespace mcl {
                     double dist_sq = x*x + y*y + z*z;
                     if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue; 
 
+                    // const float robot_min_x = -0.45f; // 後方 45cm
+                    // const float robot_max_x =  0.45f; // 前方 45cm
+                    // const float robot_min_y = -0.45f; // 左方 45cm
+                    // const float robot_max_y =  0.45f; // 右方 45cm
+                    // const float robot_min_z = -0.05f; // 足元（床面スレスレ）
+                    // const float robot_max_z =  1.00f; // 機体の高さ（マストやアームを含む）
+
+                    if (x >= -0.45 && x <= 0.45 &&    // 左右幅
+                        y >= -0.45 && y <= 0.35 &&    // 前後幅
+                        z >= -0.05 && z <= 0.60) {    // 高さ（Livoxより少し上まで）
+                        continue; 
+                    }
+
                     // --- マップ座標系への変換 ---
                     // ロボットの向き(Yaw)を考慮して回転させ、ロボットの現在位置を足す
                     double x_map = x * cos_y - y * sin_y + mclPose_.position.x;
@@ -414,22 +427,22 @@ namespace mcl {
                     xyz2uvw(x_map, y_map, z_map, &u, &v, &w);
 
                     // マップ範囲内かチェック
-                    // if (u >= 0 && u < static_cast<int>(dim_x_) && 
-                    //     v >= 0 && v < static_cast<int>(dim_y_) && 
-                    //     w >= 0 && w < static_cast<int>(dim_z_)) {
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
                         
-                    //     float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                        float sdf_val = distField3D_[getIdx3D(u, v, w)];
                         
-                    //     // 閾値の設定（例：10cm以上壁から離れていたら無効化）
-                    //     // 自己位置推定に使用する「確かな壁の点」だけを残す
-                    //     const float sdf_threshold = 0.10f; 
-                    //     if (std::abs(sdf_val) > sdf_threshold) {
-                    //         continue; // 壁から遠い点（動的障害物やノイズ）なので除外
-                    //     }
-                    // } else {
-                    //     // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
-                    //     continue;
-                    // }
+                        // 閾値の設定（例：10cm以上壁から離れていたら無効化）
+                        // 自己位置推定に使用する「確かな壁の点」だけを残す
+                        const float sdf_threshold = 0.10f; 
+                        if (std::abs(sdf_val) > sdf_threshold) {
+                            continue; // 壁から遠い点（動的障害物やノイズ）なので除外
+                        }
+                    } else {
+                        // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
+                        continue;
+                    }
 
                    
 
@@ -1039,20 +1052,86 @@ namespace mcl {
                 effectiveSampleSize_ = 1.0 / w_sq_sum;
             }
 
-            double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
+            // double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
                 
 
+            //     double total_log_p = 0.0;
+            //     double var = lfmSigma_ * lfmSigma_;
+            //     double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
+            //     const double scan_range_max = 30.0; 
+            //     const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
+
+            //     // レイキャスティング用パラメータ
+            //     const double ray_step = mapResolution_ * 5.0; // 計算量削減のため解像度の5倍ステップでチェック
+            //     const double occlusion_depth_threshold = -0.10; // 壁の表面から10cm以上奥は「壁の中」とみなす
+            //     const double endpoint_grace_dist = 0.10; // 計測点手前10cmはチェックを免除（計測点自身のめり込みを許容）
+
+            //     tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
+            //     tf2::Matrix3x3 m(q);
+            //     double r, p, yaw;
+            //     m.getRPY(r, p, yaw);
+            //     double cos_theta = std::cos(yaw);
+            //     double sin_theta = std::sin(yaw);
+
+            //     for (const auto& pt : local_points) {
+            //         double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
+            //         double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
+            //         double map_z = pt.z + pose.position.z; 
+
+            //         // 1. レイキャスティングによる遮蔽判定
+            //         bool occluded = false;
+            //         double dist_to_point = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+                    
+            //         // ロボットから計測点に向かって一定間隔でSDFを確認
+            //         for (double d = 0.2; d < dist_to_point - endpoint_grace_dist; d += ray_step) {
+            //             double ratio = d / dist_to_point;
+            //             double check_x = pose.position.x + (map_x - pose.position.x) * ratio;
+            //             double check_y = pose.position.y + (map_y - pose.position.y) * ratio;
+            //             double check_z = pose.position.z + (map_z - pose.position.z) * ratio;
+
+            //             int u, v, w;
+            //             xyz2uvw(check_x, check_y, check_z, &u, &v, &w);
+
+            //             if (u >= 0 && u < static_cast<int>(dim_x_) && v >= 0 && v < static_cast<int>(dim_y_) && w >= 0 && w < static_cast<int>(dim_z_)) {
+            //                 float sdf_val = distField3D_[getIdx3D(u, v, w)];
+            //                 // SDFが負の値（壁の内部）かつ閾値より深ければ、遮蔽されていると判断
+            //                 if (sdf_val < occlusion_depth_threshold) {
+            //                     occluded = true;
+            //                     break;
+            //                 }
+            //             }
+            //         }
+
+            //         double prob = zRand_ * pRand_const; 
+
+            //         if (occluded) {
+            //             // 遮蔽されている点が見えていると主張するパーティクルには強いペナルティ
+            //             prob = 1e-10; 
+            //         } else {
+            //             int ut, vt, wt;
+            //             xyz2uvw(map_x, map_y, map_z, &ut, &vt, &wt);
+
+            //             if (ut >= 0 && ut < static_cast<int>(dim_x_) && vt >= 0 && vt < static_cast<int>(dim_y_) && wt >= 0 && wt < static_cast<int>(dim_z_)) {
+            //                 double d = std::abs(static_cast<double>(distField3D_[getIdx3D(ut, vt, wt)]));
+            //                 double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
+            //                 prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
+            //             }
+            //         }
+            //         total_log_p += std::log(std::max(prob, 1e-10));
+            //     }
+            //     return total_log_p;
+            // }
+
+            double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
                 double total_log_p = 0.0;
                 double var = lfmSigma_ * lfmSigma_;
                 double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
+                
+                // パラメータ
                 const double scan_range_max = 30.0; 
                 const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
-                // レイキャスティング用パラメータ
-                const double ray_step = mapResolution_ * 5.0; // 計算量削減のため解像度の5倍ステップでチェック
-                const double occlusion_depth_threshold = -0.10; // 壁の表面から10cm以上奥は「壁の中」とみなす
-                const double endpoint_grace_dist = 0.10; // 計測点手前10cmはチェックを免除（計測点自身のめり込みを許容）
-
+                // パーティクルの姿勢から回転行列の要素を計算 (ループ外で1回だけ)
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
                 double r, p, yaw;
@@ -1061,51 +1140,39 @@ namespace mcl {
                 double sin_theta = std::sin(yaw);
 
                 for (const auto& pt : local_points) {
+                    // ロボット座標系からマップ座標系への変換
                     double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
                     double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
                     double map_z = pt.z + pose.position.z; 
 
-                    // 1. レイキャスティングによる遮蔽判定
-                    bool occluded = false;
-                    double dist_to_point = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-                    
-                    // ロボットから計測点に向かって一定間隔でSDFを確認
-                    for (double d = 0.2; d < dist_to_point - endpoint_grace_dist; d += ray_step) {
-                        double ratio = d / dist_to_point;
-                        double check_x = pose.position.x + (map_x - pose.position.x) * ratio;
-                        double check_y = pose.position.y + (map_y - pose.position.y) * ratio;
-                        double check_z = pose.position.z + (map_z - pose.position.z) * ratio;
-
-                        int u, v, w;
-                        xyz2uvw(check_x, check_y, check_z, &u, &v, &w);
-
-                        if (u >= 0 && u < static_cast<int>(dim_x_) && v >= 0 && v < static_cast<int>(dim_y_) && w >= 0 && w < static_cast<int>(dim_z_)) {
-                            float sdf_val = distField3D_[getIdx3D(u, v, w)];
-                            // SDFが負の値（壁の内部）かつ閾値より深ければ、遮蔽されていると判断
-                            if (sdf_val < occlusion_depth_threshold) {
-                                occluded = true;
-                                break;
-                            }
-                        }
-                    }
+                    int u, v, w;
+                    xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
 
                     double prob = zRand_ * pRand_const; 
 
-                    if (occluded) {
-                        // 遮蔽されている点が見えていると主張するパーティクルには強いペナルティ
-                        prob = 1e-10; 
-                    } else {
-                        int ut, vt, wt;
-                        xyz2uvw(map_x, map_y, map_z, &ut, &vt, &wt);
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
+                        double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
+                        
+                        // 動的障害物除外 (壁から遠すぎる点は無視)
+                        // if (sdf_val > 0.5) {
+                        //     total_log_p += std::log(prob);
+                        //     continue;
+                        // }
 
-                        if (ut >= 0 && ut < static_cast<int>(dim_x_) && vt >= 0 && vt < static_cast<int>(dim_y_) && wt >= 0 && wt < static_cast<int>(dim_z_)) {
-                            double d = std::abs(static_cast<double>(distField3D_[getIdx3D(ut, vt, wt)]));
-                            double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
-                            prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
-                        }
+                        // 壁の中(マイナス)ならペナルティを付与
+                        double d = std::abs(sdf_val);
+                        
+                        double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
+                        prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
                     }
+                    
+                    // 対数尤度を加算 (log(0) 回避のために微小値を std::max で保証)
                     total_log_p += std::log(std::max(prob, 1e-10));
                 }
+
                 return total_log_p;
             }
 
