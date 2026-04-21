@@ -1185,84 +1185,201 @@ namespace mcl {
                 return total_log_p;
             }
 
-            void filterPointCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+            // void filterPointCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
 
+            //     std::lock_guard<std::mutex> data_lock(data_mutex_);
+            //     local_points_.clear();
+            //     sensor_msgs::msg::PointCloud2 cloud_out;
+
+            //     // 1. 座標変換 (LiDAR -> base_footprint)
+            //     try {
+            //         geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
+            //             "base_footprint", msg->header.frame_id, tf2::TimePointZero);
+            //         tf2::doTransform(*msg, cloud_out, transform);
+            //     } catch (const tf2::TransformException & ex) {
+            //         RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "TF error: %s", ex.what());
+            //         return;
+            //     }
+
+            //     // ロボットの現在姿勢から回転成分を取得
+            //     tf2::Quaternion q(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
+            //     tf2::Matrix3x3 m(q);
+            //     double r, p, yaw;
+            //     m.getRPY(r, p, yaw);
+            //     double cos_y = std::cos(yaw);
+            //     double sin_y = std::sin(yaw);
+
+            //     // イテレータの準備
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
+            //     sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
+
+            //     for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
+            //         float x = *iter_x;
+            //         float y = *iter_y;
+            //         float z = *iter_z;
+
+            //         if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
+
+            //         // --- 2. 距離フィルタ ---
+            //         double dist_sq = x*x + y*y + z*z;
+            //         if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue;
+
+            //         // --- 3. 自己干渉除去 (Robot Footprint Filter) ---
+            //         if (x >= -0.45 && x <= 0.45 && y >= -0.45 && y <= 0.35 && z >= -0.05 && z <= 0.60) continue;
+
+            //         // --- 4. マップ参照フィルタ (SDFを用いた静止物抽出) ---
+            //         double map_x = x * cos_y - y * sin_y + mclPose_.position.x;
+            //         double map_y = x * sin_y + y * cos_y + mclPose_.position.y;
+            //         double map_z = z + mclPose_.position.z;
+
+            //         int u, v, w;
+            //         xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
+
+            //         if (u >= 0 && u < static_cast<int>(dim_x_) && 
+            //             v >= 0 && v < static_cast<int>(dim_y_) && 
+            //             w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
+            //             float sdf_val = distField3D_[getIdx3D(u, v, w)];
+            //             const float sdf_threshold = 0.10f; 
+            //             if (std::abs(sdf_val) > sdf_threshold) continue; // 壁から遠い（動的障害物）を除去
+            //         } else {
+            //             continue; // マップ外は除外
+            //         }
+
+            //         // --- 5. フィールド範囲・高さフィルタ ---
+            //         if (map_x < -4.825 || map_x > -1.225 || map_y < 3.2 || map_y > 8.0) continue;
+            //         if (map_z > 0.5) continue;
+
+            //         // 床や段差の面を除去 (±3cm)
+            //         if (std::abs(map_z - 0.00) <= 0.03 ||
+            //             std::abs(map_z - 0.20) <= 0.03 ||
+            //             std::abs(map_z - 0.40) <= 0.03) {
+            //             continue;
+            //         }
+
+            //         // 全てのフィルタを通過した点を保存
+            //         local_points_.push_back({x, y, z});
+            //     }
+
+            //     // デバッグ用パブリッシュ
+            //     publishFilteredCloud(msg->header.stamp);
+            // }
+
+            void filterPointCloud(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
                 std::lock_guard<std::mutex> data_lock(data_mutex_);
                 local_points_.clear();
-                sensor_msgs::msg::PointCloud2 cloud_out;
 
-                // 1. 座標変換 (LiDAR -> base_footprint)
+                // 1. 変換行列（Transform）を一度だけ取得
+                Eigen::Affine3f transform_eigen = Eigen::Affine3f::Identity();
                 try {
-                    geometry_msgs::msg::TransformStamped transform = tf_buffer_.lookupTransform(
+                    geometry_msgs::msg::TransformStamped tf_stamped = tf_buffer_.lookupTransform(
                         "base_footprint", msg->header.frame_id, tf2::TimePointZero);
-                    tf2::doTransform(*msg, cloud_out, transform);
+                    
+                    // Eigen形式に変換（高速化のため）
+                    Eigen::Quaternionf q(
+                        tf_stamped.transform.rotation.w,
+                        tf_stamped.transform.rotation.x,
+                        tf_stamped.transform.rotation.y,
+                        tf_stamped.transform.rotation.z);
+                    Eigen::Vector3f t(
+                        tf_stamped.transform.translation.x,
+                        tf_stamped.transform.translation.y,
+                        tf_stamped.transform.translation.z);
+                    transform_eigen.fromPositionOrientationScale(t, q, Eigen::Vector3f::Ones());
                 } catch (const tf2::TransformException & ex) {
                     RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "TF error: %s", ex.what());
                     return;
                 }
 
-                // ロボットの現在姿勢から回転成分を取得
-                tf2::Quaternion q(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
-                tf2::Matrix3x3 m(q);
+                // ロボットの現在姿勢（map上の向き）
+                tf2::Quaternion q_mcl(mclPose_.orientation.x, mclPose_.orientation.y, mclPose_.orientation.z, mclPose_.orientation.w);
+                tf2::Matrix3x3 m_mcl(q_mcl);
                 double r, p, yaw;
-                m.getRPY(r, p, yaw);
-                double cos_y = std::cos(yaw);
-                double sin_y = std::sin(yaw);
+                m_mcl.getRPY(r, p, yaw);
+                float cos_y = std::cos(yaw);
+                float sin_y = std::sin(yaw);
+                float robot_x = mclPose_.position.x;
+                float robot_y = mclPose_.position.y;
+                float robot_z = mclPose_.position.z;
 
-                // イテレータの準備
-                sensor_msgs::PointCloud2ConstIterator<float> iter_x(cloud_out, "x");
-                sensor_msgs::PointCloud2ConstIterator<float> iter_y(cloud_out, "y");
-                sensor_msgs::PointCloud2ConstIterator<float> iter_z(cloud_out, "z");
+                // 点群の読み取り準備
+                sensor_msgs::PointCloud2ConstIterator<float> iter_x(*msg, "x");
+                sensor_msgs::PointCloud2ConstIterator<float> iter_y(*msg, "y");
+                sensor_msgs::PointCloud2ConstIterator<float> iter_z(*msg, "z");
 
-                for (; iter_x != iter_x.end(); ++iter_x, ++iter_y, ++iter_z) {
-                    float x = *iter_x;
-                    float y = *iter_y;
-                    float z = *iter_z;
+                size_t num_points = msg->width * msg->height;
+                int step = 1; // ★間引き設定 (2なら半分, 3なら1/3の点だけ処理)
 
-                    if (std::isnan(x) || std::isnan(y) || std::isnan(z)) continue;
+                // スレッドごとにローカルなベクタを用意して push_back の競合を避ける
+                int max_threads = omp_get_max_threads();
+                std::vector<std::vector<Point3D>> thread_local_points(max_threads);
 
-                    // --- 2. 距離フィルタ ---
-                    double dist_sq = x*x + y*y + z*z;
-                    if (dist_sq < 0.45*0.45 || dist_sq > 3.0*3.0) continue;
+                #pragma omp parallel
+                {
+                    int thread_id = omp_get_thread_num();
+                    thread_local_points[thread_id].reserve(num_points / (max_threads * step));
 
-                    // --- 3. 自己干渉除去 (Robot Footprint Filter) ---
-                    if (x >= -0.45 && x <= 0.45 && y >= -0.45 && y <= 0.35 && z >= -0.05 && z <= 0.60) continue;
+                    #pragma omp for
+                    for (size_t i = 0; i < num_points; i += step) {
+                        // イテレータのオフセットを計算
+                        auto it_x = iter_x + i;
+                        auto it_y = iter_y + i;
+                        auto it_z = iter_z + i;
 
-                    // --- 4. マップ参照フィルタ (SDFを用いた静止物抽出) ---
-                    double map_x = x * cos_y - y * sin_y + mclPose_.position.x;
-                    double map_y = x * sin_y + y * cos_y + mclPose_.position.y;
-                    double map_z = z + mclPose_.position.z;
+                        float raw_x = *it_x;
+                        float raw_y = *it_y;
+                        float raw_z = *it_z;
 
-                    int u, v, w;
-                    xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
+                        if (std::isnan(raw_x)) continue;
 
-                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
-                        v >= 0 && v < static_cast<int>(dim_y_) && 
-                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        // --- 2. 座標変換 (LiDAR -> base_footprint) 手動計算 ---
+                        // P_base = R * P_lidar + T
+                        Eigen::Vector3f p_lidar(raw_x, raw_y, raw_z);
+                        Eigen::Vector3f p_base = transform_eigen * p_lidar;
+
+                        float bx = p_base.x();
+                        float by = p_base.y();
+                        float bz = p_base.z();
+
+                        // --- 3. 距離・自己干渉フィルタ (高速な判定から順に行う) ---
+                        float dist_sq = bx*bx + by*by + bz*bz;
+                        if (dist_sq < 0.20f || dist_sq > 9.0f) continue; // 0.45m~3.0m
                         
-                        float sdf_val = distField3D_[getIdx3D(u, v, w)];
-                        const float sdf_threshold = 0.10f; 
-                        if (std::abs(sdf_val) > sdf_threshold) continue; // 壁から遠い（動的障害物）を除去
-                    } else {
-                        continue; // マップ外は除外
+                        // Robot Footprint
+                        if (bx >= -0.45f && bx <= 0.45f && by >= -0.45f && by <= 0.35f && bz <= 0.60f) continue;
+
+                        // --- 4. マップ参照フィルタ (SDFを用いた静止物抽出) ---
+                        float map_px = bx * cos_y - by * sin_y + robot_x;
+                        float map_py = bx * sin_y + by * cos_y + robot_y;
+                        float map_pz = bz + robot_z;
+
+                        int u, v, w;
+                        xyz2uvw(map_px, map_py, map_pz, &u, &v, &w);
+
+                        if (u >= 0 && u < (int)dim_x_ && v >= 0 && v < (int)dim_y_ && w >= 0 && w < (int)dim_z_) {
+                            float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                            if (std::abs(sdf_val) > 0.10f) continue; // 動的障害物
+                        } else {
+                            continue; // マップ外
+                        }
+
+                        // --- 5. フィールド範囲・高さフィルタ ---
+                        if (map_px < -4.825f || map_px > -1.225f || map_py < 3.2f || map_py > 8.0f) continue;
+                        if (map_pz > 0.5f) continue;
+
+                        // 床面除去
+                        if (std::abs(map_pz - 0.00f) <= 0.04f || std::abs(map_pz - 0.20f) <= 0.04f || std::abs(map_pz - 0.40f) <= 0.04f) continue;
+
+                        thread_local_points[thread_id].push_back({(double)bx, (double)by, (double)bz});
                     }
-
-                    // --- 5. フィールド範囲・高さフィルタ ---
-                    if (map_x < -4.825 || map_x > -1.225 || map_y < 3.2 || map_y > 8.0) continue;
-                    if (map_z > 0.5) continue;
-
-                    // 床や段差の面を除去 (±3cm)
-                    if (std::abs(map_z - 0.00) <= 0.03 ||
-                        std::abs(map_z - 0.20) <= 0.03 ||
-                        std::abs(map_z - 0.40) <= 0.03) {
-                        continue;
-                    }
-
-                    // 全てのフィルタを通過した点を保存
-                    local_points_.push_back({x, y, z});
                 }
 
-                // デバッグ用パブリッシュ
+                // 各スレッドの結果を結合
+                for (const auto& t_points : thread_local_points) {
+                    local_points_.insert(local_points_.end(), t_points.begin(), t_points.end());
+                }
+
                 publishFilteredCloud(msg->header.stamp);
             }
 
