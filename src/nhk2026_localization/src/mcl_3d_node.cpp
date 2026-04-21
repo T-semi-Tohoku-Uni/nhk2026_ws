@@ -585,7 +585,7 @@ namespace mcl {
                 // 5. 確認用にYaw角を抽出する場合
                 double roll, pitch, yaw;
                 tf2::Matrix3x3(q_robot_world).getRPY(roll, pitch, yaw);
-                imu_yaw_ = yaw;
+                //imu_yaw_ = yaw;
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
                 zaxics_ = msg;
