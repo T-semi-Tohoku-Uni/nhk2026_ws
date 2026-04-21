@@ -10,10 +10,6 @@
                       y="8.7"
                       theta="-1.57"/>
       <follow_outline/>
-      <generate_route x="-3.0"
-                      y="8.7"
-                      theta="-1.57"/>
-      <follow_detail/>
       <waypoint x="-5.5"
                 y="9.7"/>
       <waypoint x="-5.5"
