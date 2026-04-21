@@ -17,10 +17,21 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
+      <generate_route x="-1.5"
+                      y="2.6"
+                      theta="0.0"/>
+      <follow_outline/>
+      <generate_route x="-1.5"
+                      y="2.6"
+                      theta="0.0"/>
+      <follow_detail/>
       <generate_route x="-3"
                       y="2.6"
                       theta="0.0"/>
       <follow_outline/>
+      <generate_route x="-3"
+                      y="2.6"
+                      theta="0.0"/>
       <follow_detail/>
     </Sequence>
   </BehaviorTree>
