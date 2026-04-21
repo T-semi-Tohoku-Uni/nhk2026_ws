@@ -19,7 +19,7 @@ bool MoveLegAction::setGoal(Goal & goal)
     }
     goal.joint_states.position = {right_angle, left_angle, back_angle};
     goal.max_acc = 5.0;
-    goal.max_speed = 5.0;
+    goal.max_speed = 1.0;
     return true;
 }
 
