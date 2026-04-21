@@ -110,8 +110,8 @@ namespace mcl {
                 this->declare_parameter<std::float_t>("initial_z", 0.0);
                 this->declare_parameter<std::float_t>("initial_theta", M_PI/2);
 
-                this->declare_parameter<std::double_t>("zHit", 0.9);
-                this->declare_parameter<std::double_t>("zRand", 0.1);
+                this->declare_parameter<std::double_t>("zHit", 0.95);
+                this->declare_parameter<std::double_t>("zRand", 0.05);
                 this->declare_parameter<double>("odomNoise1", 1.0);
                 this->declare_parameter<double>("odomNoise2", 0.1);
                 this->declare_parameter<double>("odomNoise3", 0.5);
