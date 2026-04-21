@@ -44,11 +44,23 @@ int main(int argc, char ** argv)
 
     BT::BehaviorTreeFactory factory;
     
-    BT::RosNodeParams follow_route_params;
-    follow_route_params.nh = node;
-    follow_route_params.default_port_value = "follow";
-    follow_route_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
-    follow_route_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    BT::RosNodeParams follow_forest_params;
+    follow_forest_params.nh = node;
+    follow_forest_params.default_port_value = "follow";
+    follow_forest_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    follow_forest_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    
+    BT::RosNodeParams follow_outline_params;
+    follow_outline_params.nh = node;
+    follow_outline_params.default_port_value = "follow_outline";
+    follow_outline_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    follow_outline_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    
+    BT::RosNodeParams follow_detail_params;
+    follow_detail_params.nh = node;
+    follow_detail_params.default_port_value = "follow_detail";
+    follow_detail_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    follow_detail_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
     BT::RosNodeParams generate_route_params;
     generate_route_params.nh = node;
@@ -121,7 +133,9 @@ int main(int argc, char ** argv)
     move_leg_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
     move_leg_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
     
-    factory.registerNodeType<FollowRoute>("follow_route", follow_route_params);
+    factory.registerNodeType<FollowRoute>("follow_route", follow_forest_params);
+    factory.registerNodeType<FollowRoute>("follow_outline", follow_outline_params);
+    factory.registerNodeType<FollowRoute>("follow_detail", follow_detail_params);
     factory.registerNodeType<GenerateRoute>("generate_route", generate_route_params);
     factory.registerNodeType<LinearPath>("linear_path", linear_path_params);
     factory.registerNodeType<MoveArmAction>("move_arm", action_params);
