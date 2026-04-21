@@ -107,11 +107,11 @@ private:
                         if (hand_reached()) next_step(step, state_start_time);
                         break;
                     case 1:
-                        target_hand_pos_ = {-5.00, -1.57, -1.0};
+                        target_hand_pos_ = {-4.90, -1.57, -1.0};
                         if (hand_reached())  next_step(step, state_start_time);
                         break;
                     case 2:
-                        target_hand_pos_ = {-5.00, -1.57, 1.0};
+                        target_hand_pos_ = {-4.90, -1.57, 1.0};
                         if (hand_reached())  next_step(step, state_start_time);
                         break;
                     case 3:

@@ -24,6 +24,7 @@
 #include "bt/bt_reset_mcl.hpp"
 #include "bt/bt_leg_pub.hpp"
 #include "bt/bt_sub_aruco.hpp"
+#include "bt/bt_move_legs.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -67,7 +68,6 @@ int main(int argc, char ** argv)
     action_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
 
     BT::RosNodeParams takano_hand_params;
-    takano_hand_params.nh = node;
     takano_hand_params.nh = node;
     takano_hand_params.default_port_value = "takano_hand_sequence";
     takano_hand_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
@@ -114,6 +114,12 @@ int main(int argc, char ** argv)
     BT::RosNodeParams leg_pub_params;
     leg_pub_params.nh = node;
     leg_pub_params.default_port_value = "step_legs";
+
+    BT::RosNodeParams move_leg_params;
+    move_leg_params.nh = node;
+    move_leg_params.default_port_value = "step_leg";
+    move_leg_params.server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
+    move_leg_params.wait_for_server_timeout = std::chrono::milliseconds(wait_for_server_timeout_ms);
     
     factory.registerNodeType<FollowRoute>("follow_route", follow_route_params);
     factory.registerNodeType<GenerateRoute>("generate_route", generate_route_params);
@@ -130,6 +136,7 @@ int main(int argc, char ** argv)
     factory.registerNodeType<ResetMcl>("reset_mcl", reset_mcl_params);
     factory.registerNodeType<BtLegPub>("pub_step_legs", leg_pub_params);
     factory.registerNodeType<ArucoPoseSub>("sub_aruco_pose", bt_sub_aruco_params);
+    factory.registerNodeType<MoveLegAction>("move_legs", move_leg_params);
     BT::Tree tree = factory.createTreeFromFile(bt_xml_file);
     BT::StdCoutLogger logger_cout(tree);
     tree.tickWhileRunning();

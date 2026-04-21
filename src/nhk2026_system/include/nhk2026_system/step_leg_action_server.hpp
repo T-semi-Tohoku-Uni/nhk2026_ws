@@ -38,9 +38,7 @@ private:
     void handle_accepted(const std::shared_ptr<GoalHandleLegMove> goal_handle);
     void execute(const std::shared_ptr<GoalHandleLegMove> goal_handle);
 
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr right_leg_motor_publisher_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr left_leg_motor_publisher_;
-    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr back_leg_motor_publisher_;
+    rclcpp::Publisher<std_msgs::msg::Float32MultiArray>::SharedPtr step_legs_motor_publisher_;
 
     rclcpp::TimerBase::SharedPtr feedback_timer_;
     void feedback_timer_callback();

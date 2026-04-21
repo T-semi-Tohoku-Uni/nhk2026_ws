@@ -21,7 +21,7 @@
                  y="3.8"
                  z="0.2"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000">
         <generate_route x="-1.8"
                         y="3.9"
                         theta="0.0"/>
@@ -32,7 +32,7 @@
                  y="5.0"
                  z="0.4"
                  theta="0.0"/>
-      <Delay delay_msec="5000">
+      <Delay delay_msec="4000">
         <generate_route x="-1.8"
                         y="5.0"
                         theta="0.0"/>
@@ -108,6 +108,10 @@
       <input_port name="target_theta"/>
       <input_port name="omega"/>
     </SubTree>
+    <Action ID="service_vacuum_stack"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
     <Action ID="step_move"
             editable="true">
       <input_port name="command"/>
