@@ -17,38 +17,11 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <generate_route x="-1.5"
-                      y="2.6"
-                      theta="0.0"/>
-      <follow_outline/>
-      <generate_route x="-1.5"
-                      y="2.6"
-                      theta="0.0"/>
-      <follow_detail/>
-      <generate_route x="-3"
-                      y="2.6"
-                      theta="0.0"/>
-      <follow_outline/>
-      <generate_route x="-3"
-                      y="2.6"
-                      theta="0.0"/>
-      <follow_detail/>
+      <SubTree ID="Arena"/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel>
-    <Action ID="follow_detail"
-            editable="true"/>
-    <Action ID="follow_outline"
-            editable="true"/>
-    <Action ID="generate_route"
-            editable="true">
-      <input_port name="x"/>
-      <input_port name="y"/>
-      <input_port name="theta"
-                  default="0.0"/>
-    </Action>
-  </TreeNodesModel>
+  <TreeNodesModel/>
 
 </root>
