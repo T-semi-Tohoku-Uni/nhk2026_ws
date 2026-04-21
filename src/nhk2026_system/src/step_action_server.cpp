@@ -170,7 +170,7 @@ private:
                         break;
                     case 8:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
-                        target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.57};
+                        target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.54};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 9:
@@ -246,7 +246,7 @@ private:
                         break;
                     case 9:
                         leg_max_speed_ = 50.0; leg_max_acc_ = 20.0;
-                        target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
+                        target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.54};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 10:
