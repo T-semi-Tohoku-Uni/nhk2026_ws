@@ -23,7 +23,7 @@
                  vx="0.0"
                  vy="-0.5"
                  omega="0.5"
-                 pub_msec="500"
+                 pub_msec="300"
                  _autoremap="true"/>
       </Delay>
       <Delay delay_msec="1000">
@@ -43,6 +43,10 @@
                    pos="5.0"/>
       <takano_hand step="5"
                    pos="5.0"/>
+      <generate_route x="-0.871"
+                      y="0.5"
+                      theta="1.57"/>
+      <follow_route/>
       <generate_route x="-0.871"
                       y="0.388"
                       theta="1.57"/>
