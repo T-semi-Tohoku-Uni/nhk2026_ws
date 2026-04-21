@@ -26,6 +26,7 @@
 #include <numeric>
 #include <mutex>
 #include <omp.h>
+#include <sensor_msgs/msg/imu.hpp>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -188,8 +189,8 @@ namespace mcl {
                     "initial_pose", 10, std::bind(&MCL_3D::initialPoseCallback, this, std::placeholders::_1)
                 );
 
-                subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
-                    "quaternion_feedback", 10, std::bind(&MCL_3D::externalQuatCallback, this, std::placeholders::_1)
+                subImu_ = create_subscription<sensor_msgs::msg::Imu>(
+                    "livox/imu", 10, std::bind(&MCL_3D::imuCallback, this, std::placeholders::_1)
                 );
 
                 zaxissub_= create_subscription<std_msgs::msg::Int32MultiArray>(
@@ -532,22 +533,45 @@ namespace mcl {
                 }
             }
             
-            void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
-                if (msg->data.size() >= 4) {
-                    external_quat_.w = msg->data[0];
-                    external_quat_.x = msg->data[1];
-                    external_quat_.y = msg->data[2];
-                    external_quat_.z = msg->data[3];
-                    has_external_quat_ = true;
+            // void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+            //     if (msg->data.size() >= 4) {
+            //         external_quat_.w = msg->data[0];
+            //         external_quat_.x = msg->data[1];
+            //         external_quat_.y = msg->data[2];
+            //         external_quat_.z = msg->data[3];
+            //         has_external_quat_ = true;
 
                     
-                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
-                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
-                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
-                    double yaw_deg = yaw_rad * (180.0 / M_PI);
+            //         double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
+            //         double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
+            //         double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
+            //         double yaw_deg = yaw_rad * (180.0 / M_PI);
 
-                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
-                }
+            //         //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+            //     }
+            // }
+
+            void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+                // 1. URDFの rpy="3.14159 0 -1.57" から回転クォータニオンを作成 
+                tf2::Quaternion q_base_to_livox;
+                q_base_to_livox.setRPY(3.14159, 0.0, -1.57);
+
+                // 2. 受信したIMUの姿勢を tf2 型に変換
+                tf2::Quaternion q_livox_world;
+                tf2::fromMsg(msg->orientation, q_livox_world);
+
+                // 3. ロボット本体の姿勢を計算 (逆回転を掛ける)
+                // センサーの向きを打ち消して base_link 基準の姿勢に戻す
+                tf2::Quaternion q_robot_world = q_livox_world * q_base_to_livox.inverse();
+                q_robot_world.normalize();
+
+                // 4. MCLで利用する external_quat_ を更新
+                external_quat_.x = q_robot_world.x();
+                external_quat_.y = q_robot_world.y();
+                external_quat_.z = q_robot_world.z();
+                external_quat_.w = q_robot_world.w();
+                
+                has_external_quat_ = true;
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
                 zaxics_ = msg;
@@ -1449,6 +1473,8 @@ namespace mcl {
             bool has_external_quat_ = false;
             
             std::mutex data_mutex_;
+
+            rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subImu_;
 
             // 各種パラメータ
             std::double_t zHit_, zShort_, zMax_, zRand_;

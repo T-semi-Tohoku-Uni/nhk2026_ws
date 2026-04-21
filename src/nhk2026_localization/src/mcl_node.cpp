@@ -29,6 +29,7 @@
 #include <geometry_msgs/msg/pose.hpp> 
 #include "std_msgs/msg/int32_multi_array.hpp" 
 #include "std_msgs/msg/float32_multi_array.hpp"
+#include <sensor_msgs/msg/imu.hpp>
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -222,10 +223,12 @@ namespace mcl {
 
                   
                 scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
-                subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
-                    "quaternion_feedback", 10, std::bind(&MCL::externalQuatCallback, this, std::placeholders::_1)
+                // subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
+                //     "quaternion_feedback", 10, std::bind(&MCL::externalQuatCallback, this, std::placeholders::_1)
+                // );
+                subImu_ = create_subscription<sensor_msgs::msg::Imu>(
+                    "livox/imu", 10, std::bind(&MCL::imuCallback, this, std::placeholders::_1)
                 );
-                
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
                 if (sim) {
                     RCLCPP_INFO(this->get_logger(), "Environment variable WITH_SIM is set to: %s", sim);
@@ -300,19 +303,46 @@ namespace mcl {
                 response->success = true;
             }
 
-            void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
-                if (msg->data.size() >= 4) {
-                    external_quat_.w = msg->data[0];
-                    external_quat_.x = msg->data[1];
-                    external_quat_.y = msg->data[2];
-                    external_quat_.z = msg->data[3];
-                    has_external_quat_ = true;
+            // void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+            //     if (msg->data.size() >= 4) {
+            //         external_quat_.w = msg->data[0];
+            //         external_quat_.x = msg->data[1];
+            //         external_quat_.y = msg->data[2];
+            //         external_quat_.z = msg->data[3];
+            //         has_external_quat_ = true;
 
-                    // Yawの計算
-                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
-                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
-                    imu_yaw_ = std::atan2(siny_cosp, cosy_cosp);
-                }
+            //         // Yawの計算
+            //         double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
+            //         double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
+            //         imu_yaw_ = std::atan2(siny_cosp, cosy_cosp);
+            //     }
+            // }
+
+            void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+                // 1. URDFの取り付け角度 (base_link -> livox_frame) をクォータニオンとして定義
+                tf2::Quaternion q_base_to_livox;
+                q_base_to_livox.setRPY(3.14159, 0.0, -1.57);
+
+                // 2. 受信したIMUの姿勢 (センサーのワールド姿勢)
+                tf2::Quaternion q_livox_world;
+                tf2::fromMsg(msg->orientation, q_livox_world);
+
+                // 3. ロボット本体のワールド姿勢を計算
+                // Q_robot_world = Q_livox_world * (Q_base_to_livox)^-1
+                tf2::Quaternion q_robot_world = q_livox_world * q_base_to_livox.inverse();
+                q_robot_world.normalize();
+
+                // 4. MCL内部の状態変数を更新
+                external_quat_.x = q_robot_world.x();
+                external_quat_.y = q_robot_world.y();
+                external_quat_.z = q_robot_world.z();
+                external_quat_.w = q_robot_world.w();
+                has_external_quat_ = true;
+
+                // 5. Yaw角を抽出して imu_yaw_ に保存
+                double roll, pitch, yaw;
+                tf2::Matrix3x3(q_robot_world).getRPY(roll, pitch, yaw);
+                imu_yaw_ = yaw;
             }
 
             void setMCLPose(geometry_msgs::msg::Pose2D pose) { mclPose_=pose; }
@@ -1556,7 +1586,7 @@ namespace mcl {
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subLayerScan_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanFront_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanBack_;
-            rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
+            //rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
             rclcpp::Subscription<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr subScan_;
             nhk2026_msgs::msg::MultiLaserScan::SharedPtr scan_;
 
@@ -1608,6 +1638,8 @@ namespace mcl {
             std::vector<SensorTransform> lidar_transforms_ = std::vector<SensorTransform>(3);
             rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
             std_msgs::msg::Int32MultiArray::SharedPtr zaxics_;
+
+            rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr subImu_;
 
             // private 変数として定義
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; // LaserScanから変更
