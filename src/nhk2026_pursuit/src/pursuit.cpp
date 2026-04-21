@@ -90,6 +90,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
             this->declare_parameter<double>("wait_time_", 10.0);
+            this->declare_parameter<std::string>("action_server_name", "follow");
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -112,7 +113,8 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("accel_angle_", accel_angle_);
             this->get_parameter("stop_angle_", stop_angle_);
             this->get_parameter("offset_z_", offset_z_);
-            this->get_parameter("wait_time", wait_time_);
+            this->get_parameter("wait_time_", wait_time_);
+            this->get_parameter("action_server_name", action_server_name_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -159,7 +161,7 @@ class FollowNode: public rclcpp::Node {
             target_pub_ = this->create_publisher<geometry_msgs::msg::Pose>("target_pose", 10);
             action_server_ = rclcpp_action::create_server<inrof2025_ros_type::action::Follow>(
                 this,
-                "follow",
+                this->action_server_name_.c_str(),
                 std::bind(&FollowNode::handleGoal, this, std::placeholders::_1, std::placeholders::_2),
                 std::bind(&FollowNode::handleCancel, this, std::placeholders::_1),
                 std::bind(&FollowNode::handleAccepted, this, std::placeholders::_1)
@@ -440,11 +442,11 @@ class FollowNode: public rclcpp::Node {
         void controlLoop() {
             //RCLCPP_INFO(this->get_logger(), "z: %.3f", pose_.position.z);
             if (!goal_handle_){
-                publishZero();
+                // publishZero();
                 return;
             }
             if (path_.empty()){
-                publishZero();
+                // publishZero();
                 return;
             }
             if (is_rotating_) {
@@ -456,7 +458,7 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_jump_){
-                publishZero();
+                // publishZero();
                 jumpZ();
                 return;
             }
@@ -896,6 +898,7 @@ class FollowNode: public rclcpp::Node {
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<inrof2025_ros_type::action::Rotate>> goal_rotate_handle_;
 
+        std::string action_server_name_ = "follow";
 };
 
 int main(int argc, char *argv[]) {
