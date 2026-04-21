@@ -8,11 +8,14 @@
                       y="1.45"
                       theta="3.142"/>
       <follow_route/>
+      <move_legs right_angle="3.14"
+                 left_angle="3.14"
+                 back_angle="0.0"/>
       <generate_route x="-0.490"
-                      y="1.45"
+                      y="1.5"
                       theta="3.142"/>
       <ForceSuccess>
-        <Timeout msec="10000">
+        <Timeout msec="15000">
           <follow_route/>
         </Timeout>
       </ForceSuccess>
@@ -23,7 +26,7 @@
                  vx="0.0"
                  vy="-0.5"
                  omega="0.5"
-                 pub_msec="300"
+                 pub_msec="500"
                  _autoremap="true"/>
       </Delay>
       <Delay delay_msec="1000">
@@ -37,8 +40,14 @@
                  omega="0"
                  pub_msec="1000"/>
       </Delay>
+      <move_legs right_angle="3.491"
+                 left_angle="3.491"
+                 back_angle="-0.3491"/>
       <takano_hand step="3"
                    pos="5.0"/>
+      <move_legs right_angle="3.14"
+                 left_angle="3.14"
+                 back_angle="0.0"/>
       <takano_hand step="4"
                    pos="5.0"/>
       <takano_hand step="5"
@@ -47,6 +56,9 @@
                       y="0.5"
                       theta="1.57"/>
       <follow_route/>
+      <move_legs right_angle="0.0"
+                 left_angle="0.0"
+                 back_angle="1.57"/>
       <generate_route x="-0.871"
                       y="0.388"
                       theta="1.57"/>
@@ -71,6 +83,12 @@
       <input_port name="y"/>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="move_legs"
+            editable="true">
+      <input_port name="right_angle"/>
+      <input_port name="left_angle"/>
+      <input_port name="back_angle"/>
     </Action>
     <Action ID="takano_hand"
             editable="true">
