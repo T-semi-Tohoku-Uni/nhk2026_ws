@@ -552,27 +552,40 @@ namespace mcl {
             //     }
             // }
 
-            void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
-                // 1. URDFの rpy="3.14159 0 -1.57" から回転クォータニオンを作成 
+           void imuCallback(const sensor_msgs::msg::Imu::SharedPtr msg) {
+                // 1. URDFの取り付け角度 (base_link -> livox_frame) を定義
                 tf2::Quaternion q_base_to_livox;
                 q_base_to_livox.setRPY(3.14159, 0.0, -1.57);
 
-                // 2. 受信したIMUの姿勢を tf2 型に変換
+                // 2. 受信したIMUの姿勢 (センサーのワールド姿勢)
                 tf2::Quaternion q_livox_world;
                 tf2::fromMsg(msg->orientation, q_livox_world);
 
-                // 3. ロボット本体の姿勢を計算 (逆回転を掛ける)
-                // センサーの向きを打ち消して base_link 基準の姿勢に戻す
+                // 3. ロボット本体のワールド姿勢を計算
                 tf2::Quaternion q_robot_world = q_livox_world * q_base_to_livox.inverse();
+
+                // --- 追加: Yaw角を反時計回りに90度（M_PI/2）回転させる ---
+                tf2::Quaternion q_rot_90;
+                q_rot_90.setRPY(0.0, 0.0, 1.570796); // 反時計回りに90度
+                
+                // ワールド座標のZ軸に対して回転させるために、左から掛ける
+                q_robot_world = q_rot_90 * q_robot_world; 
+                // --------------------------------------------------
+
                 q_robot_world.normalize();
 
-                // 4. MCLで利用する external_quat_ を更新
+                // 4. MCL内部の状態変数を更新
                 external_quat_.x = q_robot_world.x();
                 external_quat_.y = q_robot_world.y();
                 external_quat_.z = q_robot_world.z();
                 external_quat_.w = q_robot_world.w();
                 
                 has_external_quat_ = true;
+
+                // 5. 確認用にYaw角を抽出する場合
+                double roll, pitch, yaw;
+                tf2::Matrix3x3(q_robot_world).getRPY(roll, pitch, yaw);
+                imu_yaw_ = yaw;
             }
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
                 zaxics_ = msg;
