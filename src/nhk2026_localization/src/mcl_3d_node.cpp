@@ -22,6 +22,10 @@
 #include <geometry_msgs/msg/pose2_d.hpp>
 #include "std_msgs/msg/float32_multi_array.hpp"
 #include "std_msgs/msg/int32_multi_array.hpp" 
+#include <deque> 
+#include <numeric>
+#include <mutex>
+#include <omp.h>
 
 using namespace H5;
 using namespace std::chrono_literals;
@@ -406,6 +410,29 @@ namespace mcl {
                     double y_map = x * sin_y + y * cos_y + mclPose_.position.y;
                     double z_map = z + mclPose_.position.z;
 
+                    int u, v, w;
+                    xyz2uvw(x_map, y_map, z_map, &u, &v, &w);
+
+                    // マップ範囲内かチェック
+                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
+                        v >= 0 && v < static_cast<int>(dim_y_) && 
+                        w >= 0 && w < static_cast<int>(dim_z_)) {
+                        
+                        float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                        
+                        // 閾値の設定（例：10cm以上壁から離れていたら無効化）
+                        // 自己位置推定に使用する「確かな壁の点」だけを残す
+                        const float sdf_threshold = 0.10f; 
+                        if (std::abs(sdf_val) > sdf_threshold) {
+                            continue; // 壁から遠い点（動的障害物やノイズ）なので除外
+                        }
+                    } else {
+                        // マップ外の点は、静止物体の情報がないため除外（または必要に応じて保持）
+                        continue;
+                    }
+
+                   
+
                     // --- X / Y 範囲フィルタリング ---
                     // 指定された範囲外の点は除外
                     if (x_map < -4.825 || x_map > -1.225 || y_map < 3.2 || y_map > 8.0) {
@@ -458,6 +485,8 @@ namespace mcl {
                     filtered_cloud_pub_->publish(filtered_cloud_msg);
                 }
             }
+
+
             void initialPoseCallback(const geometry_msgs::msg::Pose::SharedPtr msg) {
                 // 1. 推定位置 (mclPose_) を受信したメッセージで更新
                 // msgは Pose型なので、そのまま position と orientation をコピー
@@ -971,29 +1000,29 @@ namespace mcl {
             void caculateMeasurementModel() {
                 if (local_points_.empty()) return;
 
-                // 各パーティクルの合計対数尤度を格納する配列 (サイズはパーティクル数のみ)
                 std::vector<double> log_weights(particleNum_);
                 double max_log_weight = -std::numeric_limits<double>::infinity();
 
+                // OpenMPによる並列化：パーティクル数が多い場合に有効
+                #pragma omp parallel for reduction(max: max_log_weight)
                 for (std::size_t i = 0; i < particles_.size(); i++) {
-                    // --- 追加：範囲チェック (2.5m = 250cm) ---
                     double px = particles_[i].getX();
                     double py = particles_[i].getY();
 
+                    // アンカー（前回推定位置）からの乖離チェック
                     if (std::abs(px - anchor_x_) > 0.35 || std::abs(py - anchor_y_) > 0.35) {
-                        // 範囲外なら存在確率を 0 にする（対数なので -inf）
                         log_weights[i] = -std::numeric_limits<double>::infinity();
                     } else {
+                        // 遮蔽チェック付きの対数尤度計算
                         log_weights[i] = caculateLogLikelihood(particles_[i].getPose(), local_points_);
                     }
-                    // --------------------------------------
                     
                     if (log_weights[i] > max_log_weight) {
                         max_log_weight = log_weights[i];
                     }
                 }
 
-                // 2. 正規化処理 (Log-Sum-Expトリック)
+                // 正規化処理 (Log-Sum-Expトリック)
                 double w_sum = 0.0;
                 std::vector<double> linear_weights(particleNum_);
                 for (std::size_t i = 0; i < particles_.size(); i++) {
@@ -1007,21 +1036,23 @@ namespace mcl {
                     particles_[i].setW(normalized_w);
                     w_sq_sum += normalized_w * normalized_w;
                 }
-
-                // 有効サンプルサイズの更新
                 effectiveSampleSize_ = 1.0 / w_sq_sum;
             }
 
             double caculateLogLikelihood(const geometry_msgs::msg::Pose& pose, const std::vector<Point3D>& local_points) {
+                
+
                 double total_log_p = 0.0;
                 double var = lfmSigma_ * lfmSigma_;
                 double normConst = 1.0 / (std::sqrt(2.0 * M_PI * var));
-                
-                // パラメータ
                 const double scan_range_max = 30.0; 
                 const double pRand_const = (1.0 / scan_range_max) * mapResolution_;
 
-                // パーティクルの姿勢から回転行列の要素を計算 (ループ外で1回だけ)
+                // レイキャスティング用パラメータ
+                const double ray_step = mapResolution_ * 5.0; // 計算量削減のため解像度の5倍ステップでチェック
+                const double occlusion_depth_threshold = -0.10; // 壁の表面から10cm以上奥は「壁の中」とみなす
+                const double endpoint_grace_dist = 0.10; // 計測点手前10cmはチェックを免除（計測点自身のめり込みを許容）
+
                 tf2::Quaternion q(pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w);
                 tf2::Matrix3x3 m(q);
                 double r, p, yaw;
@@ -1030,39 +1061,51 @@ namespace mcl {
                 double sin_theta = std::sin(yaw);
 
                 for (const auto& pt : local_points) {
-                    // ロボット座標系からマップ座標系への変換
                     double map_x = pt.x * cos_theta - pt.y * sin_theta + pose.position.x;
                     double map_y = pt.x * sin_theta + pt.y * cos_theta + pose.position.y;
                     double map_z = pt.z + pose.position.z; 
 
-                    int u, v, w;
-                    xyz2uvw(map_x, map_y, map_z, &u, &v, &w);
+                    // 1. レイキャスティングによる遮蔽判定
+                    bool occluded = false;
+                    double dist_to_point = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+                    
+                    // ロボットから計測点に向かって一定間隔でSDFを確認
+                    for (double d = 0.2; d < dist_to_point - endpoint_grace_dist; d += ray_step) {
+                        double ratio = d / dist_to_point;
+                        double check_x = pose.position.x + (map_x - pose.position.x) * ratio;
+                        double check_y = pose.position.y + (map_y - pose.position.y) * ratio;
+                        double check_z = pose.position.z + (map_z - pose.position.z) * ratio;
+
+                        int u, v, w;
+                        xyz2uvw(check_x, check_y, check_z, &u, &v, &w);
+
+                        if (u >= 0 && u < static_cast<int>(dim_x_) && v >= 0 && v < static_cast<int>(dim_y_) && w >= 0 && w < static_cast<int>(dim_z_)) {
+                            float sdf_val = distField3D_[getIdx3D(u, v, w)];
+                            // SDFが負の値（壁の内部）かつ閾値より深ければ、遮蔽されていると判断
+                            if (sdf_val < occlusion_depth_threshold) {
+                                occluded = true;
+                                break;
+                            }
+                        }
+                    }
 
                     double prob = zRand_ * pRand_const; 
 
-                    if (u >= 0 && u < static_cast<int>(dim_x_) && 
-                        v >= 0 && v < static_cast<int>(dim_y_) && 
-                        w >= 0 && w < static_cast<int>(dim_z_)) {
-                        
-                        double sdf_val = static_cast<double>(distField3D_[getIdx3D(u, v, w)]);
-                        
-                        // 動的障害物除外 (壁から遠すぎる点は無視)
-                        // if (sdf_val > 0.5) {
-                        //     total_log_p += std::log(prob);
-                        //     continue;
-                        // }
+                    if (occluded) {
+                        // 遮蔽されている点が見えていると主張するパーティクルには強いペナルティ
+                        prob = 1e-10; 
+                    } else {
+                        int ut, vt, wt;
+                        xyz2uvw(map_x, map_y, map_z, &ut, &vt, &wt);
 
-                        // 壁の中(マイナス)ならペナルティを付与
-                        double d = std::abs(sdf_val);
-                        
-                        double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
-                        prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
+                        if (ut >= 0 && ut < static_cast<int>(dim_x_) && vt >= 0 && vt < static_cast<int>(dim_y_) && wt >= 0 && wt < static_cast<int>(dim_z_)) {
+                            double d = std::abs(static_cast<double>(distField3D_[getIdx3D(ut, vt, wt)]));
+                            double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
+                            prob = std::min(1.0, zHit_ * pHit + zRand_ * pRand_const);
+                        }
                     }
-                    
-                    // 対数尤度を加算 (log(0) 回避のために微小値を std::max で保証)
                     total_log_p += std::log(std::max(prob, 1e-10));
                 }
-
                 return total_log_p;
             }
 

@@ -15,11 +15,9 @@
 
   <include path="common/bt_rotate.xml"/>
 
-  <include path="common/wait_for_aruco.xml"/>
-
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="MartialClub"/>
+      <SubTree ID="Forest"/>
     </Sequence>
   </BehaviorTree>
 

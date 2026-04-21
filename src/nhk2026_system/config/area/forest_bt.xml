@@ -13,7 +13,7 @@
   <BehaviorTree ID="Forest">
     <Sequence>
       <generate_route x="-1.8"
-                      y="2.8"
+                      y="2.6"
                       theta="0.0"/>
       <follow_route/>
       <SubTree ID="arm_up_step"/>
@@ -80,6 +80,10 @@
       <Delay delay_msec="1000">
         <step_move command="step down"/>
       </Delay>
+      <reset_mcl x="-3.0"
+                 y="8.6"
+                 z="0.0"
+                 theta="0.0"/>
     </Sequence>
   </BehaviorTree>
 
