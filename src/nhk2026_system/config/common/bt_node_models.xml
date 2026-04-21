@@ -76,6 +76,12 @@
     <Action ID="sub_aruco_pose" editable="true">
       <input_port name="id"/>
     </Action>
+    
+    <Action ID="move_legs" editable="true">
+      <input_port name="right_angle"/>
+      <input_port name="left_angle"/>
+      <input_port name="back_angle"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
