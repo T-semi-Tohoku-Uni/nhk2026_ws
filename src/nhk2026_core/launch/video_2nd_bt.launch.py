@@ -86,6 +86,14 @@ def generate_launch_description():
         output='screen',
         namespace=name_space,
     )
+
+    step_legs_angle = Node(
+        package='nhk2026_system',
+        executable='step_leg_action_server',
+        name='step_leg_action_server',
+        output='screen',
+        namespace=name_space,
+    )
     """step leg end"""
 
     """bt start"""
@@ -136,5 +144,6 @@ def generate_launch_description():
     ))
     ld.add_action(takano_hand_sequencer)
     ld.add_action(step_leg_sequencer)
+    ld.add_action(step_legs_angle)
     
     return ld
