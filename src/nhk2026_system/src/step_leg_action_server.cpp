@@ -16,7 +16,7 @@ StepLegActionServer::StepLegActionServer(): rclcpp::Node("step_leg_action_server
     );
 
     this->joint_states_subscriber = this->create_subscription<sensor_msgs::msg::JointState>(
-        std::string("/joint_states_step"),
+        std::string("joint_states_step"),
         device,
         std::bind(&StepLegActionServer::joint_state_callback, this, _1)
     );
@@ -93,20 +93,12 @@ void StepLegActionServer::handle_accepted(const std::shared_ptr<GoalHandleLegMov
         .reliability(RMW_QOS_POLICY_RELIABILITY_RELIABLE)
         .durability(RMW_QOS_POLICY_DURABILITY_VOLATILE);
 
-    this->right_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("right_leg"),
-        device
-    );
-    this->left_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("left_leg"),
-        device
-    );
-    this->back_leg_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
-        std::string("back_leg"),
+    this->step_legs_motor_publisher_ = this->create_publisher<std_msgs::msg::Float32MultiArray>(
+        std::string("step_legs"),
         device
     );
     this->feedback_timer_ = this->create_wall_timer(
-        0.05s,
+        10ms,
         std::bind(&StepLegActionServer::feedback_timer_callback, this)
     );
 
@@ -135,25 +127,6 @@ void StepLegActionServer::execute(const std::shared_ptr<GoalHandleLegMove> goal_
         bool left_reached  = std::fabs(this->now_joint_.position[1] - goal->joint_states.position[1]) <= this->kPosTolerance_;
         bool back_reached  = std::fabs(this->now_joint_.position[2] - goal->joint_states.position[2]) <= this->kPosTolerance_;
 
-        if (!right_reached)
-        {
-            std_msgs::msg::Float32MultiArray cmd;
-            cmd.data = {static_cast<float>(goal->joint_states.position[0]), goal->max_speed, goal->max_acc};
-            right_leg_motor_publisher_->publish(cmd);
-        }
-        if (!left_reached)
-        {
-            std_msgs::msg::Float32MultiArray cmd;
-            cmd.data = {static_cast<float>(goal->joint_states.position[1]), goal->max_speed, goal->max_acc};
-            left_leg_motor_publisher_->publish(cmd);
-        }
-        if (!back_reached)
-        {
-            std_msgs::msg::Float32MultiArray cmd;
-            cmd.data = {static_cast<float>(goal->joint_states.position[2]), goal->max_speed, goal->max_acc};
-            back_leg_motor_publisher_->publish(cmd);
-        }
-    
         if (right_reached && left_reached && back_reached)
         {
             result->success = true;
@@ -162,6 +135,16 @@ void StepLegActionServer::execute(const std::shared_ptr<GoalHandleLegMove> goal_
             this->goal_active_ = false;
             return;
         }
+
+        std_msgs::msg::Float32MultiArray cmd;
+        cmd.data = {
+            goal->max_speed,
+            goal->max_acc,
+            static_cast<float>(goal->joint_states.position[0]),
+            static_cast<float>(goal->joint_states.position[1]),
+            static_cast<float>(goal->joint_states.position[2])
+        };
+        this->step_legs_motor_publisher_->publish(cmd);
 
         loop_rate.sleep();
     }
