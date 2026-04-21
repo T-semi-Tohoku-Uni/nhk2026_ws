@@ -17,22 +17,19 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <generate_route x="-1.85"
-                      y="1.8"
+      <generate_route x="-3"
+                      y="2.6"
                       theta="0.0"/>
-      <follow_route/>
-      <generate_route x="-1.85"
-                      y="2.8"
-                      theta="0.0"/>
-      <follow_route/>
-      <SubTree ID="arm_up_step"/>
-      <SubTree ID="kfs_stack"/>
+      <follow_outline/>
+      <follow_detail/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="follow_route"
+    <Action ID="follow_detail"
+            editable="true"/>
+    <Action ID="follow_outline"
             editable="true"/>
     <Action ID="generate_route"
             editable="true">
