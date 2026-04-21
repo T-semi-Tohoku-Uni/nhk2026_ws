@@ -17,17 +17,29 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <service_vacuum_stack value="true"/>
-      <SubTree ID="Forest"
-               _autoremap="true"/>
+      <generate_route x="-1.85"
+                      y="1.6"
+                      theta="0.0"/>
+      <follow_route/>
+      <generate_route x="-1.85"
+                      y="2.8"
+                      theta="0.0"/>
+      <follow_route/>
+      <SubTree ID="arm_up_step"/>
+      <SubTree ID="kfs_stack"/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="service_vacuum_stack"
+    <Action ID="follow_route"
+            editable="true"/>
+    <Action ID="generate_route"
             editable="true">
-      <input_port name="value"/>
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"
+                  default="0.0"/>
     </Action>
   </TreeNodesModel>
 
