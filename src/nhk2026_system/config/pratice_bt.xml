@@ -10,6 +10,7 @@
   <include path="common/bt_node_models.xml"/>
 
   <include path="common/wait_for_trigger.xml"/>
+  <include path="common/bt_rotate.xml"/>
 
   <BehaviorTree ID="MainTree">
     <Sequence>
