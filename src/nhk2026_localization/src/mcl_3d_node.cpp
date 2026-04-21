@@ -27,6 +27,7 @@
 #include <mutex>
 #include <omp.h>
 #include <sensor_msgs/msg/imu.hpp>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using namespace H5;
 using namespace std::chrono_literals;
