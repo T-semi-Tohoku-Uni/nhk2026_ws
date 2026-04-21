@@ -8,62 +8,68 @@ endif()
 option(IS_JETSON "Build on jetson" OFF)
 # find dependencies
 find_package(ament_cmake REQUIRED)
-
+find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(OpenCV REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(realsense2_camera_msgs REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(nhk2026_msgs REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
+find_package(std_msgs REQUIRED)
+find_package(backward_ros REQUIRED)
 
 if(IS_JETSON)
-  find_package(rclcpp REQUIRED)
-  find_package(rclcpp_lifecycle REQUIRED)
-  find_package(OpenCV REQUIRED)
-  find_package(sensor_msgs REQUIRED)
-  find_package(realsense2_camera_msgs REQUIRED)
-  find_package(cv_bridge REQUIRED)
-  find_package(geometry_msgs REQUIRED)
-  find_package(nhk2026_msgs REQUIRED)
-  find_package(Eigen3 3.3 REQUIRED NO_MODULE)
-  find_package(std_msgs REQUIRED)
-  find_package(backward_ros REQUIRED)
-  message(STATUS "Building aruco_node from aruco_node_opencv410.cpp because IS_JETSON is ON")
-
-  add_executable(aruco_node
+  set(aruco_node_sources
     src/aruco_node_opencv410.cpp
   )
-
-  ament_target_dependencies(aruco_node
-    rclcpp
-    rclcpp_lifecycle
-    sensor_msgs
-    realsense2_camera_msgs
-    cv_bridge
-    geometry_msgs
-    nhk2026_msgs
-  )
-
-  target_include_directories(aruco_node PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
-    $<INSTALL_INTERFACE:include>
-  )
-
-  install(
-    TARGETS aruco_node
-    DESTINATION lib/${PROJECT_NAME}
-  )
-
-  install(
-    DIRECTORY include/
-    DESTINATION include
-  )
-
-  include_directories(
-    ${OpenCV_INCLUDE_DIRS}
-  )
-
-  target_link_libraries(aruco_node
-    ${OpenCV_LIBRARIES}
-    Eigen3::Eigen
-  )
+  message(STATUS "Building aruco_node from aruco_node_opencv410.cpp because IS_JETSON is ON")
 else()
-  message(STATUS "Skipping aruco_node because IS_JETSON is OFF")
+  set(aruco_node_sources
+    src/aruco_node.cpp
+    src/aruco.cpp
+  )
+  message(STATUS "Building aruco_node from aruco_node.cpp because IS_JETSON is OFF")
 endif()
+
+add_executable(aruco_node
+  ${aruco_node_sources}
+)
+
+ament_target_dependencies(aruco_node
+  rclcpp
+  rclcpp_lifecycle
+  sensor_msgs
+  realsense2_camera_msgs
+  cv_bridge
+  geometry_msgs
+  nhk2026_msgs
+)
+
+target_include_directories(aruco_node PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}>
+  $<INSTALL_INTERFACE:include>
+)
+
+install(
+  TARGETS aruco_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+
+include_directories(
+  ${OpenCV_INCLUDE_DIRS}
+)
+
+target_link_libraries(aruco_node
+  ${OpenCV_LIBRARIES}
+  Eigen3::Eigen
+)
 
 # add install
 install(
