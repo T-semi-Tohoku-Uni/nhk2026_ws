@@ -16,7 +16,6 @@
                       y="2.6"
                       theta="0.0"/>
       <follow_route/>
-      <SubTree ID="arm_up_step"/>
       <step_move command="step up"/>
       <reset_mcl x="-1.8"
                  y="3.8"
