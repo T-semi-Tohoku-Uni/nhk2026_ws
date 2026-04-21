@@ -25,8 +25,8 @@
       <reset_mcl x="-4.2"
                  y="3.8"
                  z="0.2"
-                 theta="reset_mcl0.0"/>
-      <Delay delay_msec="Delay4000">
+                 theta="0.0"/>
+      <Delay delay_msec="4000">
         <generate_route x="-4.2"
                         y="3.8"
                         theta="3.14"/>
@@ -60,7 +60,7 @@
                         theta="3.14"/>
       </Delay>
       <follow_route/>
-      <step_move command="step  down"/>
+      <step_move command="step down"/>
     </Sequence>
   </BehaviorTree>
 
