@@ -26,6 +26,11 @@
       <follow_detail/>
       <SubTree ID="arm_up_step"/>
       <SubTree ID="kfs_stack"/>
+      <move_arm y="0.489"
+                z="0.56"
+                roll="-2.3"
+                max_speed="0.5"
+                max_acc="0.1"/>
       <generate_route x="-1.8"
                       y="2.6"
                       theta="0.0"/>
@@ -88,7 +93,7 @@
       <step_move command="step down"/>
       <SubTree ID="rotate"
                target_theta="3.14"
-               omega="1"
+               omega="-1"
                _autoremap="true"/>
       <Delay delay_msec="1000">
         <step_move command="step down"/>
@@ -114,6 +119,14 @@
       <input_port name="y"/>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
     </Action>
     <Action ID="reset_mcl"
             editable="true">
