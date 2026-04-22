@@ -69,14 +69,6 @@
       <move_legs right_angle="0.0"
                  left_angle="0.0"
                  back_angle="1.57"/>
-      <generate_route x="-0.871"
-                      y="0.45"
-                      theta="1.57"/>
-      <follow_outline/>
-      <generate_route x="-0.871"
-                      y="0.45"
-                      theta="1.57"/>
-      <follow_detail/>
       <SubTree ID="WaitForTrigger"/>
       <takano_hand step="6"
                    pos="5.0"/>

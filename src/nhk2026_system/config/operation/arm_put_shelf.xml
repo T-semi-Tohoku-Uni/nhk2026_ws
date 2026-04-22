@@ -37,7 +37,7 @@
                       y="11.3"
                       theta="-1.57"/>
       <ForceSuccess>
-        <Timeout msec="5000">
+        <Timeout msec="6000">
           <follow_detail/>
         </Timeout>
       </ForceSuccess>

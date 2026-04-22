@@ -1,39 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <include path="../common/bt_node_models.xml"/>
+
   <BehaviorTree ID="arm_front_step">
     <Sequence>
       <move_arm y="0.920573"
                 z="0.152092"
                 roll="0.0"
                 max_speed="0.1"
-                max_acc="0.01"/>
+                max_acc="0.5"/>
       <service_vacuum value="true"/>
       <move_arm y="1.123158"
                 z="0.151863"
                 roll="0.0"
                 max_speed="0.1"
-                max_acc="0.01"/>
-      <move_arm y="0.9"
-                z="0.151863"
+                max_acc="0.5"/>
+      <move_arm y="0.864851"
+                z="0.288856"
                 roll="0.0"
-                max_speed="0.1"
-                max_acc="0.01"/>
-      <move_arm y="1.012603"
-                z="0.6"
-                roll="0.0"
-                max_speed="0.1"
-                max_acc="0.01"/>
-      <move_arm y="0.855850"
-                z="0.377388"
-                roll="-1.57"
-                max_speed="0.1"
-                max_acc="0.01"/>
-      <move_arm y="0.095582"
-                z="0.676967"
-                roll="-1.57"
-                max_speed="0.1"
-                max_acc="0.01"/>
-      <service_vacuum value="false"/>
+                max_speed="1.0"
+                max_acc="0.5"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>
