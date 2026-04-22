@@ -133,6 +133,7 @@ namespace mcl {
                 pose.set__x(initial_x);
                 pose.set__y(initial_y);
                 pose.set__theta(initial_theta);
+                initial_theta_ = initial_theta;
                 // initalize mclPose
                 setMCLPose(pose);
                 velOdom_.set__x(initial_x);
@@ -311,7 +312,7 @@ namespace mcl {
                     // Yawの計算
                     double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
                     double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
-                    imu_yaw_ = std::atan2(siny_cosp, cosy_cosp);
+                    imu_yaw_ = std::atan2(siny_cosp, cosy_cosp) + initial_theta_;
                 }
             }
 
@@ -1608,6 +1609,8 @@ namespace mcl {
             std::vector<SensorTransform> lidar_transforms_ = std::vector<SensorTransform>(3);
             rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
             std_msgs::msg::Int32MultiArray::SharedPtr zaxics_;
+
+            double initial_theta_ = 0.0;
 
             // private 変数として定義
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; // LaserScanから変更

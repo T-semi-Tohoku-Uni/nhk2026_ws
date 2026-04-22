@@ -77,7 +77,7 @@ def generate_launch_description():
     x = -1.25
     y = 0.45
     z = 0.40
-    theta = 0.0
+    theta = 3.141592
     frequency = 25.0
 
     name_space = "aro"

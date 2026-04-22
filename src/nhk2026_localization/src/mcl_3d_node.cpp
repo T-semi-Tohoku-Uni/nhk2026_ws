@@ -152,6 +152,7 @@ namespace mcl {
 
                 this->anchor_x_ = initial_x;
                 this->anchor_y_ = initial_y;
+                initial_theta_ = initial_theta;
 
                 // 2. パーティクル群の初期位置・重みのセットアップ
                 double initial_w = 1.0 / particleNum_;
@@ -543,7 +544,7 @@ namespace mcl {
                     
                     double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
                     double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
-                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp);
+                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp) + initial_theta_;
                     double yaw_deg = yaw_rad * (180.0 / M_PI);
 
                     //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
@@ -1449,6 +1450,7 @@ namespace mcl {
             bool has_external_quat_ = false;
             
             std::mutex data_mutex_;
+            double initial_theta_ = 0.0;
 
             // 各種パラメータ
             std::double_t zHit_, zShort_, zMax_, zRand_;
