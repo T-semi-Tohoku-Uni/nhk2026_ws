@@ -9,7 +9,10 @@
                 roll="-1.57"
                 max_speed="1.0"
                 max_acc="0.5"/>
-      <service_vacuum value="true"/>
+      <service_vacuum_stack value="false"/>
+      <Delay delay_msec="1000">
+        <service_vacuum value="true"/>
+      </Delay>
       <move_arm y="-0.1"
                 z="0.62"
                 roll="-1.57"
@@ -62,6 +65,10 @@
       <input_port name="max_acc"/>
     </Action>
     <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+    <Action ID="service_vacuum_stack"
             editable="true">
       <input_port name="value"/>
     </Action>

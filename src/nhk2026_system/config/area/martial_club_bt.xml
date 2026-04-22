@@ -72,6 +72,11 @@
                       y="0.45"
                       theta="1.57"/>
       <follow_detail/>
+      <SubTree ID="vel_tim"
+               vx="0.0"
+               vy="0.0"
+               omega="0.0"
+               pub_msec="500"/>
       <SubTree ID="WaitForTrigger"/>
       <takano_hand step="6"
                    pos="5.0"/>
