@@ -535,21 +535,37 @@ namespace mcl {
             
             void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
                 if (msg->data.size() >= 4) {
-                    external_quat_.w = msg->data[0];
-                    external_quat_.x = msg->data[1];
-                    external_quat_.y = msg->data[2];
-                    external_quat_.z = msg->data[3];
+                    // 1. IMUからの生のクォータニオンを生成
+                    // msg->data の並び順が [w, x, y, z] の場合
+                    tf2::Quaternion raw_q(msg->data[1], msg->data[2], msg->data[3], msg->data[0]); 
+
+                    // 2. 初期角度(initial_theta_)を表すクォータニオンを作成
+                    tf2::Quaternion q_initial;
+                    q_initial.setRPY(0.0, 0.0, initial_theta_);
+
+                    // 3. 回転の合成 (初期オフセット * 生の回転)
+                    // これにより external_quat_ 自体が初期角度を考慮した状態になる
+                    tf2::Quaternion q_combined = q_initial * raw_q;
+                    q_combined.normalize(); // 正規化して誤差を修正
+
+                    // 4. メンバ変数へ格納
+                    external_quat_.x = q_combined.x();
+                    external_quat_.y = q_combined.y();
+                    external_quat_.z = q_combined.z();
+                    external_quat_.w = q_combined.w();
                     has_external_quat_ = true;
 
+                    // 5. (デバッグ用) Yaw角の確認
+                    double roll, pitch, yaw_rad;
+                    tf2::Matrix3x3(q_combined).getRPY(roll, pitch, yaw_rad);
                     
-                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
-                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
-                    double yaw_rad = std::atan2(siny_cosp, cosy_cosp) + initial_theta_;
-                    double yaw_deg = yaw_rad * (180.0 / M_PI);
+                    // クラス共通のimu_yaw_も更新しておくと便利
+                    imu_yaw_ = yaw_rad; 
 
-                    //RCLCPP_INFO(this->get_logger(), "Calculated Yaw: [rad: %.3f, deg: %.1f]", yaw_rad, yaw_deg);
+                    // RCLCPP_INFO(this->get_logger(), "IMU Yaw (initial-offset applied): %.3f rad", imu_yaw_);
                 }
             }
+            
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
                 zaxics_ = msg;
             }
