@@ -560,12 +560,12 @@ namespace mcl {
                     tf2::Matrix3x3(q_combined).getRPY(roll, pitch, yaw_rad);
                     
                     // クラス共通のimu_yaw_も更新しておくと便利
-                    imu_yaw_ = yaw_rad; 
+                    //imu_yaw_ = yaw_rad; 
 
                     // RCLCPP_INFO(this->get_logger(), "IMU Yaw (initial-offset applied): %.3f rad", imu_yaw_);
                 }
             }
-            
+
             void lidarSelectCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg){
                 zaxics_ = msg;
             }
