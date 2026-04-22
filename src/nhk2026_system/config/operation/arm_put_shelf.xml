@@ -17,7 +17,7 @@
                 z="0.62"
                 roll="-1.57"
                 max_speed="1.0"
-                max_acc="0.05"/>
+                max_acc="0.01"/>
       <move_arm y="-0.1"
                 z="0.71"
                 roll="-1.57"
