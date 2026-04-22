@@ -4,6 +4,11 @@
 
   <BehaviorTree ID="MartialClub">
     <Sequence>
+      <move_arm y="0.248"
+                z="0.588"
+                roll="-1.942"
+                max_speed="0.5"
+                max_acc="0.1"/>
       <generate_route x="-1.5"
                       y="1.45"
                       theta="3.142"/>
@@ -15,7 +20,7 @@
                       y="1.5"
                       theta="3.142"/>
       <follow_outline/>
-      <generate_route x="-0.5"
+      <generate_route x="-0.51"
                       y="1.5"
                       theta="3.142"/>
       <ForceSuccess>
@@ -57,7 +62,7 @@
                    pos="5.0"/>
       <takano_hand step="5"
                    pos="5.0"/>
-      <generate_route x="-0.9"
+      <generate_route x="-1.5"
                       y="0.6"
                       theta="1.57"/>
       <follow_outline/>
@@ -68,15 +73,6 @@
                       y="0.45"
                       theta="1.57"/>
       <follow_outline/>
-      <generate_route x="-0.871"
-                      y="0.45"
-                      theta="1.57"/>
-      <follow_detail/>
-      <SubTree ID="vel_tim"
-               vx="0.0"
-               vy="0.0"
-               omega="0.0"
-               pub_msec="500"/>
       <SubTree ID="WaitForTrigger"/>
       <takano_hand step="6"
                    pos="5.0"/>
@@ -96,6 +92,14 @@
       <input_port name="y"/>
       <input_port name="theta"
                   default="0.0"/>
+    </Action>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
     </Action>
     <Action ID="move_legs"
             editable="true">

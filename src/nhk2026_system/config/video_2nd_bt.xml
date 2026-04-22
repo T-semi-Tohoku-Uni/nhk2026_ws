@@ -17,8 +17,13 @@
 
   <BehaviorTree ID="MainTree">
     <Sequence>
-      <SubTree ID="Forest"/>
-      <SubTree ID="Arena"/>
+      <SubTree ID="WaitForTrigger"/>
+      <SubTree ID="MartialClub"/>
+      <SubTree ID="Forest"
+               _autoremap="true"/>
+      <Delay delay_msec="3000">
+        <SubTree ID="Arena"/>
+      </Delay>
     </Sequence>
   </BehaviorTree>
 
