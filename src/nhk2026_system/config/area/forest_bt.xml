@@ -12,10 +12,24 @@
 
   <BehaviorTree ID="Forest">
     <Sequence>
+      <generate_route x="-1.85"
+                      y="1.6"
+                      theta="0.0"/>
+      <follow_outline/>
+      <generate_route x="-1.85"
+                      y="2.8"
+                      theta="0.0"/>
+      <follow_outline/>
+      <generate_route x="-1.85"
+                      y="2.8"
+                      theta="0.0"/>
+      <follow_detail/>
+      <SubTree ID="arm_up_step"/>
+      <SubTree ID="kfs_stack"/>
       <generate_route x="-1.8"
                       y="2.6"
                       theta="0.0"/>
-      <follow_route/>
+      <follow_detail/>
       <step_move command="step up"/>
       <reset_mcl x="-1.8"
                  y="3.8"
@@ -88,6 +102,10 @@
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
+    <Action ID="follow_detail"
+            editable="true"/>
+    <Action ID="follow_outline"
+            editable="true"/>
     <Action ID="follow_route"
             editable="true"/>
     <Action ID="generate_route"
@@ -108,10 +126,6 @@
       <input_port name="target_theta"/>
       <input_port name="omega"/>
     </SubTree>
-    <Action ID="service_vacuum_stack"
-            editable="true">
-      <input_port name="value"/>
-    </Action>
     <Action ID="step_move"
             editable="true">
       <input_port name="command"/>
