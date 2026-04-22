@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4"
+      main_tree_to_execute="TestTree">
+  <include path="area/arena_bt.xml"/>
+
+  <include path="area/martial_club_bt.xml"/>
+
+  <include path="area/forest_bt.xml"/>
+
+  <include path="common/bt_node_models.xml"/>
+
+  <include path="common/wait_for_trigger.xml"/>
+
+  <include path="common/bt_vel_tim.xml"/>
+
+  <include path="common/bt_rotate.xml"/>
+
+  <include path="operation/kfs_stack_front.xml"/>
+
+  <BehaviorTree ID="TestTree">
+    <Sequence>
+      <SubTree ID="arm_put_shelf"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel/>
+
+</root>
