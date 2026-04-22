@@ -23,11 +23,6 @@
       <generate_route x="-0.7"
                       y="11.3"
                       theta="-1.57"/>
-      <ForceSuccess>
-        <Timeout msec="120000">
-          <follow_detail/>
-        </Timeout>
-      </ForceSuccess>
       <SubTree ID="arm_put_shelf"/>
       <generate_route x="-2"
                       y="11"
@@ -45,8 +40,6 @@
 
   <!-- Description of Node Models (used by Groot) -->
   <TreeNodesModel>
-    <Action ID="follow_detail"
-            editable="true"/>
     <Action ID="follow_outline"
             editable="true"/>
     <Action ID="generate_route"
