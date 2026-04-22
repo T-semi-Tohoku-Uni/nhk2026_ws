@@ -14,7 +14,7 @@
         <service_vacuum value="true"/>
       </Delay>
       <move_arm y="-0.1"
-                z="0.62"
+                z="0.61"
                 roll="-1.57"
                 max_speed="1.0"
                 max_acc="0.01"/>
@@ -37,7 +37,7 @@
                       y="11.3"
                       theta="-1.57"/>
       <ForceSuccess>
-        <Timeout msec="6000">
+        <Timeout msec="6500">
           <follow_detail/>
         </Timeout>
       </ForceSuccess>
