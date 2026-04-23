@@ -17,13 +17,15 @@
 
   <include path="operation/kfs_stack_front.xml"/>
 
+  <include path="operation/kfs_stack_down.xml"/>
+
   <include path="operation/arm_put_shelf_lift.xml"/>
 
   <BehaviorTree ID="TestTree">
     <Sequence>
       <SubTree ID="arm_down_step"
                _autoremap="true"/>
-      <SubTree ID="kfs_stack"/>
+      <SubTree ID="kfs_stack_down"/>
     </Sequence>
   </BehaviorTree>
 

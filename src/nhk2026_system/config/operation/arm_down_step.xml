@@ -15,6 +15,11 @@
                 roll="-1.57"
                 max_speed="0.5"
                 max_acc="0.1"/>
+      <move_arm y="-0.3"
+                z="0.732"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
     </Sequence>
   </BehaviorTree>
 
