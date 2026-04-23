@@ -21,40 +21,13 @@
 
   <BehaviorTree ID="TestTree">
     <Sequence>
-      <service_vacuum value="true"/>
-      <move_arm y="0.011076"
-                z="0.852822"
-                roll="-1.57"
-                max_speed="1.0"
-                max_acc="0.5"/>
-      <move_legs right_angle="1.57"
-                 left_angle="1.57"
-                 back_angle="1.57"/>
-      <SubTree ID="WaitForTrigger"/>
-      <SubTree ID="arm_put_shelf_lift"/>
+      <SubTree ID="arm_down_step"
+               _autoremap="true"/>
+      <SubTree ID="kfs_stack"/>
     </Sequence>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel>
-    <Action ID="move_arm"
-            editable="true">
-      <input_port name="y"/>
-      <input_port name="z"/>
-      <input_port name="roll"/>
-      <input_port name="max_speed"/>
-      <input_port name="max_acc"/>
-    </Action>
-    <Action ID="move_legs"
-            editable="true">
-      <input_port name="right_angle"/>
-      <input_port name="left_angle"/>
-      <input_port name="back_angle"/>
-    </Action>
-    <Action ID="service_vacuum"
-            editable="true">
-      <input_port name="value"/>
-    </Action>
-  </TreeNodesModel>
+  <TreeNodesModel/>
 
 </root>

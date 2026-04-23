@@ -2,19 +2,24 @@
 <root BTCPP_format="4">
   <include path="../common/bt_node_models.xml"/>
 
-  <BehaviorTree ID="arm_down_step">
+  <BehaviorTree ID="arm_put_shelf_lift">
     <Sequence>
-      <move_arm y="-0.794664"
-                z="0.1503"
+      <move_arm y="0.011076"
+                z="0.852822"
                 roll="-1.57"
-                max_speed="0.5"
+                max_speed="1.0"
                 max_acc="0.5"/>
-      <service_vacuum value="true"/>
-      <move_arm y="-0.807901"
-                z="0.061365"
-                roll="-1.57"
-                max_speed="0.5"
-                max_acc="0.1"/>
+      <move_arm y="0.139777"
+                z="1.062562"
+                roll="0.17"
+                max_speed="1.0"
+                max_acc="0.5"/>
+      <move_arm y="0.404131"
+                z="1.008237"
+                roll="0.14"
+                max_speed="1.0"
+                max_acc="0.5"/>
+      <service_vacuum value="false"/>
     </Sequence>
   </BehaviorTree>
 
