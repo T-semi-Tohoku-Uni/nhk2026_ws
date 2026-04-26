@@ -43,6 +43,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   ${msg_files}
   ${action_files}
   ${srv_files}
+  "msg/PathWithBox.msg"
   DEPENDENCIES geometry_msgs std_msgs sensor_msgs nav_msgs
 )
 
