@@ -77,7 +77,7 @@ def generate_launch_description():
     x = -1.25
     y = 0.45
     z = 0.40
-    theta = 0.0
+    theta = 3.141592
     frequency = 25.0
 
     name_space = "aro"
@@ -210,14 +210,14 @@ def generate_launch_description():
         executable="mcl_node",
         output="screen",
         parameters=[{
-            "particleNum": 200,
+            "particleNum": 300,
             "initial_x": x,
             "initial_y": y,
             "initial_theta": theta,
-            "odomNoise1": 1.2,
-            "odomNoise2": 0.5,
-            "odomNoise3": 1.3,
-            "odomNoise4": 1.1,
+            "odomNoise1": 2.0,
+            "odomNoise2": 1.0,
+            "odomNoise3": 1.5,
+            "odomNoise4": 1.3,
             "resampleThreshold": 0.9,
             "scanStep": 5,
             "lidar_threshold": 3.0/40.0*math.pi,
@@ -306,6 +306,13 @@ def generate_launch_description():
         output="screen",
         namespace=name_space,
     )
+    vacuum_stack_server_node = Node(
+        package="nhk2026_control",
+        executable="vacuum_stack_servier",
+        name="vacuum_stack_server",
+        output="screen",
+        namespace=name_space,
+    )
     """ide arm nodes end"""
 
     """pursuit nodes begin"""
@@ -368,6 +375,7 @@ def generate_launch_description():
         joint_state_publisher_ide_arm_node,
         arm_path_plan_node,
         vacuum_server_node,
+        vacuum_stack_server_node,
         path_planner,
         blossom_path_planner,
         jsp_node,

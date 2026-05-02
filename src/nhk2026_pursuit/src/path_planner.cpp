@@ -506,7 +506,7 @@ namespace nhk2026_pursuit::path {
                     // drawMarkerOnImage(debug_binary_color, 0.32, 0.02, cv::Scalar(0, 0, 255));
 
                 
-                    cv::imwrite("debug_binary_map.png", debug_binary_color);
+                    cv::imwrite("debug_binary_map_pursuit.png", debug_binary_color);
                     
 
         

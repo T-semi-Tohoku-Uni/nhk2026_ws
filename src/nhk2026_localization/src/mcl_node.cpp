@@ -28,6 +28,7 @@
 #include <nhk2026_msgs/srv/reset_pose.hpp>
 #include <geometry_msgs/msg/pose.hpp> 
 #include "std_msgs/msg/int32_multi_array.hpp" 
+#include "std_msgs/msg/float32_multi_array.hpp"
 
 using namespace std::chrono_literals; 
 using namespace H5; // HDF5 namespace
@@ -132,6 +133,7 @@ namespace mcl {
                 pose.set__x(initial_x);
                 pose.set__y(initial_y);
                 pose.set__theta(initial_theta);
+                initial_theta_ = initial_theta;
                 // initalize mclPose
                 setMCLPose(pose);
                 velOdom_.set__x(initial_x);
@@ -221,7 +223,9 @@ namespace mcl {
 
                   
                 scan_cloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("scan_cloud", 10);
-
+                subExtQuat_ = create_subscription<std_msgs::msg::Float32MultiArray>(
+                    "quaternion_feedback", 10, std::bind(&MCL::externalQuatCallback, this, std::placeholders::_1)
+                );
                 
                 // RCLCPP_INFO(this->get_logger(), "freofkprekfore");
                 if (sim) {
@@ -295,6 +299,21 @@ namespace mcl {
                 timer_->reset();
 
                 response->success = true;
+            }
+
+            void externalQuatCallback(const std_msgs::msg::Float32MultiArray::SharedPtr msg) {
+                if (msg->data.size() >= 4) {
+                    external_quat_.w = msg->data[0];
+                    external_quat_.x = msg->data[1];
+                    external_quat_.y = msg->data[2];
+                    external_quat_.z = msg->data[3];
+                    has_external_quat_ = true;
+
+                    // Yawの計算
+                    double siny_cosp = 2.0 * (external_quat_.w * external_quat_.z + external_quat_.x * external_quat_.y);
+                    double cosy_cosp = 1.0 - 2.0 * (external_quat_.y * external_quat_.y + external_quat_.z * external_quat_.z);
+                    imu_yaw_ = std::atan2(siny_cosp, cosy_cosp) + initial_theta_;
+                }
             }
 
             void setMCLPose(geometry_msgs::msg::Pose2D pose) { mclPose_=pose; }
@@ -614,31 +633,41 @@ namespace mcl {
                 new_pose.x = msg->position.x;
                 new_pose.y = msg->position.y;
 
-                // クォータニオンからYaw角へ変換
-                tf2::Quaternion q(
-                    msg->orientation.x,
-                    msg->orientation.y,
-                    msg->orientation.z,
-                    msg->orientation.w);
-                tf2::Matrix3x3 m(q);
-                double roll, pitch, yaw;
-                m.getRPY(roll, pitch, yaw);
-                new_pose.theta = yaw;
+                if (has_external_quat_) {
+                    // IMUデータがある場合は、Rvizの矢印の向きを無視してIMUの絶対角をセット
+                    new_pose.theta = imu_yaw_;
+                    RCLCPP_INFO(this->get_logger(), "Initial pose theta initialized by IMU: %.3f rad", imu_yaw_);
+                } else {
+                    // IMUがない場合は、従来どおりRvizの矢印（クォータニオン）から計算
+                    tf2::Quaternion q(
+                        msg->orientation.x,
+                        msg->orientation.y,
+                        msg->orientation.z,
+                        msg->orientation.w);
+                    tf2::Matrix3x3 m(q);
+                    double roll, pitch, yaw;
+                    m.getRPY(roll, pitch, yaw);
+                    new_pose.theta = yaw;
+                    RCLCPP_WARN(this->get_logger(), "IMU not available. Initial pose theta set by Rviz: %.3f rad", yaw);
+                }
 
                 setMCLPose(new_pose);
 
-                // 2. パーティクルを再散布 (ノイズ量は適宜調整)
+                // 2. パーティクルを再散布
                 geometry_msgs::msg::Pose2D resetNoise;
-                resetNoise.set__x(0.1);      // xの標準偏差 [m]
-                resetNoise.set__y(0.1);      // yの標準偏差 [m]
-                resetNoise.set__theta(M_PI / 36.0); // thetaの標準偏差 (5度)
+                resetNoise.set__x(0.1); 
+                resetNoise.set__y(0.1);
+                
+                // IMUを使っている場合は、角度のばらつき（初期ノイズ）をかなり小さくしてもOK
+                if (has_external_quat_) {
+                    resetNoise.set__theta(M_PI / 180.0); // 1度程度のノイズ
+                } else {
+                    resetNoise.set__theta(M_PI / 36.0);  // 5度程度のノイズ
+                }
 
                 resetParticlesDistribution(resetNoise);
-
-                RCLCPP_INFO(this->get_logger(), "Pose reset: x=%.2f, y=%.2f, theta=%.2f", 
-                            mclPose_.x, mclPose_.y, mclPose_.theta);
             }
-
+            
             void publishVoxelMap(const std::vector<uint8_t>& map_data, hsize_t dim_x, hsize_t dim_y, hsize_t dim_z) {
                 // インデックスの範囲チェック
                 if (this->mapZIndex_ < 0 || this->mapZIndex_ >= (int)dim_z) {
@@ -820,24 +849,40 @@ namespace mcl {
             }
 
             void updateParticles(geometry_msgs::msg::Twist delta) {
-                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y; 
+                std::double_t dd2 = delta.linear.x * delta.linear.x + delta.linear.y * delta.linear.y;
                 std::double_t dy2 = delta.angular.z * delta.angular.z;
-                // std::double_t dd2 = 0;
-                // std::double_t dy2 = 0;
-                // RCLCPP_INFO(this->get_logger(), "odomNoise1=%lf", odomNoise1_);
-                std::double_t sigma_xy = std::sqrt(odomNoise1_*dd2 + odomNoise2_*dy2);
-                std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                
+                // 標準偏差の計算
+                std::double_t sigma_xy = std::sqrt(odomNoise1_ * dd2 + odomNoise2_ * dy2);
+                
+                // IMU用のノイズパラメータ（必要に応じてdeclare_parameterで調整可能にしてください）
+                double imu_sigma = 0.01; // IMUのばらつき（ラジアン）
 
-                for (size_t i = 0; i < this->particles_.size(); i++ ) {
+                for (size_t i = 0; i < this->particles_.size(); i++) {
                     std::double_t dx = delta.linear.x + randNormal(sigma_xy);
                     std::double_t dy = delta.linear.y + randNormal(sigma_xy);
-                    std::double_t dtheta = delta.angular.z + randNormal(sigma_theta);
-
+                    
                     geometry_msgs::msg::Pose2D pose_ = this->particles_[i].getPose();
                     std::double_t theta_ = pose_.theta;
-                    std::double_t x_ = pose_.x + std::cos(theta_)*dx - std::sin(theta_)*dy;
-                    std::double_t y_ = pose_.y + std::sin(theta_)*dx + std::cos(theta_)*dy;
-                    theta_ += dtheta;
+                    
+                    // 位置の更新（前のターンのThetaを使用）
+                    std::double_t x_ = pose_.x + std::cos(theta_) * dx - std::sin(theta_) * dy;
+                    std::double_t y_ = pose_.y + std::sin(theta_) * dx + std::cos(theta_) * dy;
+
+                    // 向き（Theta）の更新
+                    if (has_external_quat_) {
+                        // IMUデータがある場合は、絶対角 + わずかなノイズで更新
+                        theta_ = imu_yaw_ + randNormal(imu_sigma);
+                    } else {
+                        // IMUがない場合は従来のオドメトリベース
+                        std::double_t sigma_theta = std::sqrt(odomNoise3_ * dd2 + odomNoise4_ * dy2);
+                        theta_ += delta.angular.z + randNormal(sigma_theta);
+                    }
+
+                    // 角度の正規化（-PI to PI）
+                    while (theta_ > M_PI) theta_ -= 2.0 * M_PI;
+                    while (theta_ < -M_PI) theta_ += 2.0 * M_PI;
+
                     particles_[i].setPose(x_, y_, theta_);
                 }
             }
@@ -945,10 +990,13 @@ namespace mcl {
                             double sdf_val = distField_.at<double>(v, u);
                             
                             // 動的障害物除外ロジック
-                            if (sdf_val > 0.5) { // dynamic_obstacle_threshold
-                                total_log_p += std::log(p);
-                                continue;
-                            }
+                            // if (sdf_val > 0.5) { // dynamic_obstacle_threshold
+                            //     total_log_p += std::log(p);
+                            //     continue;
+                            // } // if (sdf_val > 0.5) { // dynamic_obstacle_threshold
+                            //     total_log_p += std::log(p);
+                            //     continue;
+                            // }
 
                             double d = (sdf_val >= 0) ? sdf_val : (std::abs(sdf_val) + 0.0); // penetration_penalty=1.0
                             double pHit = normConst * std::exp(-(d * d) / (2.0 * var)) * mapResolution_;
@@ -1509,11 +1557,14 @@ namespace mcl {
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subLayerScan_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanFront_;
             rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr subScanBack_;
-
+            rclcpp::Subscription<std_msgs::msg::Float32MultiArray>::SharedPtr subExtQuat_;
             rclcpp::Subscription<nhk2026_msgs::msg::MultiLaserScan>::SharedPtr subScan_;
             nhk2026_msgs::msg::MultiLaserScan::SharedPtr scan_;
 
             rclcpp::Service<nhk2026_msgs::srv::ResetPose>::SharedPtr srvSetPose_;
+            geometry_msgs::msg::Quaternion external_quat_;
+            bool has_external_quat_ = false;
+            double imu_yaw_ = 0.0;
 
             bool is_sim_;
             int lidar_select;
@@ -1558,6 +1609,8 @@ namespace mcl {
             std::vector<SensorTransform> lidar_transforms_ = std::vector<SensorTransform>(3);
             rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr zaxissub_;
             std_msgs::msg::Int32MultiArray::SharedPtr zaxics_;
+
+            double initial_theta_ = 0.0;
 
             // private 変数として定義
             rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_cloud_pub_; // LaserScanから変更

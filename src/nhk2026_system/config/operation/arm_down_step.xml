@@ -1,9 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <include path="../common/bt_node_models.xml"/>
+
   <BehaviorTree ID="arm_down_step">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+      <move_arm y="-0.794664"
+                z="0.1503"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.5"/>
+      <service_vacuum value="true"/>
+      <move_arm y="-0.807901"
+                z="0.061365"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
+      <move_arm y="-0.3"
+                z="0.732"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>

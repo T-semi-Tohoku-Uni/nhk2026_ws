@@ -21,6 +21,10 @@
 
     <Action ID="follow_route" editable="true"/>
 
+    <Action ID="follow_outline" editable="true"/>
+
+    <Action ID="follow_detail" editable="true"/>
+
     <Action ID="generate_route" editable="true">
       <input_port name="x"/>
       <input_port name="y"/>
@@ -47,12 +51,56 @@
       <input_port name="vy"/>
       <input_port name="omega"/>
     </Action>
+    
+    <Action ID="waypoint" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+    
+    <Action ID="rotate_sub" editable="true">
+      <input_port name="target_theta"/>
+      <input_port name="tolerance" default="0.05"/>
+    </Action>
+    
+    <Action ID="service_vacuum_stack" editable="true">
+      <input_port name="value"/>
+    </Action>
+    
+    <Action ID="reset_mcl" editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="theta"/>
+    </Action>
+    
+    <Action ID="pub_step_legs" editable="true">
+      <input_port name="angles"/>
+    </Action>
+    
+    <Action ID="sub_aruco_pose" editable="true">
+      <input_port name="id"/>
+    </Action>
+    
+    <Action ID="move_legs" editable="true">
+      <input_port name="right_angle"/>
+      <input_port name="left_angle"/>
+      <input_port name="back_angle"/>
+    </Action>
 
     <SubTree ID="vel_tim">
       <input_port name="vx"/>
       <input_port name="vy"/>
       <input_port name="omega"/>
       <input_port name="pub_msec"/>
+    </SubTree>
+    
+    <SubTree ID="rotate">
+      <input_port name="target_theta"/>
+      <input_port name="omega"/>
+    </SubTree>
+
+    <SubTree ID="WaitForArUco">
+      <input_port name="id"/>
     </SubTree>
   </TreeNodesModel>
 </root>

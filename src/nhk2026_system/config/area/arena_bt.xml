@@ -1,10 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
   <include path="../operation/arm_put_shelf.xml"/>
+
   <include path="../common/bt_node_models.xml"/>
+
   <BehaviorTree ID="Arena">
     <Sequence>
-      <SubTree ID="WaitForTrigger"
-               _autoremap="false"/>
+      <generate_route x="-3.0"
+                      y="8.7"
+                      theta="-1.57"/>
+      <follow_outline/>
+      <waypoint x="-5.5"
+                y="9.7"/>
+      <waypoint x="-5.5"
+                y="11.0"/>
+      <waypoint x="-2"
+                y="11"/>
+      <generate_route x="-0.7"
+                      y="11.3"
+                      theta="-1.57"/>
+      <follow_outline/>
+      <generate_route x="-0.7"
+                      y="11.3"
+                      theta="-1.57"/>
+      <SubTree ID="arm_put_shelf"/>
+      <generate_route x="-2"
+                      y="11"
+                      theta="-1.57"/>
+      <Delay delay_msec="3000">
+        <follow_outline/>
+      </Delay>
+      <move_arm y="0.1"
+                z="0.7"
+                roll="-1.57"
+                max_speed="1.0"
+                max_acc="0.5"/>
     </Sequence>
   </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="follow_outline"
+            editable="true"/>
+    <Action ID="generate_route"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+      <input_port name="theta"
+                  default="0.0"/>
+    </Action>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="waypoint"
+            editable="true">
+      <input_port name="x"/>
+      <input_port name="y"/>
+    </Action>
+  </TreeNodesModel>
+
 </root>

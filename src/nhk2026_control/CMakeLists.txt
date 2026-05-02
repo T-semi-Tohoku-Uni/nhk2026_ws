@@ -63,6 +63,8 @@ add_nhk_node(ide_arm_sim_bridge src/ide_arm_sim_bridge.cpp)
 add_nhk_node(arm_path_plan src/arm_path_plan_server.cpp)
 add_nhk_node(ide_arm_teaching src/ide_arm_teaching.cpp)
 add_nhk_node(robot_pos_teaching src/robot_pos_teaching.cpp)
+add_nhk_node(vacuum_stack_servier src/vacuum_stack_service.cpp)
+
 target_compile_definitions(ide_arm_teaching PRIVATE
   NHK2026_CONTROL_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )

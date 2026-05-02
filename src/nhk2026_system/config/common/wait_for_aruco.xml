@@ -1,0 +1,12 @@
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+  <BehaviorTree ID="WaitForArUco">
+    <ForceSuccess>
+      <KeepRunningUntilFailure>
+        <Inverter>
+          <sub_aruco_pose id="{id}"/>
+        </Inverter>
+      </KeepRunningUntilFailure>
+    </ForceSuccess>
+  </BehaviorTree>
+</root>

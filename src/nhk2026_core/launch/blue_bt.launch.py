@@ -34,9 +34,10 @@ def generate_launch_description():
     """ide_arm end"""
 
     """pursuit nodes begin"""
-    pursuit = Node(
+    pursuit_forest = Node(
         package="nhk2026_pursuit",
         executable="pursuit",
+        name="pursuit_forest",
         output="screen",
         parameters=[{
             "max_linear_speed": 1.0,
@@ -62,6 +63,75 @@ def generate_launch_description():
             "accel_angle_": math.pi / 10,
             "stop_angle_": math.pi / 90,
             "offset_z_": 0.02,
+            "action_server_name": "follow",
+        },
+        ],
+        namespace=name_space,
+    )
+    pursuit_outline = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        name="pursuit_outline",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 2.0,
+            "max_angular_speed": 1.5,
+            "max_linear_tolerance": 0.5,
+            "max_theta_tolerance": 0.1,
+            "max_reaching_distance": 0.50,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 2.0,
+            "Ki_tan": 0.0,
+            "Kd_tan": 0.0,
+            "Kp_normal": 2.0,
+            "Ki_normal": 0.0,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.5,
+            "Ki_theta": 0.00,
+            "Kd_theta": 0.00,
+            "x": 10,
+            "max_rotate_speed_": 1.0,
+            "slow_rotate_speed_": 0.5,
+            "accel_angle_": math.pi / 10,
+            "stop_angle_": math.pi / 90,
+            "offset_z_": 0.02,
+            "action_server_name": "follow_outline",
+        },
+        ],
+        namespace=name_space,
+    )
+    pursuit_detail = Node(
+        package="nhk2026_pursuit",
+        executable="pursuit",
+        name="pursuit_detail",
+        output="screen",
+        parameters=[{
+            "max_linear_speed": 1.0,
+            "max_angular_speed": 0.5,
+            "max_linear_tolerance": 0.3,
+            "max_theta_tolerance": 0.01,
+            "max_reaching_distance": 0.02,
+            "max_reaching_theta": 0.10,
+            "lookahead_distance": 0.20,
+            "resampleThreshold": 0.10,
+            "Kp_tan": 0.80,
+            "Ki_tan": 0.01,
+            "Kd_tan": 0.0,
+            "Kp_normal": 0.80,
+            "Ki_normal": 0.01,
+            "Kd_normal": 0.00,
+            "Kp_theta": 1.0,
+            "Ki_theta": 0.01,
+            "Kd_theta": 0.00,
+            "x": 10,
+            "max_rotate_speed_": 0.5,
+            "slow_rotate_speed_": 0.3,
+            "accel_angle_": math.pi / 10,
+            "stop_angle_": math.pi / 90,
+            "offset_z_": 0.02,
+            "action_server_name": "follow_detail",
         },
         ],
         namespace=name_space,
@@ -83,6 +153,14 @@ def generate_launch_description():
         package='nhk2026_system',
         executable='step_action_server',
         name='step_leg_sequencer',
+        output='screen',
+        namespace=name_space,
+    )
+
+    step_legs_angle = Node(
+        package='nhk2026_system',
+        executable='step_leg_action_server',
+        name='step_leg_action_server',
         output='screen',
         namespace=name_space,
     )
@@ -115,7 +193,7 @@ def generate_launch_description():
     ld.add_action(DeclareLaunchArgument(
         "bt_start_delay",
         default_value="4.0",
-        description="Delay in seconds before starting ide_arm_bt_node.",
+        description="Delay in seconds before starting bt_node.",
     ))
     ld.add_action(DeclareLaunchArgument(
         "wait_for_server_timeout_ms",
@@ -129,12 +207,16 @@ def generate_launch_description():
     ))
     
     ld.add_action(ide_arm_action_server_node)
-    ld.add_action(pursuit)
+    ld.add_action(pursuit_forest)
+    ld.add_action(pursuit_outline)
+    ld.add_action(pursuit_detail)
     ld.add_action(TimerAction(
         period=bt_start_delay,
         actions=[bt_node],
     ))
     ld.add_action(takano_hand_sequencer)
     ld.add_action(step_leg_sequencer)
+    ld.add_action(step_legs_angle)
+    
     
     return ld

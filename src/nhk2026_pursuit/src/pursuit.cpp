@@ -90,7 +90,8 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("accel_angle_", M_PI / 10);
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
-            this->declare_parameter<double>("wait_time_", 0.20);
+            this->declare_parameter<double>("wait_time_", 10.0);
+            this->declare_parameter<std::string>("action_server_name", "follow");
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -113,7 +114,8 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("accel_angle_", accel_angle_);
             this->get_parameter("stop_angle_", stop_angle_);
             this->get_parameter("offset_z_", offset_z_);
-            this->get_parameter("wait_time", wait_time_);
+            this->get_parameter("wait_time_", wait_time_);
+            this->get_parameter("action_server_name", action_server_name_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -160,7 +162,7 @@ class FollowNode: public rclcpp::Node {
             target_pub_ = this->create_publisher<geometry_msgs::msg::Pose>("target_pose", 10);
             action_server_ = rclcpp_action::create_server<inrof2025_ros_type::action::Follow>(
                 this,
-                "follow",
+                this->action_server_name_.c_str(),
                 std::bind(&FollowNode::handleGoal, this, std::placeholders::_1, std::placeholders::_2),
                 std::bind(&FollowNode::handleCancel, this, std::placeholders::_1),
                 std::bind(&FollowNode::handleAccepted, this, std::placeholders::_1)
@@ -239,19 +241,26 @@ class FollowNode: public rclcpp::Node {
             
             // アクション完了時のコールバックを登録
             send_goal_options.result_callback = [this](const GoalHandleStepMove::WrappedResult & result) {
-                is_action_busy_ = false; // アクションが終わったらフラグを下ろす
+                // ここで即座に false にせず、待機が終わるまで true を維持するのがコツ！
+                // is_action_busy_ = false; // ← ここでは消す
+
                 if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
-                    RCLCPP_INFO(this->get_logger(), "Step sequence completed.");
-
+                    RCLCPP_INFO(this->get_logger(), "Step completed. Teleporting and waiting 5s...");
                     resetRealPose(); 
-                    RCLCPP_INFO(this->get_logger(), "init pose!!!!!!!");
-                    rclcpp::WallRate rate(1.0 / wait_time_); 
 
+                    // 5秒後にフラグを下ろす予約だけして、コールバックはすぐ抜ける
+                    this->wait_timer_ = this->create_wall_timer(
+                        std::chrono::duration<double>(wait_time_), // 5.0
+                        [this]() {
+                            this->is_action_busy_ = false; // 5秒経ってから制御再開を許可
+                            this->wait_timer_->cancel();   // タイマーを止める
+                            RCLCPP_INFO(this->get_logger(), "Ready to move again!");
+                        }
+                    );
                 } else {
-                    RCLCPP_ERROR(this->get_logger(), "Step sequence failed or canceled.");
+                    is_action_busy_ = false; 
                 }
             };
-
             //実機でテストするためコメントアウト simulation real
             // this->action_client_->async_send_goal(goal_msg, send_goal_options);
         }
@@ -284,15 +293,15 @@ class FollowNode: public rclcpp::Node {
             // zが変化しなくなるまでインデックスを進める
             int index = current_waypoint_index_ + 1;   
             
-            while (index + 1 < static_cast<int>(path_.path.poses.size()) &&
-                std::abs(path_.path.poses[index].pose.position.z - path_.path.poses[index+1].pose.position.z) > 1e-3) {
+            while (index + 1 < static_cast<int>(path_.size()) &&
+                std::abs(path_[index].pose.position.z - path_[index+1].pose.position.z) > 1e-3) {
                 index++;
             }
 
             // zが変化しなくなったindexの座標をteleport先に設定
-            double target_x = path_.path.poses[index].pose.position.x;
-            double target_y = path_.path.poses[index].pose.position.y;
-            double target_z = path_.path.poses[index].pose.position.z;
+            double target_x = path_[index].pose.position.x;
+            double target_y = path_[index].pose.position.y;
+            double target_z = path_[index].pose.position.z;
 
             std::shared_ptr<nhk2026_msgs::srv::ResetPose_Request> request = 
                 std::make_shared<nhk2026_msgs::srv::ResetPose::Request>();
@@ -432,12 +441,13 @@ class FollowNode: public rclcpp::Node {
         }
 
         void controlLoop() {
+            //RCLCPP_INFO(this->get_logger(), "z: %.3f", pose_.position.z);
             if (!goal_handle_){
-                publishZero();
+                // publishZero();
                 return;
             }
-            if (path_.path.poses.empty()){
-                publishZero();
+            if (path_.empty()){
+                // publishZero();
                 return;
             }
             if (is_rotating_) {
@@ -449,7 +459,7 @@ class FollowNode: public rclcpp::Node {
                 return;
             }
             if (is_jump_){
-                publishZero();
+                // publishZero();
                 jumpZ();
                 return;
             }
@@ -853,6 +863,7 @@ class FollowNode: public rclcpp::Node {
         nhk2026_msgs::msg::PathWithBox path_;
         std::mutex mutex_;
         geometry_msgs::msg::Pose pose_;
+        rclcpp::TimerBase::SharedPtr wait_timer_;
 
         rclcpp::Client<nhk2026_msgs::srv::ResetPose>::SharedPtr reset_pose_client_;
 
@@ -884,12 +895,13 @@ class FollowNode: public rclcpp::Node {
         double offset_z_ = 0.02; 
 
         //wait
-        double wait_time_ = 0.5;
+        double wait_time_ = 5.0;
         
         // rotate action server
         rclcpp_action::Server<inrof2025_ros_type::action::Rotate>::SharedPtr action_rotate_server_;
         std::shared_ptr<rclcpp_action::ServerGoalHandle<inrof2025_ros_type::action::Rotate>> goal_rotate_handle_;
 
+        std::string action_server_name_ = "follow";
 };
 
 int main(int argc, char *argv[]) {

@@ -72,9 +72,9 @@ private:
         else {
             // 通常移動
             geometry_msgs::msg::Twist twist;
-            twist.linear.x = msg->axes[1] * 2.0;  
-            twist.linear.y = msg->axes[0] * 2.0;  
-            twist.angular.z = msg->axes[3] * 1.0; 
+            twist.linear.x = msg->axes[1] * 3.0;  
+            twist.linear.y = msg->axes[0] * 3.0;  
+            twist.angular.z = msg->axes[3] * 2.0; 
             vel_pub_->publish(twist);
         }
 

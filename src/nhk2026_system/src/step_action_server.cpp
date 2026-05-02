@@ -137,7 +137,7 @@ private:
                         if (leg_reached()) { zaxics_count++; next_step(step, state_start_time); }
                         break;
                     case 1:
-                        target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.57};
+                        target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.47};
                         target_robomas = 0.3f;
                         feedbacktype = 1;
                         if (leg_reached()) next_step(step, state_start_time);
@@ -148,7 +148,7 @@ private:
                         break;
                     case 3:
                         target_robomas = 0.3f; target_cmd_vel.linear.y = 0.3;
-                        target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, -1.57};
+                        target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, -1.47};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 4:
@@ -170,7 +170,7 @@ private:
                         break;
                     case 8:
                         target_robomas = 0.0f; target_cmd_vel.linear.y = 0.0;
-                        target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.57};
+                        target_leg_pos_ = {6.28 + count * 6.28, 6.28 + count * 6.28, 1.47};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 9:
@@ -214,7 +214,7 @@ private:
                         if (check_lidar(1, 1)) next_step(step, state_start_time);
                         break;
                     case 2:
-                        target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, -1.57};
+                        target_leg_pos_ = {6.1 + count * 6.28, 6.1 + count * 6.28, -1.47};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 3:
@@ -222,7 +222,7 @@ private:
                         if (check_lidar(0, 1)) next_step(step, state_start_time);
                         break;
                     case 4:
-                        target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.57};
+                        target_leg_pos_ = {4.57 + count * 6.28, 4.57 + count * 6.28, -1.47};
                         feedbacktype = 1;
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
@@ -246,7 +246,7 @@ private:
                         break;
                     case 9:
                         leg_max_speed_ = 50.0; leg_max_acc_ = 20.0;
-                        target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.57};
+                        target_leg_pos_ = {0.0 + count * 6.28, 0.0 + count * 6.28, 1.47};
                         if (leg_reached()) next_step(step, state_start_time);
                         break;
                     case 10:

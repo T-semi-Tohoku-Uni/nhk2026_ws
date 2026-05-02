@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <include path="../common/bt_node_models.xml"/>
+
+  <BehaviorTree ID="kfs_stack_down">
+    <Sequence>
+      <move_arm y="-0.05"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
+      <move_arm y="-0.05"
+                z="0.65"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
+      <move_legs right_angle="0.0"
+                 left_angle="0.0"
+                 back_angle="1.3"/>
+      <service_vacuum value="false"/>
+      <move_arm y="-0.06"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.1"
+                max_acc="0.1"/>
+      <move_legs right_angle="0.0"
+                 left_angle="0.0"
+                 back_angle="1.57"/>
+      <move_arm y="-0.06"
+                z="0.62"
+                roll="-1.57"
+                max_speed="0.2"
+                max_acc="0.1"/>
+      <move_legs right_angle="0.0"
+                 left_angle="0.0"
+                 back_angle="1.3"/>
+      <service_vacuum_stack value="true"/>
+      <move_arm y="-0.1"
+                z="0.7"
+                roll="-1.57"
+                max_speed="0.5"
+                max_acc="0.1"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="move_arm"
+            editable="true">
+      <input_port name="y"/>
+      <input_port name="z"/>
+      <input_port name="roll"/>
+      <input_port name="max_speed"/>
+      <input_port name="max_acc"/>
+    </Action>
+    <Action ID="move_legs"
+            editable="true">
+      <input_port name="right_angle"/>
+      <input_port name="left_angle"/>
+      <input_port name="back_angle"/>
+    </Action>
+    <Action ID="service_vacuum"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+    <Action ID="service_vacuum_stack"
+            editable="true">
+      <input_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

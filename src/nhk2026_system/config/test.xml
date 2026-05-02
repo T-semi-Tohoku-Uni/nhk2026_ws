@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4"
-      main_tree_to_execute="MainTree">
+      main_tree_to_execute="TestTree">
   <include path="area/arena_bt.xml"/>
 
   <include path="area/martial_club_bt.xml"/>
@@ -15,15 +15,17 @@
 
   <include path="common/bt_rotate.xml"/>
 
-  <BehaviorTree ID="MainTree">
+  <include path="operation/kfs_stack_front.xml"/>
+
+  <include path="operation/kfs_stack_down.xml"/>
+
+  <include path="operation/arm_put_shelf_lift.xml"/>
+
+  <BehaviorTree ID="TestTree">
     <Sequence>
-      <SubTree ID="WaitForTrigger"/>
-      <SubTree ID="MartialClub"/>
-      <SubTree ID="Forest"
+      <SubTree ID="arm_down_step"
                _autoremap="true"/>
-      <Delay delay_msec="3000">
-        <SubTree ID="Arena"/>
-      </Delay>
+      <SubTree ID="kfs_stack_down"/>
     </Sequence>
   </BehaviorTree>
 
