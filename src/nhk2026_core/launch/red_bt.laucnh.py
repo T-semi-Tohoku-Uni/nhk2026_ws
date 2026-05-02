@@ -89,7 +89,7 @@ def generate_launch_description():
     """step leg end"""
 
     """bt start"""
-    ide_arm_bt_node = Node(
+    bt_node = Node(
         package="nhk2026_system",
         executable="video_2nd_bt_node",
         name="video_2nd_bt_node",
@@ -132,7 +132,7 @@ def generate_launch_description():
     ld.add_action(pursuit)
     ld.add_action(TimerAction(
         period=bt_start_delay,
-        actions=[ide_arm_bt_node],
+        actions=[bt_node],
     ))
     ld.add_action(takano_hand_sequencer)
     ld.add_action(step_leg_sequencer)
