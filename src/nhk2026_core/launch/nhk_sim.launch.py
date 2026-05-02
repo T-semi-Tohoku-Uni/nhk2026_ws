@@ -215,6 +215,8 @@ def generate_launch_description():
             "accel_angle_": math.pi / 10,
             "stop_angle_": math.pi / 90,
             "offset_z_": 0.02,
+            "wait_time_": 0.20,
+            "min_speed_": 0.25,
         },
         ],
         remappings=[('clock', '/world/nhk2026/clock')],

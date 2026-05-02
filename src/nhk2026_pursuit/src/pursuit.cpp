@@ -91,6 +91,7 @@ class FollowNode: public rclcpp::Node {
             this->declare_parameter<double>("stop_angle_", M_PI / 90);
             this->declare_parameter<double>("offset_z_", 0.2);
             this->declare_parameter<double>("wait_time_", 0.20);
+            this->declare_parameter<double>("min_linear_speed_", 0.20);
             this->get_parameter("lookahead_distance", lookahead_distance_);
             this->get_parameter("max_linear_speed", max_linear_speed_);
             this->get_parameter("max_theta_speed", max_theta_speed_);
@@ -114,6 +115,7 @@ class FollowNode: public rclcpp::Node {
             this->get_parameter("stop_angle_", stop_angle_);
             this->get_parameter("offset_z_", offset_z_);
             this->get_parameter("wait_time", wait_time_);
+            this->get_parameter("min_linear_speed_", min_linear_speed_);
 
             reset_pose_client_ = this->create_client<nhk2026_msgs::srv::ResetPose>("reset_pose");
 
@@ -631,6 +633,7 @@ class FollowNode: public rclcpp::Node {
             double linear_speed_cmd_x = linear_cmd_tan * tx + linear_cmd_norm * nx;
             double linear_speed_cmd_y = linear_cmd_tan * ty + linear_cmd_norm * ny;
 
+          
 
             geometry_msgs::msg::Twist linear_speed;
             linear_speed.linear.x = cos(getYaw(pose_.orientation)) * linear_speed_cmd_x + sin(getYaw(pose_.orientation)) * linear_speed_cmd_y;
@@ -639,6 +642,18 @@ class FollowNode: public rclcpp::Node {
 
             //apply speed limits 
             geometry_msgs::msg::Twist clipped_v = clip(linear_speed);
+
+
+            double final_speed = std::hypot(clipped_v.linear.x, clipped_v.linear.y);
+            if (final_speed > 1e-3 && final_speed < min_linear_speed_) {
+                double scale = min_linear_speed_ / final_speed;
+                clipped_v.linear.x *= scale;
+                clipped_v.linear.y *= scale;
+            }
+
+            RCLCPP_INFO(this->get_logger(), "final_speed %.2f min_linear_speed_ %.2f", 
+                std::hypot(clipped_v.linear.x, clipped_v.linear.y), min_linear_speed_);
+
             cmd_pub_->publish(clipped_v);
 
 
@@ -654,8 +669,7 @@ class FollowNode: public rclcpp::Node {
 
             //test 
             //RCLCPP_INFO(this->get_logger(), "theta %.2f", getYaw(path_[current_waypoint_index_].pose.orientation) * 180 / M_PI);
-            RCLCPP_INFO(this->get_logger(), "is_box %d", (int)(bool)path_.flags[current_waypoint_index_]);
-            
+            //RCLCPP_INFO(this->get_logger(), "speed %.2f min_linear_speed_ %.2f", speed, min_linear_speed_);
             
             //publish feedback
             auto feedback_msg = std::make_shared<inrof2025_ros_type::action::Follow::Feedback>();
@@ -866,6 +880,7 @@ class FollowNode: public rclcpp::Node {
         double max_theta_tolerance;
         double max_reaching_distance;
         double max_reaching_theta;
+        double min_linear_speed_ = 0.20;
 
         // waypoint index
         int current_waypoint_index_;    
